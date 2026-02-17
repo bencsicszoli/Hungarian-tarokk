@@ -1,11 +1,19 @@
-import { useState, useEffect } from "react";
+import {
+  useState,
+  useEffect,
+  type SubmitEventHandler,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { usePlayer } from "../context/PlayerContext.tsx";
 //import CardTableDecoration from "../pageComponents/CardTableDecoration.jsx";
 import InputField from "../pageComponents/InputField.tsx";
 
 function LoginPage() {
-  const { setPlayer, token, setToken } = usePlayer();
+  const playerContext = usePlayer();
+  if (!playerContext) {
+    throw new Error("usePlayer must be used within PlayerProvider");
+  }
+  const { setPlayer, token, setToken } = playerContext;
   const [playerName, setPlayerName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +26,7 @@ function LoginPage() {
 
   async function postLogin() {
     try {
-      const response = await fetch(`/api/user/login`, {
+      const response = await fetch(`/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ playerName, password }),
@@ -30,7 +38,7 @@ function LoginPage() {
       localStorage.setItem("jwtToken", jwt);
       setToken(jwt);
 
-      const playerRes = await fetch(`/api/user/me`, {
+      const playerRes = await fetch(`/api/auth/me`, {
         headers: { Authorization: "Bearer " + jwt },
       });
       if (!playerRes.ok) throw new Error("Could not fetch user info");
@@ -40,7 +48,9 @@ function LoginPage() {
       setIsLoggedIn(true);
       setError(null);
     } catch (error) {
-      setError(error.message);
+      setError(
+        error instanceof Error ? error.message : "An unknown error occurred",
+      );
     }
   }
 
@@ -48,10 +58,10 @@ function LoginPage() {
     navigate(`/register`);
   }
 
-  function handleLogin(e) {
+  const handleLogin: SubmitEventHandler<HTMLFormElement> = (e) => {
     e.preventDefault();
     postLogin();
-  }
+  };
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -63,7 +73,6 @@ function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-table-background px-4 py-8">
       <div className="p-4 sm:p-6 bg-[#4B2E1F] rounded-[90px] shadow-inner w-full max-w-7xl">
         <div className="w-full h-168 bg-poker-table rounded-[70px] shadow-2xl flex flex-col items-center justify-center relative text-white px-6 sm:px-8">
-          
           {/*<CardTableDecoration />*/}
 
           <h2 className="text-4xl font-extrabold  mb-11 drop-shadow-lg text-center text-white">
@@ -84,6 +93,7 @@ function LoginPage() {
                   placeholderText="username"
                   inputValue={playerName}
                   onInputValue={setPlayerName}
+                  autoComplete="off"
                 />
                 <InputField
                   htmlFor="pwd"
@@ -96,7 +106,7 @@ function LoginPage() {
                   onInputValue={setPassword}
                   autoComplete="off"
                 />
-                
+
                 {error && (
                   <p className="text-sm font-light text-red-500 dark:text-red-400">
                     {error}

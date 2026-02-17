@@ -1,3 +1,15 @@
+interface InputFieldProps {
+  htmlFor: string;
+  labelText: string;
+  inputType: string;
+  inputName: string;
+  inputId: string;
+  placeholderText: string;
+  inputValue: string;
+  onInputValue: (value: string) => void;
+  autoComplete: string;
+}
+
 function InputField({
   htmlFor,
   labelText,
@@ -8,7 +20,7 @@ function InputField({
   inputValue,
   onInputValue,
   autoComplete,
-}) {
+}: InputFieldProps) {
   
   return (
     <div>
