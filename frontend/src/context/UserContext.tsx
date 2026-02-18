@@ -1,27 +1,27 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
 
-interface Player {
+interface User {
   id: string;
   name: string;
   email: string;
   // Add other player properties as needed
 }
 
-interface PlayerContextType {
-  player: Player | null;
-  setPlayer: (player: Player | null) => void;
+interface UserContextType {
+  user: User | null;
+  setUser: (user: User | null) => void;
   logout: () => void;
   token: string | null;
   setToken: (token: string | null) => void;
 }
 
-const PlayerContext = createContext<PlayerContextType | null>(null);
+const UserContext = createContext<UserContextType | null>(null);
 
-export function PlayerProvider({ children }: { children: ReactNode }) {
-  const [player, setPlayer] = useState<Player | null>(null);
+export function UserProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem("jwtToken") || null);
-  const logout = () => setPlayer(null);
+  const logout = () => setUser(null);
 
   useEffect(() => {
     if (token) {
@@ -32,15 +32,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [token]);
 
   return (
-    <PlayerContext.Provider
-      value={{ player, setPlayer, logout, token, setToken }}
+    <UserContext.Provider
+      value={{ user, setUser, logout, token, setToken }}
     >
       {children}
-    </PlayerContext.Provider>
+    </UserContext.Provider>
   );
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
-export function usePlayer() {
-  return useContext(PlayerContext);
+export function useUser() {
+  return useContext(UserContext);
 }

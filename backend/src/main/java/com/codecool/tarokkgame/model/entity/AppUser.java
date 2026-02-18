@@ -12,7 +12,7 @@ import java.util.Set;
 @Getter
 @Setter
 @Table(name = "users")
-public class User {
+public class AppUser {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
@@ -22,6 +22,7 @@ public class User {
     private String email;
     private LocalDate registrationDate;
     private int balance;
+    private int games;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))

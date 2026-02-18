@@ -6,8 +6,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Entity
 @Getter
@@ -21,7 +20,7 @@ public class Player {
     int place;
 
     @ManyToOne
-    private User user;
+    private AppUser user;
 
     @ManyToOne
     private Game game;
@@ -45,5 +44,20 @@ public class Player {
     @Enumerated(EnumType.STRING)
     @Column(name = "bid")
     private Set<BidLevel> bidLevels;
+
+    public String getName() {
+        return user.getUsername();
+    }
+/*
+    public void addCard(PlayerCard card) {
+        cards.add(card);
+    }
+
+ */
+    public List<PlayerCard> getSortedCards() {
+        List<PlayerCard> sortedCards = new ArrayList<>(cards);
+        sortedCards.sort(Comparator.comparingInt(o -> o.getCard().getId()));
+        return sortedCards;
+    }
 }
 

@@ -4,17 +4,17 @@ import {
   type SubmitEventHandler,
 } from "react";
 import { useNavigate } from "react-router-dom";
-import { usePlayer } from "../context/PlayerContext.tsx";
+import { useUser } from "../context/UserContext.tsx";
 //import CardTableDecoration from "../pageComponents/CardTableDecoration.jsx";
 import InputField from "../pageComponents/InputField.tsx";
 
 function LoginPage() {
-  const playerContext = usePlayer();
-  if (!playerContext) {
-    throw new Error("usePlayer must be used within PlayerProvider");
+  const userContext = useUser();
+  if (!userContext) {
+    throw new Error("useUser must be used within UserProvider");
   }
-  const { setPlayer, token, setToken } = playerContext;
-  const [playerName, setPlayerName] = useState("");
+  const { setUser, token, setToken } = userContext;
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -29,7 +29,7 @@ function LoginPage() {
       const response = await fetch(`/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ playerName, password }),
+        body: JSON.stringify({ username, password }),
       });
       if (!response.ok) {
         throw new Error((await response.json()).message);
@@ -43,7 +43,7 @@ function LoginPage() {
       });
       if (!playerRes.ok) throw new Error("Could not fetch user info");
       const playerData = await playerRes.json();
-      setPlayer(playerData);
+      setUser(playerData);
 
       setIsLoggedIn(true);
       setError(null);
@@ -91,8 +91,8 @@ function LoginPage() {
                   inputName="username"
                   inputId="username"
                   placeholderText="username"
-                  inputValue={playerName}
-                  onInputValue={setPlayerName}
+                  inputValue={username}
+                  onInputValue={setUsername}
                   autoComplete="off"
                 />
                 <InputField

@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import LoginPage from "./authentication/LoginPage.tsx";
 import RegisterPage from "./authentication/RegisterPage.tsx";
-import { PlayerProvider } from "./context/PlayerContext.tsx";
+import { UserProvider } from "./context/UserContext.tsx";
 
 export default function App() {
   const router = createBrowserRouter([
@@ -17,8 +17,8 @@ export default function App() {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <PlayerProvider>
+    <UserProvider>
       <App />
-    </PlayerProvider>
+    </UserProvider>
   </StrictMode>,
 );

@@ -4,7 +4,7 @@ import CardTableDecoration from "../pageComponents/CardTableDecoration";
 import InputField from "../pageComponents/InputField";
 
 function RegistrationPage() {
-  const [playerName, setPlayerName] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
   const [regError, setRegError] = useState<string | null>(null);
@@ -15,7 +15,7 @@ function RegistrationPage() {
       const response = await fetch(`/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ playerName, password, email }),
+        body: JSON.stringify({ username, password, email }),
       });
       if (!response.ok) {
         throw new Error((await response.json()).message);
@@ -61,8 +61,8 @@ function RegistrationPage() {
                   inputName="username"
                   inputId="usrnm"
                   placeholderText="username"
-                  inputValue={playerName}
-                  onInputValue={setPlayerName}
+                  inputValue={username}
+                  onInputValue={setUsername}
                   autoComplete="off"
                 />
                 <InputField
