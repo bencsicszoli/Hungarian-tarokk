@@ -27,7 +27,6 @@ public class AuthController {
     @PostMapping("/login")
     @ResponseStatus(HttpStatus.OK)
     public JwtResponseDTO authenticateUser(@RequestBody LoginDTO request) {
-        System.out.println("LOGIN ENDPOINT HIT");
         return authService.loginUser(request);
     }
 

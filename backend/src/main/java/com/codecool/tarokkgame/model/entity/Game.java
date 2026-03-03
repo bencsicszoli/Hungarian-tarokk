@@ -19,6 +19,10 @@ public class Game {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
+    private String player1;
+    private String player2;
+    private String player3;
+    private String player4;
 
     private boolean isXIXInvit = false;
     private boolean isXVIIIInvit = false;
@@ -31,8 +35,9 @@ public class Game {
     private String turnPlayer;
     private String declarer;
     private String information;
+    private int cardOrder = 1; // ?
 
-    @OneToMany
+    @OneToMany(mappedBy = "game")
     private List<Player> players;
 
     @Enumerated(EnumType.STRING)

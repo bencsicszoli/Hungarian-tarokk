@@ -17,21 +17,23 @@ public class Player {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    int place;
+    int place = 0;
 
     @ManyToOne
+    @JoinColumn(name = "user_id")
     private AppUser user;
 
     @ManyToOne
+    @JoinColumn(name="game_id")
     private Game game;
 
     @OneToMany
     private List<PlayerCard> cards;
 
-    private boolean eightTarokksInAdvance;
-    private boolean eightTarokksAfterwards;
-    private boolean nineTarokksInAdvance;
-    private boolean nineTarokksAfterwards;
+    private boolean eightTarokksInAdvance = false;
+    private boolean eightTarokksAfterwards = false;
+    private boolean nineTarokksInAdvance = false;
+    private boolean nineTarokksAfterwards = false;
 
     @Enumerated(EnumType.STRING)
     private BidLevel bidLevel = BidLevel.NONE;
@@ -58,6 +60,14 @@ public class Player {
         List<PlayerCard> sortedCards = new ArrayList<>(cards);
         sortedCards.sort(Comparator.comparingInt(o -> o.getCard().getId()));
         return sortedCards;
+    }
+
+    public int getBalance() {
+        return user.getBalance();
+    }
+
+    public void setBalance(int balance) {
+        user.setBalance(balance);
     }
 }
 

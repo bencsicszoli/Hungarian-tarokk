@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 interface User {
   id: string;
-  name: string;
+  username: string;
   email: string;
   // Add other player properties as needed
 }

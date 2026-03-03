@@ -5,7 +5,6 @@ import {
 } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../context/UserContext.tsx";
-//import CardTableDecoration from "../pageComponents/CardTableDecoration.jsx";
 import InputField from "../pageComponents/InputField.tsx";
 
 function LoginPage() {

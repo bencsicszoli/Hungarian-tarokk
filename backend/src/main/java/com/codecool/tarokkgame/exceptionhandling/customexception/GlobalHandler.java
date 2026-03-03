@@ -3,7 +3,6 @@ package com.codecool.tarokkgame.exceptionhandling.customexception;
 import com.codecool.tarokkgame.model.dto.ErrorMessage;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -41,5 +40,11 @@ public class GlobalHandler {
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ErrorMessage handleBadCredentialsException(BadCredentialsException ex) {
         return new ErrorMessage("Wrong username or password");
+    }
+
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ErrorMessage handleGenericException(Exception e) {
+        return new ErrorMessage(e.getMessage());
     }
 }

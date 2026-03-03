@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -20,9 +21,10 @@ public class AppUser {
     private String username;
     private String password;
     private String email;
-    private LocalDate registrationDate;
-    private int balance;
-    private int games;
+    private LocalDate registrationDate = LocalDate.now();
+    private int balance = 1000;
+    private int games = 0;
+
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
