@@ -13,7 +13,7 @@ public interface GameRepository extends JpaRepository<Game, Long> {
 
 
     @NativeQuery(value = "SELECT * FROM game WHERE player1 = ?1 OR player2 = ?1 OR player3 = ?1 OR player4 = ?1 ORDER BY id DESC LIMIT 1")
-    Optional<Game> findLastGameByPlayer(@Param("player") String player);
+    Optional<Game> findLastGameByPlayer(String player);
 
 
     @NativeQuery(value = "SELECT * FROM game WHERE player1 IS NULL OR player2 IS NULL OR player3 IS NULL OR player4 IS NULL LIMIT 1")

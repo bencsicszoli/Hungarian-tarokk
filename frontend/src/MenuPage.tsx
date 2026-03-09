@@ -88,9 +88,7 @@ function MenuPage() {
       console.warn("WebSocket not connected yet, cannot join game.");
       return;
     }
-    console.log("username:", user?.username);
     send("/app/game.join", { username: user?.username });
-    console.log("Join game message sent", { username: user?.username });
     //navigate("/game");
   }
 

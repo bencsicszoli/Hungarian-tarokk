@@ -18,4 +18,8 @@ public class DeckCard {
 
     @ManyToOne
     private Card card;
+
+    @ManyToOne
+    @JoinColumn(name="game_id")
+    private Game game;
 }

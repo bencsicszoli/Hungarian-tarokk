@@ -27,8 +27,8 @@ public class Player {
     @JoinColumn(name="game_id")
     private Game game;
 
-    @OneToMany
-    private List<PlayerCard> cards;
+    @OneToMany(mappedBy="player", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PlayerCard> playerCards;
 
     private boolean eightTarokksInAdvance = false;
     private boolean eightTarokksAfterwards = false;
@@ -57,7 +57,7 @@ public class Player {
 
  */
     public List<PlayerCard> getSortedCards() {
-        List<PlayerCard> sortedCards = new ArrayList<>(cards);
+        List<PlayerCard> sortedCards = new ArrayList<>(playerCards);
         sortedCards.sort(Comparator.comparingInt(o -> o.getCard().getId()));
         return sortedCards;
     }

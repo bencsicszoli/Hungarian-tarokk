@@ -38,7 +38,8 @@ public class PlayerService {
             return mapper.mapToJoinMessageDTO(gameOpt.get(), gameOpt.get().getPlayers());
         }
 
-        // A game with missing players exist
+        // A game with missing players exists
+
         AppUser user = userRepository.findByUsername(username).orElseThrow(() -> new NoSuchElementException(String.format("User %s not found", username.toUpperCase())));
         Game gameWithEmptySeat = gameRepository.findFirstGameByMissingPlayer().orElse(null);
         if (gameWithEmptySeat != null) {

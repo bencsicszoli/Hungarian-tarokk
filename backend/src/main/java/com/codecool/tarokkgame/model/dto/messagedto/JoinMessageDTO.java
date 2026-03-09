@@ -21,6 +21,7 @@ public class JoinMessageDTO {
     private int player2Balance;
     private int player3Balance;
     private int player4Balance;
+    private String gameState = "NEW";
 
     public JoinMessageDTO() {}
 }
