@@ -242,13 +242,18 @@ function Game() {
     //console.log("Rendering player hand for seat:", seatAttribute.playerSeat);
     //console.log("Player balance:", seatAttribute.playerBalance);
     return (
-      <div>
-        <p>{seatAttribute.playerSeat}</p>
-        <div className="flex justify-center items-center h-full">
+      <div className="flex flex-col h-full">
+        <div className="h-1/6 flex justify-center items-center font-bold text-xl">
+          <p>{seatAttribute.playerSeat}</p>
+        </div>
+        
+        <div className="flex justify-center items-center h-2/3">
           {displayOwnCards()}
         </div>
-
-        <p>Balance: {seatAttribute.playerBalance}</p>
+        <div className="h-1/6 flex justify-center items-center font-bold text-xl">
+          <p>Balance: {seatAttribute.playerBalance}</p>
+        </div>
+        
       </div>
     );
   }
@@ -258,15 +263,15 @@ function Game() {
     //console.log("Player balance:", seatAttribute.playerBalance);
     return (
       <div className="flex flex-col h-full">
-        <div className="h-1/12">
+        <div className="h-1/6 flex justify-center items-center font-bold text-xl">
           <p>{seatAttribute.playerSeat}</p>
         </div>
         
-        <div className="flex justify-center items-center h-5/6">
+        <div className="flex justify-center items-center h-2/3 relative -top-5">
           {displayHandBack(seatAttribute.playerCardsNumber)}
         </div>
-        <div className="h-1/12">
-          <p className="h-1/12">Balance: {seatAttribute.playerBalance}</p>
+        <div className="h-1/6 flex justify-center items-center font-bold text-xl">
+          <p>Balance: {seatAttribute.playerBalance}</p>
         </div>
         
       </div>
@@ -390,11 +395,12 @@ function Game() {
 
               {/* Talon and play area */}
               <div className="w-1/3 bg-gray-400">
-                <div className="flex justify-center items-center h-full">
+                <div className="h-1/6 flex justify-center items-end font-bold text-xl">
+                  <p>Talon</p>
+                </div>
+                <div className="flex justify-center items-center h-5/6">
                   {displayTalon(talonCardsNumber)}
                 </div>
-
-                <p>Talon</p>
               </div>
 
               {/* Player 2's area */}
@@ -407,7 +413,7 @@ function Game() {
             </div>
 
             {/* Bottom row */}
-            <div className="w-full h-1/3 bg-blue-300">
+            <div className="w-full h-1/3">
               {/*
               <p>{player1}</p>
               <p>Balance: {player1Balance}</p>*/}

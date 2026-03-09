@@ -77,49 +77,45 @@ public class MessageController {
         String playerName = principal.getName();
         if (playerName.equals(request.username())) {
             Game game = gameRepository.findById(request.gameId()).orElseThrow(() -> new NoSuchElementException("Game not found"));
-            shuffleService.addShuffledDeck(game);
-            dealService.setTalonCards(game);
-            PublicTalonDTO publicTalonDTO = new PublicTalonDTO(6, "game.talon");
-            messagingTemplate.convertAndSend("/topic/game." + request.gameId(), publicTalonDTO);
-            /*
-            Player player = playerRepository.findByUserUsernameAndGameId(game.getStartPlayer(), game.getId()).orElseThrow(() -> new NoSuchElementException("Player not found"));
-            List<PlayerCardDTO> playerCardDTOS = dealService.getPlayerCards(player, 7, 11);
-            PlayerCardListDTO playerCardListDTO = new PlayerCardListDTO(playerCardDTOS, "game.playerCards");
-            PublicCardsNumberDTO cardNumberDTO = new PublicCardsNumberDTO(5, "game.cardNumber", game.getStartPlayer());
-            messagingTemplate.convertAndSendToUser(game.getStartPlayer(), "/queue/private", playerCardListDTO);
-            messagingTemplate.convertAndSend("/topic/game." + request.gameId(), cardNumberDTO);
-*/
+            dealTalonCards(game, request);
+
             int from = 2;
             int to = 6;
             Player playerToDeal = playerRepository.findByUserUsernameAndGameId(request.username(), request.gameId()).orElseThrow(() -> new NoSuchElementException("Dealer not found"));
-            System.out.println("Dealer: " + playerToDeal.getName());
             for (int i = 0; i < 4; i++) {
-                playerToDeal = game.getNextPlayer(playerToDeal);
-                System.out.println("next player: " + playerToDeal.getName());
                 from += 5;
                 to += 5;
-                List<PlayerCardDTO> playerCardDTOS = dealService.getPlayerCards(playerToDeal, from, to);
-                PlayerCardListDTO playerCardListDTO = new PlayerCardListDTO(playerCardDTOS, "game.playerCards");
-                PublicCardsNumberDTO cardNumberDTO = new PublicCardsNumberDTO(5, "game.cardNumber", playerToDeal.getName());
-                messagingTemplate.convertAndSendToUser(playerToDeal.getName(), "/queue/private", playerCardListDTO);
-                messagingTemplate.convertAndSend("/topic/game." + request.gameId(), cardNumberDTO);
-            }
-            to--;
-            for (int i = 0; i < 4; i++) {
                 playerToDeal = game.getNextPlayer(playerToDeal);
-                System.out.println("next player: " + playerToDeal.getName());
+                List<PlayerCardDTO> playerCardDTOS = dealService.getPlayerCards(playerToDeal, from, to);
+                dealPlayerCards(playerCardDTOS, playerToDeal, request, 5);
+            }
+
+            from++;
+            for (int i = 0; i < 4; i++) {
                 from += 4;
                 to += 4;
+                playerToDeal = game.getNextPlayer(playerToDeal);
                 List<PlayerCardDTO> playerCardDTOS = dealService.getAllPlayerCards(playerToDeal, from, to);
-                PlayerCardListDTO playerCardListDTO = new PlayerCardListDTO(playerCardDTOS, "game.playerCards");
-                PublicCardsNumberDTO cardNumberDTO = new PublicCardsNumberDTO(9, "game.cardNumber", playerToDeal.getName());
-                messagingTemplate.convertAndSendToUser(playerToDeal.getName(), "/queue/private", playerCardListDTO);
-                messagingTemplate.convertAndSend("/topic/game." + request.gameId(), cardNumberDTO);
+                dealPlayerCards(playerCardDTOS, playerToDeal, request, 9);
             }
 
         } else {
             throw new NotAllowedOperationException("Invalid username");
         }
+    }
+
+    private void dealTalonCards(Game game, DealRequestDTO request) {
+        shuffleService.addShuffledDeck(game);
+        dealService.setTalonCards(game);
+        PublicTalonDTO publicTalonDTO = new PublicTalonDTO(6, "game.talon");
+        messagingTemplate.convertAndSend("/topic/game." + request.gameId(), publicTalonDTO);
+    }
+
+    private void dealPlayerCards(List<PlayerCardDTO> playerCardDTOS, Player playerToDeal, DealRequestDTO request, int cardNumber) {
+        PlayerCardListDTO playerCardListDTO = new PlayerCardListDTO(playerCardDTOS, "game.playerCards");
+        PublicCardsNumberDTO cardNumberDTO = new PublicCardsNumberDTO(cardNumber, "game.cardNumber", playerToDeal.getName());
+        messagingTemplate.convertAndSendToUser(playerToDeal.getName(), "/queue/private", playerCardListDTO);
+        messagingTemplate.convertAndSend("/topic/game." + request.gameId(), cardNumberDTO);
     }
 
 }
