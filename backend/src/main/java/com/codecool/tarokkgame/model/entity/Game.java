@@ -35,7 +35,7 @@ public class Game {
     private String turnPlayer;
     private String declarer;
     private String information;
-    private int cardOrder = 1; // ?
+    private int cardOrder = 1;
 
     @OneToMany(mappedBy = "game")
     private List<Player> players;

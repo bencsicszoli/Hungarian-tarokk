@@ -45,7 +45,7 @@ public class Player {
     @CollectionTable(name = "potential_bids", joinColumns = @JoinColumn(name = "player_id"))
     @Enumerated(EnumType.STRING)
     @Column(name = "bid")
-    private Set<BidLevel> bidLevels;
+    private Set<BidLevel> bidLevels; // Is it really necessary?
 
     public String getName() {
         return user.getUsername();
@@ -68,6 +68,39 @@ public class Player {
 
     public void setBalance(int balance) {
         user.setBalance(balance);
+    }
+
+    public boolean hasAnyHonours() {
+        for (PlayerCard playerCard : playerCards) {
+            if (playerCard.getCard().getStrength() == 1 ||
+            playerCard.getCard().getStrength() == 21 ||
+            playerCard.getCard().getStrength() == 22) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean couldAnnounce18Invit() {
+        return checkNumberOfTarokksAndGivenTarokkExist(18);
+    }
+
+    public boolean couldAnnounce19Invit() {
+        return checkNumberOfTarokksAndGivenTarokkExist(19);
+    }
+
+    private boolean checkNumberOfTarokksAndGivenTarokkExist(int tarokkStrength) {
+        int tarokks = 0;
+        boolean tarokkExist = false;
+        for (PlayerCard playerCard : playerCards) {
+            if (playerCard.getCard().getStrength() > 0) {
+                tarokks++;
+            }
+            if (playerCard.getCard().getStrength() == tarokkStrength) {
+                tarokkExist = true;
+            }
+        }
+        return tarokkExist && tarokks >= 5;
     }
 }
 

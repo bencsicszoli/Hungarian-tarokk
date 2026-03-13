@@ -59,11 +59,15 @@ function Game() {
     game?.player4CardsNumber || 0,
   );
   const [ownCards, setOwnCards] = useState<{ imagePath: string }[]>([]);
-  const [gameState, setGameState] = useState<"NEW" | "IN_PROGRESS">(
+  const [gameState, setGameState] = useState<"NEW" | "IN_PROGRESS" | "BIDDING">(
     game?.gameState || "NEW",
   );
   const [tableTurned, setTableTurned] = useState(false);
   const [talonCardsNumber, setTalonCardsNumber] = useState<number>(0);
+  const [levelDiscription, setLevelDescription] = useState<string>(
+    game?.levelDescription || "None",
+  );
+  const [potentialBids, setPotentialBids] = useState<string[]>([]);
 
   const seatModifier = useRef(0);
 
@@ -114,18 +118,23 @@ function Game() {
         break;
       case "game.talon":
         setTalonCardsNumber(message.talonCards);
+        setGameState(message.gameState);
         console.log("Talon cards number updated:", message.talonCards);
         break;
       case "game.cardNumber":
         console.log("Card number update received for", message.username);
-        if (message.username === player1)
-          setPlayer1CardsNumber(message.cardsNumber);
-        if (message.username === player2)
-          setPlayer2CardsNumber(message.cardsNumber);
-        if (message.username === player3)
-          setPlayer3CardsNumber(message.cardsNumber);
-        if (message.username === player4)
-          setPlayer4CardsNumber(message.cardsNumber);
+        setPlayerCardNumber({
+          username: message.username,
+          cardsNumber: message.cardsNumber,
+        });
+        break;
+      case "game.lastDeal":
+        setGameState("BIDDING");
+        setPlayerCardNumber({
+          username: message.username,
+          cardsNumber: message.cardsNumber,
+        });
+        console.log("Game state updated to BIDDING");
         break;
       default:
         console.log("Unhandled message type:", message.type);
@@ -146,10 +155,37 @@ function Game() {
         setOwnCards(message.cards);
         console.log("Own cards updated:", message.cards);
         break;
+      case "game.bid":
+        console.log("Bid message received:", message);
+        break;
+      case "game.firstPotentialBids":
+        console.log("First potential bids received:", message);
+        setPotentialBids(message.potentialBids);
+        break;
       default:
         console.log("Unhandled private message type:", message.type);
         break;
     }
+  }
+
+  useEffect(() => {
+    if (gameState === "BIDDING" && user?.username === startPlayer) {
+      getFirstPotentialBids();
+    }
+  }, [gameState, user, startPlayer]);
+
+  function setPlayerCardNumber(message: {
+    username: string;
+    cardsNumber: number;
+  }) {
+    if (message.username === player1)
+      setPlayer1CardsNumber(message.cardsNumber);
+    if (message.username === player2)
+      setPlayer2CardsNumber(message.cardsNumber);
+    if (message.username === player3)
+      setPlayer3CardsNumber(message.cardsNumber);
+    if (message.username === player4)
+      setPlayer4CardsNumber(message.cardsNumber);
   }
 
   const playerSeats = [
@@ -246,16 +282,36 @@ function Game() {
         <div className="h-1/6 flex justify-center items-center font-bold text-xl">
           <p>{seatAttribute.playerSeat}</p>
         </div>
-        
+
         <div className="flex justify-center items-center h-2/3">
           {displayOwnCards()}
         </div>
         <div className="h-1/6 flex justify-center items-center font-bold text-xl">
-          <p>Balance: {seatAttribute.playerBalance}</p>
+          {renderBidButtons()}
         </div>
-        
       </div>
     );
+  }
+
+  function renderBidButtons() {
+    return potentialBids.map((bid) => (
+      <button
+        key={bid}
+        className="border-black border-2 w-1/8 h-2/3"
+        
+        onClick={() => {
+          send("/app/game.bid", {
+            username: user?.username,
+            gameId: game.gameId,
+            bid: bid,
+          });
+          console.log("Bid sent:", user?.username, game.gameId, bid);
+          setPotentialBids([]);
+        }}
+      >
+        {bid}
+      </button>
+    ));
   }
 
   function renderPlayerHand(seatAttribute: SeatAttributes) {
@@ -266,14 +322,13 @@ function Game() {
         <div className="h-1/6 flex justify-center items-center font-bold text-xl">
           <p>{seatAttribute.playerSeat}</p>
         </div>
-        
+
         <div className="flex justify-center items-center h-2/3 relative -top-5">
           {displayHandBack(seatAttribute.playerCardsNumber)}
         </div>
         <div className="h-1/6 flex justify-center items-center font-bold text-xl">
           <p>Balance: {seatAttribute.playerBalance}</p>
         </div>
-        
       </div>
     );
   }
@@ -290,12 +345,24 @@ function Game() {
     //navigate("/game");
   }
 
+  function getFirstPotentialBids() {
+    send("/app/game.firstPotentialBids", {
+      username: user?.username,
+      gameId: game.gameId,
+    });
+    console.log(
+      "Request for potential bids sent:",
+      user?.username,
+      game.gameId,
+    );
+  }
+
   function displayTalon(talonCardsNumber: number) {
     const cardsBack = Array(talonCardsNumber).fill("Back.png");
-    return cardsBack.map((index) => (
+    return cardsBack.map((imagePath, index) => (
       <img
         key={index}
-        src="Back.png"
+        src={imagePath}
         alt="Talon card back"
         className="w-20 -mx-14"
       />

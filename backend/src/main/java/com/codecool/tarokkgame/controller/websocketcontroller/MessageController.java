@@ -1,11 +1,13 @@
 package com.codecool.tarokkgame.controller.websocketcontroller;
 
+import com.codecool.tarokkgame.constants.GameState;
 import com.codecool.tarokkgame.exceptionhandling.customexception.NotAllowedOperationException;
 import com.codecool.tarokkgame.model.dto.messagedto.*;
 import com.codecool.tarokkgame.model.entity.Game;
 import com.codecool.tarokkgame.model.entity.Player;
 import com.codecool.tarokkgame.repository.GameRepository;
 import com.codecool.tarokkgame.repository.PlayerRepository;
+import com.codecool.tarokkgame.service.BidService;
 import com.codecool.tarokkgame.service.DealService;
 import com.codecool.tarokkgame.service.PlayerService;
 import com.codecool.tarokkgame.service.ShuffleService;
@@ -29,8 +31,9 @@ public class MessageController {
     private final ShuffleService shuffleService;
     private final DealService dealService;
     private final PlayerRepository playerRepository;
+    private final BidService bidService;
 
-    public MessageController(SimpMessagingTemplate messagingTemplate, PlayerService playerService, GameRepository gameRepository, ShuffleService shuffleService, DealService dealService, PlayerRepository playerRepository) {
+    public MessageController(SimpMessagingTemplate messagingTemplate, PlayerService playerService, GameRepository gameRepository, ShuffleService shuffleService, DealService dealService, PlayerRepository playerRepository, BidService bidService) {
 
         this.messagingTemplate = messagingTemplate;
         this.playerService = playerService;
@@ -38,6 +41,7 @@ public class MessageController {
         this.shuffleService = shuffleService;
         this.dealService = dealService;
         this.playerRepository = playerRepository;
+        this.bidService = bidService;
     }
 
     @MessageMapping("/game.join")
@@ -48,7 +52,7 @@ public class MessageController {
             if (joinMessage == null) {
                 joinMessage = new JoinMessageDTO();
                 joinMessage.setInformation("Something went wrong. You cannot join the game.");
-                joinMessage.setType("error");
+                joinMessage.setType("error"); // Handle the error in the frontend
                 messagingTemplate.convertAndSendToUser(playerName, "/queue/private", joinMessage);
                 System.out.println("Errormessage sent");
             } else {
@@ -73,7 +77,7 @@ public class MessageController {
 
     @MessageMapping("/game.deal")
     @Transactional
-    public void dealCards(@Payload DealRequestDTO request, Principal principal) {
+    public void dealCards(@Payload GeneralRequestDTO request, Principal principal) {
         String playerName = principal.getName();
         if (playerName.equals(request.username())) {
             Game game = gameRepository.findById(request.gameId()).orElseThrow(() -> new NoSuchElementException("Game not found"));
@@ -87,7 +91,7 @@ public class MessageController {
                 to += 5;
                 playerToDeal = game.getNextPlayer(playerToDeal);
                 List<PlayerCardDTO> playerCardDTOS = dealService.getPlayerCards(playerToDeal, from, to);
-                dealPlayerCards(playerCardDTOS, playerToDeal, request, 5);
+                dealPlayerCards(playerCardDTOS, playerToDeal, request);
             }
 
             from++;
@@ -96,25 +100,51 @@ public class MessageController {
                 to += 4;
                 playerToDeal = game.getNextPlayer(playerToDeal);
                 List<PlayerCardDTO> playerCardDTOS = dealService.getAllPlayerCards(playerToDeal, from, to);
-                dealPlayerCards(playerCardDTOS, playerToDeal, request, 9);
+                dealPlayerCards(playerCardDTOS, playerToDeal, request, i);
             }
+            game.setState(GameState.BIDDING);
+            gameRepository.save(game);
 
         } else {
             throw new NotAllowedOperationException("Invalid username");
         }
     }
 
-    private void dealTalonCards(Game game, DealRequestDTO request) {
+    @MessageMapping("/game.firstPotentialBids")
+    @Transactional
+    public void sendPotentialBidsToStartPlayer(@Payload GeneralRequestDTO request, Principal principal) {
+        String playerName = principal.getName();
+        if (playerName.equals(request.username())) {
+            PotentialBidsDTO potentialBids = bidService.getPotentialBidsToStartPlayer(playerName, request.gameId());
+            messagingTemplate.convertAndSendToUser(playerName, "/queue/private", potentialBids);
+        } else {
+            throw new NotAllowedOperationException("Invalid username");
+        }
+    }
+
+    private void dealTalonCards(Game game, GeneralRequestDTO request) {
         shuffleService.addShuffledDeck(game);
         dealService.setTalonCards(game);
-        PublicTalonDTO publicTalonDTO = new PublicTalonDTO(6, "game.talon");
+        PublicTalonDTO publicTalonDTO = new PublicTalonDTO(6, "game.talon", "IN_PROGRESS");
         messagingTemplate.convertAndSend("/topic/game." + request.gameId(), publicTalonDTO);
     }
 
-    private void dealPlayerCards(List<PlayerCardDTO> playerCardDTOS, Player playerToDeal, DealRequestDTO request, int cardNumber) {
+    private void dealPlayerCards(List<PlayerCardDTO> playerCardDTOS, Player playerToDeal, GeneralRequestDTO request) {
         PlayerCardListDTO playerCardListDTO = new PlayerCardListDTO(playerCardDTOS, "game.playerCards");
-        PublicCardsNumberDTO cardNumberDTO = new PublicCardsNumberDTO(cardNumber, "game.cardNumber", playerToDeal.getName());
         messagingTemplate.convertAndSendToUser(playerToDeal.getName(), "/queue/private", playerCardListDTO);
+        PublicCardsNumberDTO cardNumberDTO = new PublicCardsNumberDTO(5, "game.cardNumber", playerToDeal.getName());
+        messagingTemplate.convertAndSend("/topic/game." + request.gameId(), cardNumberDTO);
+    }
+
+    private void dealPlayerCards(List<PlayerCardDTO> playerCardDTOS, Player playerToDeal, GeneralRequestDTO request, int i) {
+        PlayerCardListDTO playerCardListDTO = new PlayerCardListDTO(playerCardDTOS, "game.playerCards");
+        messagingTemplate.convertAndSendToUser(playerToDeal.getName(), "/queue/private", playerCardListDTO);
+        PublicCardsNumberDTO cardNumberDTO;
+        if (i == 3) {
+            cardNumberDTO = new PublicCardsNumberDTO(9, "game.lastDeal", playerToDeal.getName());
+        } else {
+            cardNumberDTO = new PublicCardsNumberDTO(9, "game.cardNumber", playerToDeal.getName());
+        }
         messagingTemplate.convertAndSend("/topic/game." + request.gameId(), cardNumberDTO);
     }
 
