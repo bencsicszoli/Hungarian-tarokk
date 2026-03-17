@@ -122,6 +122,23 @@ public class MessageController {
         }
     }
 
+    @MessageMapping("/game.bid")
+    @Transactional
+    public void sendPotentialBidsToTurnPlayer(@Payload BidLevelRequestDTO request, Principal principal) {
+        String playerName = principal.getName();
+        if (playerName.equals(request.username())) {
+            PotentialBidsDTO potentialBids = bidService.getPotentialBidsToTurnPlayer(playerName, request.gameId(), request.newLevel());
+            if (potentialBids != null) {
+                Game game = gameRepository.findById(request.gameId()).orElseThrow(() -> new NoSuchElementException("Game not found"));
+                String turnPlayer = game.getTurnPlayer();
+                messagingTemplate.convertAndSendToUser(turnPlayer, "/queue/private", potentialBids);
+            }
+
+        } else {
+            throw new NotAllowedOperationException("Invalid username");
+        }
+    }
+
     private void dealTalonCards(Game game, GeneralRequestDTO request) {
         shuffleService.addShuffledDeck(game);
         dealService.setTalonCards(game);

@@ -2,6 +2,7 @@ package com.codecool.tarokkgame.model.entity;
 
 import com.codecool.tarokkgame.constants.BidLevel;
 import com.codecool.tarokkgame.constants.RoleInGame;
+import com.codecool.tarokkgame.model.dto.SpecialBidCasesDTO;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -30,6 +31,11 @@ public class Player {
     @OneToMany(mappedBy="player", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PlayerCard> playerCards;
 
+    private boolean announcedXVIII_Invit = false;
+    private boolean announcedXIX_Invit = false;
+    private boolean acceptedXVIII_Invit = false;
+    private boolean acceptedXIX_Invit = false;
+
     private boolean eightTarokksInAdvance = false;
     private boolean eightTarokksAfterwards = false;
     private boolean nineTarokksInAdvance = false;
@@ -50,12 +56,7 @@ public class Player {
     public String getName() {
         return user.getUsername();
     }
-/*
-    public void addCard(PlayerCard card) {
-        cards.add(card);
-    }
 
- */
     public List<PlayerCard> getSortedCards() {
         List<PlayerCard> sortedCards = new ArrayList<>(playerCards);
         sortedCards.sort(Comparator.comparingInt(o -> o.getCard().getId()));
@@ -101,6 +102,40 @@ public class Player {
             }
         }
         return tarokkExist && tarokks >= 5;
+    }
+
+    public SpecialBidCasesDTO getSpecialBidCases() {
+        int tarokks = 0;
+        boolean hasTarokk18 = false;
+        boolean hasTarokk19 = false;
+        boolean hasTarokk20 = false;
+        for (PlayerCard playerCard : playerCards) {
+            if (playerCard.getCard().getStrength() > 0) {
+                tarokks++;
+            }
+            if (playerCard.getCard().getStrength() == 18) {
+                hasTarokk18 = true;
+            } else if (playerCard.getCard().getStrength() == 19) {
+                hasTarokk19 = true;
+            } else if (playerCard.getCard().getStrength() == 20) {
+                hasTarokk20 = true;
+            }
+        }
+        return new SpecialBidCasesDTO(
+                tarokks > 4 && hasTarokk18,
+                tarokks > 4 && hasTarokk19,
+                tarokks > 4 && hasTarokk20
+        );
+    }
+
+    public boolean hasTarokk20() {
+        boolean hasTarokk20 = false;
+        for (PlayerCard playerCard : playerCards) {
+            if (playerCard.getCard().getStrength() == 20) {
+                hasTarokk20 = true;
+            }
+        }
+        return hasTarokk20;
     }
 }
 

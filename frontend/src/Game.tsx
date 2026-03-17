@@ -162,6 +162,10 @@ function Game() {
         console.log("First potential bids received:", message);
         setPotentialBids(message.potentialBids);
         break;
+        case "game.potentialBids":
+          console.log("Potential bids received:", message);
+          setPotentialBids(message.potentialBids);
+          break;
       default:
         console.log("Unhandled private message type:", message.type);
         break;
@@ -303,7 +307,7 @@ function Game() {
           send("/app/game.bid", {
             username: user?.username,
             gameId: game.gameId,
-            bid: bid,
+            newLevel: bid,
           });
           console.log("Bid sent:", user?.username, game.gameId, bid);
           setPotentialBids([]);

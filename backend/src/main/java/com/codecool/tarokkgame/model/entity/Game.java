@@ -86,4 +86,19 @@ public class Game {
         }
         throw new NoSuchElementException("Player " + name + " not found in the game");
     }
+
+    public Player getNextBiddingPlayer(Player player) {
+        int[] places = {0, 1, 2, 3, 4, 1, 2, 3};
+        int playerIndex = places[player.getPlace()];
+        for (int i = playerIndex + 1; i <= playerIndex + 3; i++) {
+            for (Player biddingPlayer : players) {
+                if (biddingPlayer.getPlace() == places[i] && biddingPlayer.getBidLevel() != BidLevel.PASS) {
+                    return biddingPlayer;
+                }
+            }
+        }
+        return null;
+    }
+
+
 }

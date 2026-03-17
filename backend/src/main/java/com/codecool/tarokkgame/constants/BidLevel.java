@@ -5,15 +5,17 @@ import lombok.Getter;
 public enum BidLevel {
     NONE(0, 0, "None"),
     PASS(0, 0, "Pass"),
-    THREE(1, 1, "Three"),
-    TWO(2, 2, "Two"),
+    THREE(1, 1, "3"),
+    TWO(2, 2, "2"),
     TWO_HELD(2, 3, "Hold (2)"),
-    ONE(3, 4, "One"),
+    ONE(3, 4, "1"),
     ONE_HELD(3, 5, "Hold (1)"),
     SOLO(4, 6, "Solo"),
     SOLO_HELD(4, 7, "Hold (solo)");
 
+    @Getter
     final int bidValue;
+    @Getter
     final int grade;
     @Getter
     final String description;
@@ -25,14 +27,14 @@ public enum BidLevel {
     }
 
     public BidLevel getNextLevelAtFirstBid(BidLevel actualLevel, int step) {
-        if (actualLevel == SOLO) {
+        if (actualLevel.getBidValue() + step > 4) {
             return PASS;
         }
         return getBidLevelByBidValue(actualLevel.bidValue + step);
     }
 
     public BidLevel getNextLevelAtOtherBids(BidLevel actualLevel, int step) {
-        if (actualLevel.grade == 7) {
+        if (actualLevel.grade + step > 7) {
             return PASS;
         }
         return getBidLevelByGrade(actualLevel.grade + step);
@@ -56,7 +58,7 @@ public enum BidLevel {
         throw new IllegalArgumentException("Invalid grade value: " + grade);
     }
 
-    public BidLevel getLevelByDescription(String description) {
+    public static BidLevel getLevelByDescription(String description) {
         for (BidLevel bidLevel : BidLevel.values()) {
             if (description.equals(bidLevel.description)) {
                 return bidLevel;
