@@ -35,6 +35,7 @@ public class Player {
     private boolean announcedXIX_Invit = false;
     private boolean acceptedXVIII_Invit = false;
     private boolean acceptedXIX_Invit = false;
+    private boolean yieldedGame = false;
 
     private boolean eightTarokksInAdvance = false;
     private boolean eightTarokksAfterwards = false;
@@ -133,6 +134,7 @@ public class Player {
         for (PlayerCard playerCard : playerCards) {
             if (playerCard.getCard().getStrength() == 20) {
                 hasTarokk20 = true;
+                break;
             }
         }
         return hasTarokk20;

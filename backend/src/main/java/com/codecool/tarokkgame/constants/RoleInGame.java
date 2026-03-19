@@ -1,7 +1,10 @@
 package com.codecool.tarokkgame.constants;
 
 public enum RoleInGame {
-    DECLARER("declarer"), DECLARER_PARTNER("declarer"), OPPONENT("opponent"), NOT_CLEAR_YET("none");
+    DECLARER("declarer"),
+    DECLARER_PARTNER("declarer"),
+    OPPONENT("opponent"),
+    NOT_CLEAR_YET("none");
 
     private final String team;
 

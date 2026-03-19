@@ -1,9 +1,6 @@
 package com.codecool.tarokkgame.model.entity;
 
-import com.codecool.tarokkgame.constants.BidLevel;
-import com.codecool.tarokkgame.constants.Bonus;
-import com.codecool.tarokkgame.constants.GameLevel;
-import com.codecool.tarokkgame.constants.GameState;
+import com.codecool.tarokkgame.constants.*;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -26,7 +23,9 @@ public class Game {
 
     private boolean isXIXInvit = false;
     private boolean isXVIIIInvit = false;
-    private String invitAcceptor = null;
+    private boolean isYielded = false;
+
+    private String invitAcceptor;
     private int biddingPasses = 0;
     private int invitedTarokk = 0;
     private int bonusPasses = 0;
@@ -99,6 +98,39 @@ public class Game {
         }
         return null;
     }
+
+    public void setPlayerRolesInCaseYieldedGameOrInvit(Player declarer) {
+        if (isYielded) {
+            for (Player player : players) {
+                if (player.isYieldedGame()) {
+                    player.setRoleInGame(RoleInGame.DECLARER_PARTNER);
+                } else if (player.getRoleInGame() != RoleInGame.DECLARER) {
+                    player.setRoleInGame(RoleInGame.OPPONENT);
+                }
+            }
+        } else if (isXIXInvit) {
+            if (declarer.isAcceptedXIX_Invit()) {
+                for (Player player : players) {
+                    if (player.isAnnouncedXIX_Invit()) {
+                        player.setRoleInGame(RoleInGame.DECLARER_PARTNER);
+                    } else if (player.getRoleInGame() != RoleInGame.DECLARER) {
+                        player.setRoleInGame(RoleInGame.OPPONENT);
+                    }
+                }
+            }
+        } else if (isXVIIIInvit) {
+            if (declarer.isAcceptedXVIII_Invit()) {
+                for (Player player : players) {
+                    if (player.isAnnouncedXVIII_Invit()) {
+                        player.setRoleInGame(RoleInGame.DECLARER_PARTNER);
+                    } else if (player.getRoleInGame() != RoleInGame.DECLARER) {
+                        player.setRoleInGame(RoleInGame.OPPONENT);
+                    }
+                }
+            }
+        }
+    }
+
 
 
 }

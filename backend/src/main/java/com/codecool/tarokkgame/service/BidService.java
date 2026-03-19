@@ -30,24 +30,7 @@ public class BidService {
         if (!hasAnyHonours) {
             return new PotentialBidsDTO(Set.of(BidLevel.PASS.getDescription()), "game.firstPotentialBids");
         } else {
-            String level3 = BidLevel.THREE.getDescription();
-            String level2 = BidLevel.TWO.getDescription();
-            String level1 = BidLevel.ONE.getDescription();
-            String pass = BidLevel.PASS.getDescription();
-            Set<String> bids = new LinkedHashSet<>();
-            SpecialBidCasesDTO specialBidCases = player.getSpecialBidCases();
-            if (specialBidCases.isCouldInviteWith18() && specialBidCases.isCouldInviteWith19()) {
-                return getPotentialBidsWithDifferentOptionsAtFirstBid(level3, level2, level1, pass, bids);
-
-            } else if (specialBidCases.isCouldInviteWith18()) {
-                return getPotentialBidsWithDifferentOptionsAtFirstBid(level3, null, level1, pass, bids);
-
-            } else if (specialBidCases.isCouldInviteWith19()) {
-                return getPotentialBidsWithDifferentOptionsAtFirstBid(level3, level2, null, pass, bids);
-
-            } else {
-                return getPotentialBidsWithDifferentOptionsAtFirstBid(level3, null, null, pass, bids);
-            }
+            return createBidCasesToStartPlayer(player);
         }
     }
 
@@ -60,438 +43,15 @@ public class BidService {
 
         // Sender's bid is PASS
         if (bidLevel == BidLevel.PASS) {
-            game.setBiddingPasses(game.getBiddingPasses() + 1);
-            sender.setBidLevel(bidLevel);
-            playerRepository.save(sender);
+            return handleBidIfPass(game, sender, bidLevel, bids);
 
-            // Bidding PASS three times
-            if (game.getBiddingPasses() == 3 && game.getBidLevel() != BidLevel.NONE) {
-                game.setState(GameState.TALON_PICK_UP);
-                game.setStartPlayer(game.getDeclarer());
-                game.setTurnPlayer(game.getDeclarer());
-                Player declarer = game.getPlayerByName(game.getDeclarer());
-                declarer.setRoleInGame(RoleInGame.DECLARER);
-                gameRepository.save(game);
-                playerRepository.save(declarer);
-                return null;
-
-                // Bidding PASS less than three times
-            } else {
-
-                // Find the next bidding player
-                Player nextPlayer = game.getNextBiddingPlayer(sender);
-                if (nextPlayer != null) {
-                    game.setTurnPlayer(nextPlayer.getName());
-
-                    // Method in case of first bidder
-                    if (nextPlayer.getBidLevel() == BidLevel.NONE) {
-
-                        // There is no honour
-                        if (!nextPlayer.hasAnyHonours()) {
-                            gameRepository.save(game);
-                            playerRepository.save(nextPlayer);
-                            return new PotentialBidsDTO(Set.of(BidLevel.PASS.getDescription()), "game.potentialBids");
-                        } else {
-
-                            // Player has at least one honour
-                            SpecialBidCasesDTO specialBidCases = nextPlayer.getSpecialBidCases();
-                            BidLevel actualLevel = game.getBidLevel();
-                            BidLevel levelUpByOneStep = actualLevel.getNextLevelAtFirstBid(actualLevel, 1);
-
-                            // Player has at least 5 tarokks and the 18 and the 19
-                            if (specialBidCases.isCouldInviteWith18() && specialBidCases.isCouldInviteWith19()) {
-                                BidLevel levelUpByTwoSteps = actualLevel.getNextLevelAtFirstBid(actualLevel, 2);
-                                BidLevel levelUpByThreeSteps = actualLevel.getNextLevelAtFirstBid(actualLevel, 3);
-                                gameRepository.save(game);
-                                playerRepository.save(nextPlayer);
-                                bids.add(levelUpByOneStep.getDescription());
-                                bids.add(levelUpByTwoSteps.getDescription());
-                                bids.add(levelUpByThreeSteps.getDescription());
-                                bids.add(BidLevel.PASS.getDescription());
-                                return new PotentialBidsDTO(bids, "game.potentialBids");
-
-                                // Player has at least 5 tarokks and the 19
-                            } else if (specialBidCases.isCouldInviteWith19()) {
-                                BidLevel levelUpByTwoSteps = actualLevel.getNextLevelAtFirstBid(actualLevel, 2);
-                                //sender.setBidLevel(levelUpByOneStep);
-                                gameRepository.save(game);
-                                playerRepository.save(nextPlayer);
-                                bids.add(levelUpByOneStep.getDescription());
-                                bids.add(levelUpByTwoSteps.getDescription());
-                                bids.add(BidLevel.PASS.getDescription());
-                                return new PotentialBidsDTO(bids, "game.potentialBids");
-
-                                // Player has at least 5 tarokks and the 18
-                            } else if (specialBidCases.isCouldInviteWith18()) {
-                                BidLevel levelUpByThreeSteps = actualLevel.getNextLevelAtFirstBid(actualLevel, 3);
-                                //sender.setBidLevel(levelUpByOneStep);
-                                gameRepository.save(game);
-                                playerRepository.save(nextPlayer);
-                                bids.add(levelUpByOneStep.getDescription());
-                                bids.add(levelUpByThreeSteps.getDescription());
-                                bids.add(BidLevel.PASS.getDescription());
-                                return new PotentialBidsDTO(bids, "game.potentialBids");
-
-                                // Player cannot invite
-                            } else {
-                                //sender.setBidLevel(levelUpByOneStep);
-                                gameRepository.save(game);
-                                playerRepository.save(nextPlayer);
-                                bids.add(levelUpByOneStep.getDescription());
-                                bids.add(BidLevel.PASS.getDescription());
-                                return new PotentialBidsDTO(bids, "game.potentialBids");
-                            }
-                        }
-
-                        // Method in case of bidder has already bid
-                    } else {
-                        SpecialBidCasesDTO specialBidCases = nextPlayer.getSpecialBidCases();
-                        BidLevel actualLevel = game.getBidLevel();
-                        BidLevel levelUpByOneStep = actualLevel.getNextLevelAtOtherBids(actualLevel, 1);
-                        BidLevel levelUpByTwoSteps = actualLevel.getNextLevelAtOtherBids(actualLevel, 2);
-                        BidLevel levelUpByThreeSteps = actualLevel.getNextLevelAtOtherBids(actualLevel, 3);
-                        BidLevel levelUpByFourSteps = actualLevel.getNextLevelAtOtherBids(actualLevel, 4);
-
-                        // Player has the 20 and at least 5 tarokks, and bidLevel is two
-                        if (actualLevel == BidLevel.TWO && specialBidCases.isCouldYieldWith20()) {
-
-                            // Player has the 18, 19, 20 and at least 5 tarokks, and bidLevel is two
-                            if (specialBidCases.isCouldInviteWith18() && specialBidCases.isCouldInviteWith19()) {
-                                //sender.setBidLevel(levelUpByOneStep);
-                                gameRepository.save(game);
-                                playerRepository.save(nextPlayer);
-                                bids.add(levelUpByOneStep.getDescription());
-                                bids.add(levelUpByTwoSteps.getDescription());
-                                //bids.add(levelUpByThreeSteps.getDescription());
-                                bids.add(levelUpByFourSteps.getDescription());
-                                bids.add(BidLevel.PASS.getDescription());
-                                return new PotentialBidsDTO(bids, "game.potentialBids");
-
-                                // Player has the 19, 20 and at least 5 tarokks, and bidLevel is two
-                            } else if (specialBidCases.isCouldInviteWith19()) {
-                                //sender.setBidLevel(levelUpByOneStep);
-                                gameRepository.save(game);
-                                playerRepository.save(nextPlayer);
-                                bids.add(levelUpByOneStep.getDescription());
-                                bids.add(levelUpByTwoSteps.getDescription());
-                                bids.add(BidLevel.PASS.getDescription());
-                                return new PotentialBidsDTO(bids, "game.potentialBids");
-
-                                // Player has the 18, 20 and at least 5 tarokks, and bidLevel is two
-                            } else if (specialBidCases.isCouldInviteWith18()) {
-                                //sender.setBidLevel(levelUpByOneStep);
-                                bids.add(levelUpByOneStep.getDescription());
-                                //bids.add(levelUpByThreeSteps.getDescription());
-                                bids.add(levelUpByFourSteps.getDescription());
-                                bids.add(BidLevel.PASS.getDescription());
-                                return new PotentialBidsDTO(bids, "game.potentialBids");
-
-                                // Player has the 20 and at least 5 tarokks, and bidLevel is two
-                            } else {
-                                //sender.setBidLevel(levelUpByOneStep);
-                                bids.add(levelUpByOneStep.getDescription());
-                                bids.add(BidLevel.PASS.getDescription());
-                                return new PotentialBidsDTO(bids, "game.potentialBids");
-                            }
-
-                        } else {
-                            // Player cannot announce 'PASS'
-                            if (actualLevel == BidLevel.TWO) {
-                                if (specialBidCases.isCouldInviteWith18() && specialBidCases.isCouldInviteWith19()) {
-                                    gameRepository.save(game);
-                                    playerRepository.save(nextPlayer);
-                                    bids.add(levelUpByOneStep.getDescription());
-                                    bids.add(levelUpByTwoSteps.getDescription());
-                                    bids.add(levelUpByFourSteps.getDescription());  // ?????????
-                                    bids.add(BidLevel.PASS.getDescription());
-                                    return new PotentialBidsDTO(bids, "game.potentialBids");
-                                } else if (specialBidCases.isCouldInviteWith19()) {
-                                    gameRepository.save(game);
-                                    playerRepository.save(nextPlayer);
-                                    bids.add(levelUpByOneStep.getDescription());
-                                    bids.add(levelUpByTwoSteps.getDescription());
-                                    bids.add(BidLevel.PASS.getDescription());
-                                    return new PotentialBidsDTO(bids, "game.potentialBids");
-                                } else if (specialBidCases.isCouldInviteWith18()) {
-                                    gameRepository.save(game);
-                                    playerRepository.save(nextPlayer);
-                                    bids.add(levelUpByOneStep.getDescription());
-                                    bids.add(levelUpByFourSteps.getDescription());  // ????????????
-                                    bids.add(BidLevel.PASS.getDescription());
-                                    return new PotentialBidsDTO(bids, "game.potentialBids");
-                                } else {
-                                    gameRepository.save(game);
-                                    playerRepository.save(nextPlayer);
-                                    return new PotentialBidsDTO(
-                                            Set.of(levelUpByOneStep.getDescription()),
-                                            "game.potentialBids");
-                                }
-                                //sender.setBidLevel(levelUpByOneStep);
-
-
-                                // Player can announce 'PASS'
-                            } else {
-                                //sender.setBidLevel(levelUpByOneStep);
-                                gameRepository.save(game);
-                                playerRepository.save(nextPlayer);
-                                if (specialBidCases.isCouldInviteWith19()) {
-                                    gameRepository.save(game);
-                                    playerRepository.save(nextPlayer);
-                                    bids.add(levelUpByOneStep.getDescription());
-                                    bids.add(levelUpByTwoSteps.getDescription());
-                                    bids.add(BidLevel.PASS.getDescription());
-                                    return new PotentialBidsDTO(bids, "game.potentialBids");
-                                } else {
-                                    //sender.setBidLevel(levelUpByOneStep);
-                                    gameRepository.save(game);
-                                    playerRepository.save(nextPlayer);
-                                    bids.add(levelUpByOneStep.getDescription());
-                                    bids.add(BidLevel.PASS.getDescription());
-                                    return new PotentialBidsDTO(bids, "game.potentialBids");
-                                }
-                            }
-                        }
-                    }
-
-                    // We cannot find the next bidding player
-                } else {
-                    throw new NoSuchElementException("Next player not found in bidding phase");
-                }
-            }
-
-            // Player's bid is not PASS
+        // Player's bid is not PASS
         } else {
-            // There has been a XIX invit, but the announcer is not the sender
-            game.setDeclarer(sender.getName());
-            System.out.println("Sender: " + sender.getName());
-            //game.setBidLevel(bidLevel);  Set it later!
-            game.setInformation(bidLevel.getDescription());
-
-            if (game.isXIXInvit() && !sender.isAnnouncedXIX_Invit()) {
-                sender.setAcceptedXIX_Invit(true);
-                game.setInvitAcceptor(sender.getName());
-
-                // There has been a XVIII invit, but the announcer is not the sender
-            } else if (game.isXVIIIInvit() && !sender.isAnnouncedXVIII_Invit()) {
-                sender.setAcceptedXVIII_Invit(true);
-                game.setInvitAcceptor(sender.getName());
-            }
-            // The sender has bid first time
-            if (sender.getBidLevel() == BidLevel.NONE) { // Incorrect!
-                if (bidLevel.getBidValue() - game.getBidLevel().getBidValue() == 2) {
-                    game.setXIXInvit(true);
-                    sender.setAnnouncedXIX_Invit(true);
-                    sender.setBidLevel(bidLevel);
-                } else if (bidLevel.getBidValue() - game.getBidLevel().getBidValue() == 3) {
-                    game.setXVIIIInvit(true);
-                    sender.setAnnouncedXVIII_Invit(true);
-                    sender.setBidLevel(bidLevel);
-                } else {
-                    sender.setBidLevel(bidLevel);
-                }
-
-                // The sender has already bid
-            } else {
-                if (bidLevel.getGrade() - game.getBidLevel().getGrade() == 2) {
-                    game.setXIXInvit(true);
-                    sender.setAnnouncedXIX_Invit(true);
-                    sender.setBidLevel(bidLevel);
-                } else if (bidLevel.getGrade() - game.getBidLevel().getGrade() == 3 ||
-                        bidLevel.getGrade() - sender.getBidLevel().getGrade() == 4) {
-                    game.setXVIIIInvit(true);
-                    sender.setAnnouncedXVIII_Invit(true);
-                    sender.setBidLevel(bidLevel);
-                } else {
-                    sender.setBidLevel(bidLevel);
-                }
-            }
-            game.setBidLevel(bidLevel);
-
-            // There is no more option to continue bidding
-            if (bidLevel == BidLevel.SOLO_HELD || game.getBiddingPasses() == 3) {
-                game.setState(GameState.TALON_PICK_UP);
-                game.setStartPlayer(game.getDeclarer());
-                game.setTurnPlayer(game.getDeclarer());
-                Player declarer = game.getPlayerByName(game.getDeclarer());
-                declarer.setRoleInGame(RoleInGame.DECLARER);
-                gameRepository.save(game);
-                playerRepository.save(declarer);
-                playerRepository.save(sender);
-                return null;
-
-                // There are opportunities to continue bidding
-            } else {
-                playerRepository.save(sender);
-                Player nextPlayer = game.getNextBiddingPlayer(sender);
-                if (nextPlayer != null) {
-                    game.setTurnPlayer(nextPlayer.getName());
-
-                    // Method in case of first bidder
-                    if (nextPlayer.getBidLevel() == BidLevel.NONE) {
-
-                        // There is no honour
-                        if (!nextPlayer.hasAnyHonours()) {
-                            //sender.setBidLevel(bidLevel);
-                            gameRepository.save(game);
-                            //playerRepository.save(sender);
-                            playerRepository.save(nextPlayer);
-                            return new PotentialBidsDTO(Set.of(BidLevel.PASS.getDescription()), "game.potentialBids");
-                        } else {
-
-                            // Player has at least one honour
-                            SpecialBidCasesDTO specialBidCases = nextPlayer.getSpecialBidCases();
-                            BidLevel actualLevel = game.getBidLevel();
-                            BidLevel levelUpByOneStep = actualLevel.getNextLevelAtFirstBid(actualLevel, 1);
-
-                            // Player has at least 5 tarokks and the 18 and the 19
-                            if (specialBidCases.isCouldInviteWith18() && specialBidCases.isCouldInviteWith19()) {
-                                BidLevel levelUpByTwoSteps = actualLevel.getNextLevelAtFirstBid(actualLevel, 2);
-                                BidLevel levelUpByThreeSteps = actualLevel.getNextLevelAtFirstBid(actualLevel, 3);
-                                //sender.setBidLevel(levelUpByOneStep);
-                                //playerRepository.save(sender);
-                                gameRepository.save(game);
-                                playerRepository.save(nextPlayer);
-                                bids.add(levelUpByOneStep.getDescription());
-                                bids.add(levelUpByTwoSteps.getDescription());
-                                bids.add(levelUpByThreeSteps.getDescription());
-                                bids.add(BidLevel.PASS.getDescription());
-                                return new PotentialBidsDTO(bids, "game.potentialBids");
-
-                                // Player has at least 5 tarokks and the 19
-                            } else if (specialBidCases.isCouldInviteWith19()) {
-                                BidLevel levelUpByTwoSteps = actualLevel.getNextLevelAtFirstBid(actualLevel, 2);
-                                //sender.setBidLevel(levelUpByOneStep);
-                                //playerRepository.save(sender);
-                                gameRepository.save(game);
-                                playerRepository.save(nextPlayer);
-                                bids.add(levelUpByOneStep.getDescription());
-                                bids.add(levelUpByTwoSteps.getDescription());
-                                bids.add(BidLevel.PASS.getDescription());
-                                return new PotentialBidsDTO(bids, "game.potentialBids");
-
-                                // Player has at least 5 tarokks and the 18
-                            } else if (specialBidCases.isCouldInviteWith18()) {
-                                BidLevel levelUpByThreeSteps = actualLevel.getNextLevelAtFirstBid(actualLevel, 3);
-                                //sender.setBidLevel(levelUpByOneStep);
-                                //playerRepository.save(sender);
-                                gameRepository.save(game);
-                                playerRepository.save(nextPlayer);
-                                bids.add(levelUpByOneStep.getDescription());
-                                bids.add(levelUpByThreeSteps.getDescription());
-                                bids.add(BidLevel.PASS.getDescription());
-                                return new PotentialBidsDTO(bids, "game.potentialBids");
-
-                                // Player cannot invite
-                            } else {
-                                //sender.setBidLevel(levelUpByOneStep);
-                                //playerRepository.save(sender);
-                                gameRepository.save(game);
-                                playerRepository.save(nextPlayer);
-                                bids.add(levelUpByOneStep.getDescription());
-                                bids.add(BidLevel.PASS.getDescription());
-                                return new PotentialBidsDTO(bids, "game.potentialBids");
-                            }
-                        }
-
-                        // Method in case of bidder has already bid
-                    } else {
-                        SpecialBidCasesDTO specialBidCases = nextPlayer.getSpecialBidCases();
-                        BidLevel actualLevel = game.getBidLevel();
-                        BidLevel levelUpByOneStep = actualLevel.getNextLevelAtOtherBids(actualLevel, 1);
-                        BidLevel levelUpByTwoSteps = actualLevel.getNextLevelAtOtherBids(actualLevel, 2);
-                        BidLevel levelUpByThreeSteps = actualLevel.getNextLevelAtOtherBids(actualLevel, 3);
-                        BidLevel levelUpByFourSteps = actualLevel.getNextLevelAtOtherBids(actualLevel, 4);
-
-                        // Player has the 20 and at least 5 tarokks, and bidLevel is two
-                        if (actualLevel == BidLevel.TWO && specialBidCases.isCouldYieldWith20()) {
-
-                            // Player has the 18, 19, 20 and at least 5 tarokks, and bidLevel is two
-                            if (specialBidCases.isCouldInviteWith18() && specialBidCases.isCouldInviteWith19()) {
-                                //sender.setBidLevel(levelUpByOneStep);
-                                //playerRepository.save(sender);
-                                gameRepository.save(game);
-                                playerRepository.save(nextPlayer);
-                                bids.add(levelUpByOneStep.getDescription());
-                                bids.add(levelUpByTwoSteps.getDescription());
-                                //bids.add(levelUpByThreeSteps.getDescription());
-                                bids.add(levelUpByFourSteps.getDescription());
-                                bids.add(BidLevel.PASS.getDescription());
-                                return new PotentialBidsDTO(bids, "game.potentialBids");
-
-                                // Player has the 19, 20 and at least 5 tarokks, and bidLevel is two
-                            } else if (specialBidCases.isCouldInviteWith19()) {
-                                //sender.setBidLevel(levelUpByOneStep);
-                                //playerRepository.save(sender);
-                                gameRepository.save(game);
-                                playerRepository.save(nextPlayer);
-                                bids.add(levelUpByOneStep.getDescription());
-                                bids.add(levelUpByTwoSteps.getDescription());
-                                bids.add(BidLevel.PASS.getDescription());
-                                return new PotentialBidsDTO(bids, "game.potentialBids");
-
-                                // Player has the 18, 20 and at least 5 tarokks, and bidLevel is two
-                            } else if (specialBidCases.isCouldInviteWith18()) {
-                                //sender.setBidLevel(levelUpByOneStep);
-                                //playerRepository.save(sender);
-                                bids.add(levelUpByOneStep.getDescription());
-                                bids.add(levelUpByFourSteps.getDescription());
-                                bids.add(BidLevel.PASS.getDescription());
-                                return new PotentialBidsDTO(bids, "game.potentialBids");
-
-                                // Player has the 20 and at least 5 tarokks, and bidLevel is two
-                            } else {
-                                //sender.setBidLevel(levelUpByOneStep);
-                                //playerRepository.save(sender);
-                                bids.add(levelUpByOneStep.getDescription());
-                                bids.add(BidLevel.PASS.getDescription());
-                                return new PotentialBidsDTO(bids, "game.potentialBids");
-                            }
-
-                        } else {
-                            // Player cannot announce 'PASS'
-                            if (actualLevel == BidLevel.TWO) {
-                                //sender.setBidLevel(levelUpByOneStep);
-                                //playerRepository.save(sender);
-                                gameRepository.save(game);
-                                playerRepository.save(nextPlayer);
-                                return new PotentialBidsDTO(
-                                        Set.of(levelUpByOneStep.getDescription()),
-                                        "game.potentialBids");
-                                // Player can announce 'PASS'
-                            } else {
-                                //sender.setBidLevel(levelUpByOneStep);
-                                //playerRepository.save(sender);
-                                gameRepository.save(game);
-                                playerRepository.save(nextPlayer);
-                                if (specialBidCases.isCouldInviteWith19()) {
-                                    gameRepository.save(game);
-                                    playerRepository.save(nextPlayer);
-                                    bids.add(levelUpByOneStep.getDescription());
-                                    bids.add(levelUpByTwoSteps.getDescription());
-                                    bids.add(BidLevel.PASS.getDescription());
-                                    return new PotentialBidsDTO(bids, "game.potentialBids");
-                                } else {
-                                    //sender.setBidLevel(levelUpByOneStep);
-                                    //playerRepository.save(sender);
-                                    gameRepository.save(game);
-                                    playerRepository.save(nextPlayer);
-                                    bids.add(levelUpByOneStep.getDescription());
-                                    bids.add(BidLevel.PASS.getDescription());
-                                    return new PotentialBidsDTO(bids, "game.potentialBids");
-                                }
-                            }
-                        }
-                    }
-
-                    // We cannot find the next bidding player
-                } else {
-                    throw new NoSuchElementException("Next player not found in bidding phase");
-                }
-            }
+            return handleBidIfNotPass(game, sender, bidLevel, bids);
         }
     }
 
-    private PotentialBidsDTO getPotentialBidsWithDifferentOptionsAtFirstBid(String level3, String level2, String level1, String pass, Set<String> options) {
+    private PotentialBidsDTO getPotentialBidsWithDifferentOptionsAtFirstTime(String level3, String level2, String level1, String pass, Set<String> options) {
         options.add(level3);
         if (level2 != null) {
             options.add(level2);
@@ -504,7 +64,7 @@ public class BidService {
         return new PotentialBidsDTO(options, "game.firstPotentialBids");
     }
 
-    private PotentialBidsDTO getPotentialBidsWithDifferentOptionsAtOtherBids(String option1, String option2, String option3, String option4, Set<String> options, Game game, Player player) {
+    private PotentialBidsDTO getPotentialBidsWithDifferentOptionsAtFurtherCases(String option1, String option2, String option3, String option4, Set<String> options, Game game, Player player) {
         gameRepository.save(game);
         playerRepository.save(player);
         options.add(option1);
@@ -518,5 +78,253 @@ public class BidService {
             options.add(option4);
         }
         return new PotentialBidsDTO(options, "game.potentialBids");
+    }
+
+    private PotentialBidsDTO handleBidIfPass(Game game, Player sender, BidLevel bidLevel, Set<String> bids) {
+        game.setBiddingPasses(game.getBiddingPasses() + 1);
+
+        // Handle yielded game
+        if (sender.getBidLevel() == BidLevel.THREE && game.getBidLevel() == BidLevel.TWO) {
+            sender.setYieldedGame(true);
+            game.setYielded(true);
+        }
+        sender.setBidLevel(bidLevel);
+
+        // Bidding PASS three times
+        if (game.getBiddingPasses() == 3 && game.getBidLevel() != BidLevel.NONE) {
+            return finishBidding(game, sender);
+
+        // Bidding PASS less than three times
+        } else {
+            return createBidCases(sender, game, bids);
+        }
+    }
+
+    private PotentialBidsDTO handleBidIfNotPass(Game game, Player sender, BidLevel bidLevel, Set<String> bids) {
+        game.setDeclarer(sender.getName());
+        game.setInformation(bidLevel.getDescription());
+        sender.setBidLevel(bidLevel);
+
+        // There has been a XIX invit, but the announcer is not the sender
+        handleInvitAcceptance(game, sender);
+
+        // The sender has bid first time
+        handleInvitAnnouncement(sender, bidLevel, game);
+
+        game.setBidLevel(bidLevel);
+
+        // There is no more option to continue bidding
+        if (bidLevel == BidLevel.SOLO_HELD || game.getBiddingPasses() == 3) {
+            return finishBidding(game, sender);
+
+        // There is at least one further option to continue bidding
+        } else {
+            return createBidCases(sender, game, bids);
+        }
+    }
+
+    private PotentialBidsDTO methodInCaseFirstBidder(Player nextPlayer, Game game, Set<String> bids) {
+
+        // Player has no honour
+        if (!nextPlayer.hasAnyHonours()) {
+            gameRepository.save(game);
+            playerRepository.save(nextPlayer);
+            return new PotentialBidsDTO(Set.of(BidLevel.PASS.getDescription()), "game.potentialBids");
+
+        // Player has at least one honour
+        } else {
+            return createPotentialBidsToTurnPlayerAtFirstTime(nextPlayer, game, bids);
+        }
+    }
+
+    private PotentialBidsDTO finishBidding(Game game, Player sender) {
+        game.setState(GameState.TALON_PICK_UP);
+        game.setTurnPlayer(game.getDeclarer());
+        Player declarer = game.getPlayerByName(game.getDeclarer());
+        declarer.setRoleInGame(RoleInGame.DECLARER);
+        game.setPlayerRolesInCaseYieldedGameOrInvit(declarer);
+        gameRepository.save(game);
+        playerRepository.save(declarer);
+        playerRepository.save(sender);
+        return null;
+    }
+
+    private PotentialBidsDTO createBidCases(Player sender, Game game, Set<String> bids) {
+        // Find the next bidding player
+        playerRepository.save(sender);
+        Player nextPlayer = game.getNextBiddingPlayer(sender);
+        if (nextPlayer != null) {
+            game.setTurnPlayer(nextPlayer.getName());
+
+            // Method in case of first bidder
+            if (nextPlayer.getBidLevel() == BidLevel.NONE) {
+
+                // There is no honour
+                return methodInCaseFirstBidder(nextPlayer, game, bids);
+
+            // Method in case of bidder has already bid
+            } else {
+                SpecialBidCasesDTO specialBidCases = nextPlayer.getSpecialBidCases();
+                BidLevel actualLevel = game.getBidLevel();
+                String option1 = actualLevel.getNextLevelAtOtherBids(actualLevel, 1).getDescription();
+                String option2 = actualLevel.getNextLevelAtOtherBids(actualLevel, 2).getDescription();
+                String option3 = actualLevel.getNextLevelAtOtherBids(actualLevel, 4).getDescription();
+                String option4 = BidLevel.PASS.getDescription();
+
+                if (actualLevel == BidLevel.TWO && specialBidCases.isCouldYieldWith20()) {
+
+                    // Player has the 20 and at least 5 tarokks, and bidLevel is two
+                    return createBidCasesInCasePotentialYieldedGame(specialBidCases, nextPlayer, game, bids, option1, option2, option3, option4);
+
+                } else {
+                    // Player cannot announce 'PASS'
+                    return createBidCasesWithoutPotentialYieldedGame(specialBidCases, nextPlayer, actualLevel, game, bids, option1, option2, option3, option4);
+                }
+            }
+
+            // We cannot find the next bidding player
+        } else {
+            throw new NoSuchElementException("Next player not found in bidding phase");
+        }
+    }
+
+    private PotentialBidsDTO createBidCasesToStartPlayer(Player player) {
+        String level3 = BidLevel.THREE.getDescription();
+        String level2 = BidLevel.TWO.getDescription();
+        String level1 = BidLevel.ONE.getDescription();
+        String pass = BidLevel.PASS.getDescription();
+        Set<String> bids = new LinkedHashSet<>();
+        SpecialBidCasesDTO specialBidCases = player.getSpecialBidCases();
+        if (specialBidCases.isCouldInviteWith18() && specialBidCases.isCouldInviteWith19()) {
+            return getPotentialBidsWithDifferentOptionsAtFirstTime(level3, level2, level1, pass, bids);
+
+        } else if (specialBidCases.isCouldInviteWith18()) {
+            return getPotentialBidsWithDifferentOptionsAtFirstTime(level3, null, level1, pass, bids);
+
+        } else if (specialBidCases.isCouldInviteWith19()) {
+            return getPotentialBidsWithDifferentOptionsAtFirstTime(level3, level2, null, pass, bids);
+
+        } else {
+            return getPotentialBidsWithDifferentOptionsAtFirstTime(level3, null, null, pass, bids);
+        }
+    }
+
+    private PotentialBidsDTO createPotentialBidsToTurnPlayerAtFirstTime(Player nextPlayer, Game game, Set<String> bids) {
+        SpecialBidCasesDTO specialBidCases = nextPlayer.getSpecialBidCases();
+        BidLevel actualLevel = game.getBidLevel();
+        String option1 = actualLevel.getNextLevelAtFirstBid(actualLevel, 1).getDescription();
+        String option2 = actualLevel.getNextLevelAtFirstBid(actualLevel, 2).getDescription();
+        String option3 = actualLevel.getNextLevelAtFirstBid(actualLevel, 3).getDescription();
+        String option4 = BidLevel.PASS.getDescription();
+
+        // Player has at least 5 tarokks and the 18 and the 19
+        if (specialBidCases.isCouldInviteWith18() && specialBidCases.isCouldInviteWith19()) {
+            return getPotentialBidsWithDifferentOptionsAtFurtherCases(option1, option2, option3, option4, bids, game,nextPlayer);
+
+            // Player has at least 5 tarokks and the 19
+        } else if (specialBidCases.isCouldInviteWith19()) {
+            return getPotentialBidsWithDifferentOptionsAtFurtherCases(option1, option2, null, option4, bids, game, nextPlayer);
+
+            // Player has at least 5 tarokks and the 18
+        } else if (specialBidCases.isCouldInviteWith18()) {
+            return getPotentialBidsWithDifferentOptionsAtFurtherCases(option1, null, option3, option4, bids, game, nextPlayer);
+
+            // Player cannot invite
+        } else {
+            return getPotentialBidsWithDifferentOptionsAtFurtherCases(option1, null, null, option4, bids, game, nextPlayer);
+        }
+    }
+
+    private void handleInvitAcceptance(Game game, Player sender) {
+        if (game.isXIXInvit() && !sender.isAnnouncedXIX_Invit()) {
+            sender.setAcceptedXIX_Invit(true);
+            game.setInvitAcceptor(sender.getName());
+
+            // There has been a XVIII invit, but the announcer is not the sender
+        } else if (game.isXVIIIInvit() && !sender.isAnnouncedXVIII_Invit()) {
+            sender.setAcceptedXVIII_Invit(true);
+            game.setInvitAcceptor(sender.getName());
+        }
+    }
+
+    private void handleInvitAnnouncement(Player sender, BidLevel bidLevel, Game game) {
+        if (sender.getBidLevel() == BidLevel.NONE) {
+            if (bidLevel.getBidValue() - game.getBidLevel().getBidValue() == 2) {
+                game.setXIXInvit(true);
+                sender.setAnnouncedXIX_Invit(true);
+            } else if (bidLevel.getBidValue() - game.getBidLevel().getBidValue() == 3) {
+                game.setXVIIIInvit(true);
+                sender.setAnnouncedXVIII_Invit(true);
+            }
+
+            // The sender has already bid
+        } else {
+            if (bidLevel.getGrade() - game.getBidLevel().getGrade() == 2) {
+                game.setXIXInvit(true);
+                sender.setAnnouncedXIX_Invit(true);
+            } else if (bidLevel.getGrade() - sender.getBidLevel().getGrade() == 4) {
+                game.setXVIIIInvit(true);
+                sender.setAnnouncedXVIII_Invit(true);
+            }
+        }
+    }
+
+    private PotentialBidsDTO createBidCasesInCasePotentialYieldedGame(SpecialBidCasesDTO specialBidCases, Player nextPlayer, Game game, Set<String> bids, String option1, String option2, String option3, String option4) {
+
+        // Player has the 18, 19, 20 and at least 5 tarokks, and bidLevel is two
+        if (specialBidCases.isCouldInviteWith18() && specialBidCases.isCouldInviteWith19()) {
+            if (nextPlayer.isAnnouncedXIX_Invit()) {
+                option2 = null;
+            }
+            return getPotentialBidsWithDifferentOptionsAtFurtherCases(option1, option2, option3, option4, bids, game, nextPlayer);
+
+            // Player has the 19, 20 and at least 5 tarokks, and bidLevel is two
+        } else if (specialBidCases.isCouldInviteWith19()) {
+            if (nextPlayer.isAnnouncedXIX_Invit()) {
+                option2 = null;
+            }
+            return getPotentialBidsWithDifferentOptionsAtFurtherCases(option1, option2, null, option4, bids, game, nextPlayer);
+
+            // Player has the 18, 20 and at least 5 tarokks, and bidLevel is two
+        } else if (specialBidCases.isCouldInviteWith18()) {
+            return getPotentialBidsWithDifferentOptionsAtFurtherCases(option1, null, option3, option4, bids, game, nextPlayer);
+
+            // Player has the 20 and at least 5 tarokks, and bidLevel is two
+        } else {
+            return getPotentialBidsWithDifferentOptionsAtFurtherCases(option1, null, null, option4, bids, game, nextPlayer);
+        }
+    }
+
+    private PotentialBidsDTO createBidCasesWithoutPotentialYieldedGame(SpecialBidCasesDTO specialBidCases, Player nextPlayer, BidLevel actualLevel, Game game, Set<String> bids, String option1, String option2, String option3, String option4) {
+        if (actualLevel == BidLevel.TWO) {
+
+            // Player cannot announce 'PASS'
+            if (specialBidCases.isCouldInviteWith18() && specialBidCases.isCouldInviteWith19()) {
+                if (nextPlayer.isAnnouncedXIX_Invit()) {
+                    option2 = null;
+                }
+                return getPotentialBidsWithDifferentOptionsAtFurtherCases(option1, option2, option3, null, bids, game, nextPlayer);
+            } else if (specialBidCases.isCouldInviteWith19()) {
+                if (nextPlayer.isAnnouncedXIX_Invit()) {
+                    option2 = null;
+                }
+                return getPotentialBidsWithDifferentOptionsAtFurtherCases(option1, option2, null, null, bids, game, nextPlayer);
+            } else if (specialBidCases.isCouldInviteWith18()) {
+                return getPotentialBidsWithDifferentOptionsAtFurtherCases(option1, null, option3, null, bids, game, nextPlayer);
+            } else {
+                return getPotentialBidsWithDifferentOptionsAtFurtherCases(option1, null, null, null, bids, game, nextPlayer);
+            }
+
+        } else {
+            // Player can announce 'PASS'
+            if (specialBidCases.isCouldInviteWith19()) {
+                if (nextPlayer.isAnnouncedXIX_Invit()) {
+                    option2 = null;
+                }
+                return getPotentialBidsWithDifferentOptionsAtFurtherCases(option1, option2, null, option4, bids, game, nextPlayer);
+            } else {
+                return getPotentialBidsWithDifferentOptionsAtFurtherCases(option1, null, null, option4, bids, game, nextPlayer);
+            }
+        }
     }
 }
