@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface PlayerCardRepository extends JpaRepository<PlayerCard, Long> {
     List<PlayerCard> findAllByPlayerId(Long playerId);
+    void deleteAllByPlayerId(Long playerId);
 }

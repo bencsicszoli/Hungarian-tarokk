@@ -7,10 +7,8 @@ import com.codecool.tarokkgame.model.entity.Game;
 import com.codecool.tarokkgame.model.entity.Player;
 import com.codecool.tarokkgame.repository.GameRepository;
 import com.codecool.tarokkgame.repository.PlayerRepository;
-import com.codecool.tarokkgame.service.BidService;
-import com.codecool.tarokkgame.service.DealService;
-import com.codecool.tarokkgame.service.PlayerService;
-import com.codecool.tarokkgame.service.ShuffleService;
+import com.codecool.tarokkgame.repository.TalonCardRepository;
+import com.codecool.tarokkgame.service.*;
 import jakarta.transaction.Transactional;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -31,9 +29,11 @@ public class MessageController {
     private final ShuffleService shuffleService;
     private final DealService dealService;
     private final PlayerRepository playerRepository;
+    private final TalonCardRepository talonCardRepository;
     private final BidService bidService;
+    private final TalonService talonService;
 
-    public MessageController(SimpMessagingTemplate messagingTemplate, PlayerService playerService, GameRepository gameRepository, ShuffleService shuffleService, DealService dealService, PlayerRepository playerRepository, BidService bidService) {
+    public MessageController(SimpMessagingTemplate messagingTemplate, PlayerService playerService, GameRepository gameRepository, ShuffleService shuffleService, DealService dealService, PlayerRepository playerRepository, TalonCardRepository talonCardRepository, BidService bidService, TalonService talonService) {
 
         this.messagingTemplate = messagingTemplate;
         this.playerService = playerService;
@@ -41,7 +41,9 @@ public class MessageController {
         this.shuffleService = shuffleService;
         this.dealService = dealService;
         this.playerRepository = playerRepository;
+        this.talonCardRepository = talonCardRepository;
         this.bidService = bidService;
+        this.talonService = talonService;
     }
 
     @MessageMapping("/game.join")
@@ -128,10 +130,47 @@ public class MessageController {
         String playerName = principal.getName();
         if (playerName.equals(request.username())) {
             PotentialBidsDTO potentialBids = bidService.getPotentialBidsToTurnPlayer(playerName, request.gameId(), request.newLevel());
+            Game game = gameRepository.findById(request.gameId()).orElseThrow(() -> new NoSuchElementException("Game not found"));
+            String turnPlayer = game.getTurnPlayer();
             if (potentialBids != null) {
-                Game game = gameRepository.findById(request.gameId()).orElseThrow(() -> new NoSuchElementException("Game not found"));
-                String turnPlayer = game.getTurnPlayer();
                 messagingTemplate.convertAndSendToUser(turnPlayer, "/queue/private", potentialBids);
+                PublicBidDTO publicBidDTO = bidService.getPublicBidInfo(game, turnPlayer);
+                messagingTemplate.convertAndSend("/topic/game." + request.gameId(), publicBidDTO);
+            } else {
+                PublicBidDTO publicBidDTO = bidService.getPublicBidInfo(game, turnPlayer);
+                messagingTemplate.convertAndSend("/topic/game." + request.gameId(), publicBidDTO);
+                NewGameStateDTO gameStateDTO = new NewGameStateDTO("TALON_PICK_UP", "game.gameState");
+                messagingTemplate.convertAndSend("/topic/game." + request.gameId(), gameStateDTO);
+            }
+
+        } else {
+            throw new NotAllowedOperationException("Invalid username");
+        }
+    }
+
+    @MessageMapping("/game.dealTalonToPlayers")
+    @Transactional
+    public void dealTalonToPlayers(@Payload TalonRequestDTO request, Principal principal) {
+        String playerName = principal.getName();
+        if (playerName.equals(request.username())) {
+            Game game = gameRepository.findById(request.gameId()).orElseThrow(() -> new NoSuchElementException("Game not found"));
+            Player player = playerRepository.findByUserUsernameAndGameId(request.declarer(), request.gameId()).orElseThrow(() -> new NoSuchElementException("Player not found"));
+            int[] talonCardsToDeal = game.getBidLevel().getCardsFromTalon();
+            long idFrom = talonCardRepository.findSmallestId(game.getId());
+            long idTo;
+            String playerToDeal = request.declarer();
+            for (int i = 0; i < 4; i++) {
+                idTo = idFrom + talonCardsToDeal[i] - 1;
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                }
+                PlayerCardListDTO cardList = talonService.allocateTalonCards(game, player, idFrom, idTo);
+                messagingTemplate.convertAndSendToUser(playerToDeal, "/queue/private", cardList);
+                player = game.getNextPlayer(player);
+                playerToDeal = player.getName();
+                idFrom = idTo + 1;
             }
 
         } else {

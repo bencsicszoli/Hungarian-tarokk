@@ -2,8 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useUser } from "./context/UserContext";
 import { useWebSocket } from "./context/WebSocketContext";
+import InfoTable from "./pageComponents/InfoTable";
 
-const INITIAL_ROTATION = [0, 0, 22.5, -30, -37.5, -45, -52.5, -60, -67.5, -75];
+const INITIAL_ROTATION = [
+  0, 0, 22.5, -30, -37.5, -45, -52.5, -60, -67.5, -75, -82.5, -90, -97.5,
+];
 
 function Game() {
   const location = useLocation();
@@ -34,6 +37,10 @@ function Game() {
   const [turnPlayer, setTurnPlayer] = useState<string | null>(
     game?.turnPlayer || null,
   );
+  const [declarer, setDeclarer] = useState<string | null>(
+    game?.declarer || null,
+  );
+  const [bid, setBid] = useState<"-" | "3" | "2" | "1" | "solo">("-");
   const [player1Balance, setPlayer1Balance] = useState<number>(
     game?.player1Balance || 0,
   );
@@ -59,9 +66,9 @@ function Game() {
     game?.player4CardsNumber || 0,
   );
   const [ownCards, setOwnCards] = useState<{ imagePath: string }[]>([]);
-  const [gameState, setGameState] = useState<"NEW" | "IN_PROGRESS" | "BIDDING">(
-    game?.gameState || "NEW",
-  );
+  const [gameState, setGameState] = useState<
+    "NEW" | "IN_PROGRESS" | "BIDDING" | "TALON_PICK_UP"
+  >(game?.gameState || "NEW");
   const [tableTurned, setTableTurned] = useState(false);
   const [talonCardsNumber, setTalonCardsNumber] = useState<number>(0);
   const [levelDiscription, setLevelDescription] = useState<string>(
@@ -136,6 +143,16 @@ function Game() {
         });
         console.log("Game state updated to BIDDING");
         break;
+      case "game.publicBidInfo":
+        setBid(message.bid);
+        setDeclarer(message.declarer);
+        setTurnPlayer(message.turnPlayer);
+        console.log("Public bid info updated:", message);
+        break;
+      case "game.gameState":
+        setGameState(message.gameState);
+        console.log("Game state updated:", message.gameState);
+        break;
       default:
         console.log("Unhandled message type:", message.type);
         break;
@@ -162,10 +179,10 @@ function Game() {
         console.log("First potential bids received:", message);
         setPotentialBids(message.potentialBids);
         break;
-        case "game.potentialBids":
-          console.log("Potential bids received:", message);
-          setPotentialBids(message.potentialBids);
-          break;
+      case "game.potentialBids":
+        console.log("Potential bids received:", message);
+        setPotentialBids(message.potentialBids);
+        break;
       default:
         console.log("Unhandled private message type:", message.type);
         break;
@@ -177,6 +194,12 @@ function Game() {
       getFirstPotentialBids();
     }
   }, [gameState, user, startPlayer]);
+
+  useEffect(() => {
+    if (gameState === "TALON_PICK_UP" && declarer === user?.username) {
+      dealTalonToPlayers();
+    }
+  }, [gameState, declarer]);
 
   function setPlayerCardNumber(message: {
     username: string;
@@ -302,7 +325,6 @@ function Game() {
       <button
         key={bid}
         className="border-black border-2 w-1/8 h-2/3"
-        
         onClick={() => {
           send("/app/game.bid", {
             username: user?.username,
@@ -361,6 +383,16 @@ function Game() {
     );
   }
 
+  function dealTalonToPlayers() {
+    send("/app/game.dealTalonToPlayers", {
+      username: user?.username,
+      declarer: declarer,
+      gameId: game.gameId,
+      bid: bid,
+    });
+    console.log("Request to deal talon to players sent");
+  }
+
   function displayTalon(talonCardsNumber: number) {
     const cardsBack = Array(talonCardsNumber).fill("Back.png");
     return cardsBack.map((imagePath, index) => (
@@ -413,17 +445,19 @@ function Game() {
         {/*Card table */}
         <div className="w-3/4 h-207.5 bg-poker-table rounded-[70px] shadow-2xl text-white px-6 sm:px-8 flex flex-col items-center justify-center">
           {/* Menu buttons */}
-          <div className="w-full h-1/12 bg-green-300 flex justify-around items-center">
+          <div className="w-full h-1/12 flex justify-around items-center">
             <button
-              className="border-black border-2 w-1/8 h-2/3"
+              className="border-black border-2 w-1/8 h-2/3 bg-green-300 text-[#2f4b3a] text-2xl font-bold"
               onClick={handleLogout}
             >
               Logout
             </button>
-            <button className="border-black border-2 w-1/8 h-2/3">Back</button>
+            <button className="border-black border-2 w-1/8 h-2/3 bg-green-300 text-[#2f4b3a] text-2xl font-bold">
+              Back
+            </button>
             {user?.username === dealer && gameState === "NEW" && (
               <button
-                className="border-black border-2 w-1/8 h-2/3"
+                className="border-black border-2 w-1/8 h-2/3 bg-green-300 text-[#2f4b3a] text-2xl font-bold"
                 onClick={handleDeal}
               >
                 DEAL
@@ -494,12 +528,7 @@ function Game() {
         </div>
 
         {/*Info table */}
-        <div className="w-100 h-207.5 bg-info-table rounded-[70px] shadow-2xl text-white px-6 sm:px-8 flex flex-col">
-          <div className="w-full h-1/4 bg-blue-300"></div>
-          <div className="w-full h-1/4 bg-blue-500"></div>
-          <div className="w-full h-1/4 bg-blue-300"></div>
-          <div className="w-full h-1/4 bg-blue-500"></div>
-        </div>
+        <InfoTable bid={bid} declarer={declarer} turnPlayer={turnPlayer} />
       </div>
     </div>
   );

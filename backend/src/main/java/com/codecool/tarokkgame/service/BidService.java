@@ -5,6 +5,7 @@ import com.codecool.tarokkgame.constants.GameState;
 import com.codecool.tarokkgame.constants.RoleInGame;
 import com.codecool.tarokkgame.model.dto.SpecialBidCasesDTO;
 import com.codecool.tarokkgame.model.dto.messagedto.PotentialBidsDTO;
+import com.codecool.tarokkgame.model.dto.messagedto.PublicBidDTO;
 import com.codecool.tarokkgame.model.entity.Game;
 import com.codecool.tarokkgame.model.entity.Player;
 import com.codecool.tarokkgame.repository.GameRepository;
@@ -49,6 +50,13 @@ public class BidService {
         } else {
             return handleBidIfNotPass(game, sender, bidLevel, bids);
         }
+    }
+
+    public PublicBidDTO getPublicBidInfo(Game game, String turnPlayer) {
+        String declarer = game.getDeclarer();
+        String bid = game.getBidLevel().getBidNameToDisplay();
+        System.out.println("Bid name: " + bid);
+        return new PublicBidDTO(declarer, turnPlayer, bid, "game.publicBidInfo");
     }
 
     private PotentialBidsDTO getPotentialBidsWithDifferentOptionsAtFirstTime(String level3, String level2, String level1, String pass, Set<String> options) {
@@ -103,15 +111,15 @@ public class BidService {
     private PotentialBidsDTO handleBidIfNotPass(Game game, Player sender, BidLevel bidLevel, Set<String> bids) {
         game.setDeclarer(sender.getName());
         game.setInformation(bidLevel.getDescription());
-        sender.setBidLevel(bidLevel);
+        //sender.setBidLevel(bidLevel); // később !!!
 
-        // There has been a XIX invit, but the announcer is not the sender
         handleInvitAcceptance(game, sender);
 
         // The sender has bid first time
         handleInvitAnnouncement(sender, bidLevel, game);
 
         game.setBidLevel(bidLevel);
+        sender.setBidLevel(bidLevel);
 
         // There is no more option to continue bidding
         if (bidLevel == BidLevel.SOLO_HELD || game.getBiddingPasses() == 3) {
@@ -236,6 +244,8 @@ public class BidService {
     }
 
     private void handleInvitAcceptance(Game game, Player sender) {
+
+        // There has been a XIX invit, but the announcer is not the sender
         if (game.isXIXInvit() && !sender.isAnnouncedXIX_Invit()) {
             sender.setAcceptedXIX_Invit(true);
             game.setInvitAcceptor(sender.getName());

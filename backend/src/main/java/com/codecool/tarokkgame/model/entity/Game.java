@@ -101,6 +101,7 @@ public class Game {
 
     public void setPlayerRolesInCaseYieldedGameOrInvit(Player declarer) {
         if (isYielded) {
+            setInvitedTarokk(20);
             for (Player player : players) {
                 if (player.isYieldedGame()) {
                     player.setRoleInGame(RoleInGame.DECLARER_PARTNER);
@@ -110,6 +111,7 @@ public class Game {
             }
         } else if (isXIXInvit) {
             if (declarer.isAcceptedXIX_Invit()) {
+                setInvitedTarokk(19);
                 for (Player player : players) {
                     if (player.isAnnouncedXIX_Invit()) {
                         player.setRoleInGame(RoleInGame.DECLARER_PARTNER);
@@ -120,6 +122,7 @@ public class Game {
             }
         } else if (isXVIIIInvit) {
             if (declarer.isAcceptedXVIII_Invit()) {
+                setInvitedTarokk(18);
                 for (Player player : players) {
                     if (player.isAnnouncedXVIII_Invit()) {
                         player.setRoleInGame(RoleInGame.DECLARER_PARTNER);
@@ -130,7 +133,4 @@ public class Game {
             }
         }
     }
-
-
-
 }
