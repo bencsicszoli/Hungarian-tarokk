@@ -159,15 +159,25 @@ public class MessageController {
             long idFrom = talonCardRepository.findSmallestId(game.getId());
             long idTo;
             String playerToDeal = request.declarer();
+            int talonCards = 6;
             for (int i = 0; i < 4; i++) {
+                int playerCards = player.getPlayerCards().size();
+                if (i == 3) {
+                    game.setState(GameState.SKART_LAY_DOWN);
+                }
                 idTo = idFrom + talonCardsToDeal[i] - 1;
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                 }
+                talonCards -= talonCardsToDeal[i];
                 PlayerCardListDTO cardList = talonService.allocateTalonCards(game, player, idFrom, idTo);
                 messagingTemplate.convertAndSendToUser(playerToDeal, "/queue/private", cardList);
+                PublicTalonDTO talonDTO = new PublicTalonDTO(talonCards, "game.talon", game.getState().toString());
+                messagingTemplate.convertAndSend("/topic/game." + request.gameId(), talonDTO);
+                PublicCardsNumberDTO cardsNumberDTO = new PublicCardsNumberDTO(playerCards + talonCardsToDeal[i], "game.cardNumber", playerToDeal);
+                messagingTemplate.convertAndSend("/topic/game." + request.gameId(), cardsNumberDTO);
                 player = game.getNextPlayer(player);
                 playerToDeal = player.getName();
                 idFrom = idTo + 1;
