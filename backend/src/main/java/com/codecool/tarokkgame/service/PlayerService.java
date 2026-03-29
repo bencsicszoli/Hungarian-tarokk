@@ -20,9 +20,9 @@ public class PlayerService {
     private final AppUserRepository userRepository;
     private final GameRepository gameRepository;
     private final PlayerRepository playerRepository;
-    private final MessageMapper mapper;
+    private final MapperService mapper;
 
-    public PlayerService(AppUserRepository userRepository, GameRepository gameRepository, PlayerRepository playerRepository, MessageMapper mapper) {
+    public PlayerService(AppUserRepository userRepository, GameRepository gameRepository, PlayerRepository playerRepository, MapperService mapper) {
         this.userRepository = userRepository;
         this.gameRepository = gameRepository;
         this.playerRepository = playerRepository;

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useRef } from "react";
+import { createContext, useContext, useEffect, useState, useRef, useCallback, useMemo } from "react";
 import type { ReactNode } from "react";
 import SockJS from "sockjs-client";
 import { Client } from "@stomp/stompjs";
@@ -67,7 +67,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     };
   }, [token]);
 
-  function subscribe({ destination, callback }: { destination: string; callback: (message: unknown) => void }) {
+  const subscribe = useCallback(({ destination, callback }: { destination: string; callback: (message: unknown) => void }) => {
     const client = stompClientRef.current;
 
     if (client && client.connected) {
@@ -78,9 +78,9 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       subscriptionQueueRef.current.push({ destination, callback });
       return { unsubscribe: () => {} };
     }
-  }
+  }, []);
 
-  function send(destination: string, body: object) {
+  const send = useCallback((destination: string, body: object) => {
     const client = stompClientRef.current;
 
     if (client && client.connected) {
@@ -91,10 +91,12 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     } else {
       console.warn("Not connected yet. Message not sent.");
     }
-  }
+  }, []);
+
+  const value = useMemo(() => ({ connected, subscribe, send }), [connected, subscribe, send]);
 
   return (
-    <WebSocketContext.Provider value={{ connected, subscribe, send }}>
+    <WebSocketContext.Provider value={value}>
       {children}
     </WebSocketContext.Provider>
   );

@@ -1,4 +1,21 @@
-function InfoTable({ bid, declarer, turnPlayer }: { bid: string; declarer: string | null; turnPlayer: string | null }) {
+function InfoTable({ bid, declarer, turnPlayer, info }: { bid: string; declarer: string | null; turnPlayer: string | null; info: string }) {
+
+  function displayInformation(info: string) {
+    if (info.indexOf("!") !== info.lastIndexOf("!")) {
+      return info
+        .split("!")
+        .filter(Boolean)
+        .map((sentence, index) => (
+          <span key={index}>
+            {sentence.trim()}!
+            <br />
+          </span>
+        ));
+    } else {
+      return info;
+    }
+  }
+
   return (
     <div className="w-100 h-207.5 bg-info-table rounded-[70px] shadow-2xl text-[#2f4b3a] px-6 sm:px-8 flex flex-col">
       <div className="w-full h-1/4 flex flex-col">
@@ -32,7 +49,9 @@ function InfoTable({ bid, declarer, turnPlayer }: { bid: string; declarer: strin
           </div>
         </div>
       </div>
-      <div className="w-full h-1/4 bg-blue-500"></div>
+      <div className="w-full h-1/4 bg-blue-500 items-center justify-center flex">
+        <p className="text-4xl font-bold text-center">{displayInformation(info)}</p>
+      </div>
       <div className="w-full h-1/4 bg-blue-300"></div>
       <div className="w-full h-1/4 bg-blue-500"></div>
     </div>

@@ -175,7 +175,12 @@ public class BidService {
                 SpecialBidCasesDTO specialBidCases = nextPlayer.getSpecialBidCases();
                 BidLevel actualLevel = game.getBidLevel();
                 String option1 = actualLevel.getNextLevelAtOtherBids(actualLevel, 1).getDescription();
-                String option2 = actualLevel.getNextLevelAtOtherBids(actualLevel, 2).getDescription();
+                String option2;
+                if (!actualLevel.getDescription().contains("HELD")) {
+                    option2 = actualLevel.getNextLevelAtOtherBids(actualLevel, 2).getDescription();
+                } else {
+                    option2 = actualLevel.getNextLevelAtOtherBids(actualLevel, 3).getDescription();
+                }
                 String option3 = actualLevel.getNextLevelAtOtherBids(actualLevel, 4).getDescription();
                 String option4 = BidLevel.PASS.getDescription();
 

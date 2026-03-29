@@ -19,6 +19,7 @@ public class Player {
     private Long id;
 
     int place = 0;
+    int tarokksInSkart = 0;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

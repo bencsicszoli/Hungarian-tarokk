@@ -136,11 +136,13 @@ public class MessageController {
                 messagingTemplate.convertAndSendToUser(turnPlayer, "/queue/private", potentialBids);
                 PublicBidDTO publicBidDTO = bidService.getPublicBidInfo(game, turnPlayer);
                 messagingTemplate.convertAndSend("/topic/game." + request.gameId(), publicBidDTO);
+                System.out.println("Private bid message sent to " + turnPlayer);
             } else {
                 PublicBidDTO publicBidDTO = bidService.getPublicBidInfo(game, turnPlayer);
                 messagingTemplate.convertAndSend("/topic/game." + request.gameId(), publicBidDTO);
                 NewGameStateDTO gameStateDTO = new NewGameStateDTO("TALON_PICK_UP", "game.gameState");
                 messagingTemplate.convertAndSend("/topic/game." + request.gameId(), gameStateDTO);
+                System.out.println("Game state sent to " + turnPlayer + " at the end of bidding");
             }
 
         } else {
@@ -182,7 +184,40 @@ public class MessageController {
                 playerToDeal = player.getName();
                 idFrom = idTo + 1;
             }
+            if (game.getBidLevel().getBidValue() == 4) {
+                Player declarer = playerRepository.findByUserUsernameAndGameId(request.declarer(), request.gameId()).orElseThrow(() -> new NoSuchElementException("Declarer not found"));
+                Player turnPlayer = game.getNextPlayer(declarer);
+                game.setTurnPlayer(turnPlayer.getName());
+                gameRepository.save(game);
+                TurnPlayerDTO turnPlayerDTO = new TurnPlayerDTO(turnPlayer.getName(), "game.turnPlayer");
+                messagingTemplate.convertAndSend("/topic/game." + request.gameId(), turnPlayerDTO);
+            }
 
+        } else {
+            throw new NotAllowedOperationException("Invalid username");
+        }
+    }
+
+    @MessageMapping("/game.discardSkart")
+    @Transactional
+    public void discardSkart(@Payload SkartRequestDTO request, Principal principal) {
+        String playerName = principal.getName();
+        if (playerName.equals(request.username())) {
+            Game game = gameRepository.findById(request.gameId()).orElseThrow(() -> new NoSuchElementException("Game not found"));
+            Player player = playerRepository.findByUserUsernameAndGameId(request.username(), request.gameId()).orElseThrow(() -> new NoSuchElementException("Player not found"));
+            PlayerCardListDTO cardListDTO = talonService.discardTalonCards(game, player, request.cardsToSkart());
+            messagingTemplate.convertAndSendToUser(playerName, "/queue/private", cardListDTO);
+            PublicSkartDTO skartDTO = talonService.createSkartDTO(game, request.cardsToSkart().size(), player);
+            messagingTemplate.convertAndSend("/topic/game." + request.gameId(), skartDTO);
+            if (game.getState() == GameState.BONUS_ANNOUNCEMENT) {
+                DeclarerSkartWithTarokkDTO skartWithTarokkDTO = talonService.createPublicSkartDTO(game);
+                if (skartWithTarokkDTO != null) {
+                    messagingTemplate.convertAndSend("/topic/game." + request.gameId(), skartWithTarokkDTO);
+                }
+                GameStateDTO gameStateDTO = new GameStateDTO(game.getState().toString(), "game.gameState");
+                messagingTemplate.convertAndSend("/topic/game." + request.gameId(), gameStateDTO);
+            }
+            gameRepository.save(game);
         } else {
             throw new NotAllowedOperationException("Invalid username");
         }

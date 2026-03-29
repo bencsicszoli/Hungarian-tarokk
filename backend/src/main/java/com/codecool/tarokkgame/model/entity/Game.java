@@ -24,6 +24,8 @@ public class Game {
     private boolean isXIXInvit = false;
     private boolean isXVIIIInvit = false;
     private boolean isYielded = false;
+    private boolean isTarokkInDeclarerSkart = false;
+    private boolean isTarokkInOpponentSkart = false;
 
     private String invitAcceptor;
     private int biddingPasses = 0;
@@ -132,5 +134,19 @@ public class Game {
                 }
             }
         }
+    }
+
+    public String getMessageWithTarokksInOpponentSkart() {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (Player player : players) {
+            if (player.getRoleInGame() != RoleInGame.DECLARER) {
+                if (player.getTarokksInSkart() == 1) {
+                    stringBuilder.append(player.getName()).append(" placed ").append(player.getTarokksInSkart()).append(" tarokk in skart!");
+                } else if (player.getTarokksInSkart() == 2) {
+                    stringBuilder.append(player.getName()).append(" placed ").append(player.getTarokksInSkart()).append(" tarokks in skart!");
+                }
+            }
+        }
+        return stringBuilder.toString();
     }
 }
