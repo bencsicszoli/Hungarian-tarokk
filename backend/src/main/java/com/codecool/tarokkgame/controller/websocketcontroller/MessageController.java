@@ -32,8 +32,9 @@ public class MessageController {
     private final TalonCardRepository talonCardRepository;
     private final BidService bidService;
     private final TalonService talonService;
+    private final BonusService bonusService;
 
-    public MessageController(SimpMessagingTemplate messagingTemplate, PlayerService playerService, GameRepository gameRepository, ShuffleService shuffleService, DealService dealService, PlayerRepository playerRepository, TalonCardRepository talonCardRepository, BidService bidService, TalonService talonService) {
+    public MessageController(SimpMessagingTemplate messagingTemplate, PlayerService playerService, GameRepository gameRepository, ShuffleService shuffleService, DealService dealService, PlayerRepository playerRepository, TalonCardRepository talonCardRepository, BidService bidService, TalonService talonService, BonusService bonusService) {
 
         this.messagingTemplate = messagingTemplate;
         this.playerService = playerService;
@@ -44,6 +45,7 @@ public class MessageController {
         this.talonCardRepository = talonCardRepository;
         this.bidService = bidService;
         this.talonService = talonService;
+        this.bonusService = bonusService;
     }
 
     @MessageMapping("/game.join")
@@ -209,15 +211,57 @@ public class MessageController {
             messagingTemplate.convertAndSendToUser(playerName, "/queue/private", cardListDTO);
             PublicSkartDTO skartDTO = talonService.createSkartDTO(game, request.cardsToSkart().size(), player);
             messagingTemplate.convertAndSend("/topic/game." + request.gameId(), skartDTO);
-            if (game.getState() == GameState.BONUS_ANNOUNCEMENT) {
-                DeclarerSkartWithTarokkDTO skartWithTarokkDTO = talonService.createPublicSkartDTO(game);
-                if (skartWithTarokkDTO != null) {
-                    messagingTemplate.convertAndSend("/topic/game." + request.gameId(), skartWithTarokkDTO);
-                }
-                GameStateDTO gameStateDTO = new GameStateDTO(game.getState().toString(), "game.gameState");
-                messagingTemplate.convertAndSend("/topic/game." + request.gameId(), gameStateDTO);
-            }
+            handleFinishSkartPhase(request, game);
             gameRepository.save(game);
+        } else {
+            throw new NotAllowedOperationException("Invalid username");
+        }
+    }
+
+    @Transactional
+    @MessageMapping("game.firstPotentialBonuses")
+    public void sendFirstPotentialBonusesToDeclarer(GeneralRequestDTO request, Principal principal) {
+        String playerName = principal.getName();
+        if (playerName.equals(request.username())) {
+            Game game = gameRepository.findById(request.gameId()).orElseThrow(() -> new NoSuchElementException("Game not found"));
+            Player declarer = playerRepository.findByUserUsernameAndGameId(game.getDeclarer(), request.gameId()).orElseThrow(() -> new NoSuchElementException("Player not found"));
+            FirstPotentialBonusesDTO potentialBonuses = bonusService.getFirstPotentialDeclarerBonuses(game, declarer);
+            messagingTemplate.convertAndSendToUser(playerName, "/queue/private", potentialBonuses);
+        } else {
+            throw new NotAllowedOperationException("Invalid username");
+        }
+    }
+
+    @Transactional
+    @MessageMapping("game.announceFirstBonuses")
+    public void handleFirstDeclarerBonuses(FirstDeclarerBonusesRequestDTO request, Principal principal) {
+        String playerName = principal.getName();
+        if (request.declarer().equals(playerName)) {
+            Game game = gameRepository.findById(request.gameId()).orElseThrow(() -> new NoSuchElementException("Game not found"));
+            Player declarer = playerRepository.findByUserUsernameAndGameId(game.getDeclarer(), request.gameId()).orElseThrow(() -> new NoSuchElementException("Player not found"));
+            PrivateInfoDTO privateInfoDTO = bonusService.checkUltimoAndTarokkNumber(declarer, request.bonuses(), request.selectedTarokkNumber());
+            if (privateInfoDTO != null) {
+                messagingTemplate.convertAndSendToUser(playerName, "/queue/private", privateInfoDTO);
+                return;
+            }
+            PublicBonusDTO bonusDTO = bonusService.getFirstPublicBonusInfo(game, declarer, request.bonuses(), request.selectedTarokkNumber(), request.calledTarokk());
+            messagingTemplate.convertAndSend("/topic/game." + request.gameId(), bonusDTO);
+            Player nextPlayer = game.getNextPlayer(declarer);
+            PotentialBonusesDTO bonusesDTO = bonusService.getFirstPotentialTurnPlayerBonuses(game, nextPlayer);
+            messagingTemplate.convertAndSendToUser(nextPlayer.getName(), "/queue/private", bonusesDTO);
+
+        } else {
+            throw new NotAllowedOperationException("Invalid username");
+        }
+        // Remember to set firstBonusRound to false in the frontend after handling public message!
+    }
+
+    @Transactional
+    @MessageMapping("game.announceBonuses")
+    public void handleBonuses(BonusesRequestDTO request, Principal principal) {
+        String playerName = principal.getName();
+        if (request.username().equals(playerName)) {
+
         } else {
             throw new NotAllowedOperationException("Invalid username");
         }
@@ -247,6 +291,17 @@ public class MessageController {
             cardNumberDTO = new PublicCardsNumberDTO(9, "game.cardNumber", playerToDeal.getName());
         }
         messagingTemplate.convertAndSend("/topic/game." + request.gameId(), cardNumberDTO);
+    }
+
+    private void handleFinishSkartPhase(SkartRequestDTO request, Game game) {
+        if (game.getState() == GameState.BONUS_ANNOUNCEMENT) {
+            DeclarerSkartWithTarokkDTO skartWithTarokkDTO = talonService.createPublicSkartDTO(game);
+            if (skartWithTarokkDTO != null) {
+                messagingTemplate.convertAndSend("/topic/game." + request.gameId(), skartWithTarokkDTO);
+            }
+            GameStateDTO gameStateDTO = new GameStateDTO(game.getState().toString(), "game.gameState");
+            messagingTemplate.convertAndSend("/topic/game." + request.gameId(), gameStateDTO);
+        }
     }
 
 }

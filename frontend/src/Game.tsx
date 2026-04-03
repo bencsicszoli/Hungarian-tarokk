@@ -3,6 +3,9 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useUser } from "./context/UserContext";
 import { useWebSocket } from "./context/WebSocketContext";
 import InfoTable from "./pageComponents/InfoTable";
+import Talon from "./pageComponents/Talon";
+import Skart from "./Skart";
+import type { SeatAttributes, Card } from "./Types";
 
 const INITIAL_ROTATION = [
   0, 0, -22.5, -30, -37.5, -45, -52.5, -60, -67.5, -75, -82.5, -90, -97.5,
@@ -61,21 +64,11 @@ function Game() {
   };
   const [playerCards, setPlayerCards] =
     useState<Record<string, number>>(initialCards);
-  const [ownCards, setOwnCards] = useState<
-    {
-      cardId: number;
-      clickable: boolean;
-      imagePath: string;
-    }[]
-  >([]);
-  const [temporarySelectedCards, setTemporarySelectedCards] = useState<
-    {
-      cardId: number; imagePath: string; clickable: boolean 
-}[]
-  >([]);
-  const [declarerSkart, setDeclarerSkart] = useState<
-    { imagePath: string; clickable: boolean }[]
-  >([]);
+  const [ownCards, setOwnCards] = useState<Card[]>([]);
+  const [temporarySelectedCards, setTemporarySelectedCards] = useState<Card[]>(
+    [],
+  );
+  const [declarerSkart, setDeclarerSkart] = useState<Card[]>([]);
   const [gameState, setGameState] = useState<
     | "NEW"
     | "IN_PROGRESS"
@@ -92,8 +85,18 @@ function Game() {
   const [potentialBids, setPotentialBids] = useState<string[]>([]);
   const [declarerSkartLength, setDeclarerSkartLength] = useState<number>(0);
   const [opponentSkartLength, setOpponentSkartLength] = useState<number>(0);
-  const [information, setInformation] = useState<string>("");
-
+  const [publicInformation, setPublicInformation] = useState<string>("");
+  const [privateInformation, setPrivateInformation] = useState<string>("");
+  const [potentialBonuses, setPotentialBonuses] = useState<string[]>([]);
+  const [callableTarokks, setCallableTarokks] = useState<string[]>([]);
+  const [calledTarokk, setCalledTarokk] = useState<string | null>(null);
+  const [selectedTarokkNumber, setSelectedTarokkNumber] = useState<number>(0);
+  const [hasEightTarokks, setHasEightTarokks] = useState<boolean>(false);
+  const [hasNineTarokks, setHasNineTarokks] = useState<boolean>(false);
+  const [selectedBonuses, setSelectedBonuses] = useState<string[]>([]);
+  const [firstBonusRound, setFirstBonusRound] = useState<boolean>(true);
+  const [declarerBonuses, setDeclarerBonuses] = useState<string[]>([]);
+  const [opponentBonuses, setOpponentBonuses] = useState<string[]>([]);
   const seatModifier = useRef(0);
   const cardsToDiscard = useRef<number>(0);
 
@@ -164,20 +167,31 @@ function Game() {
       case "game.publicSkartInfo":
         setDeclarerSkartLength(message.declarerSkartLength);
         setOpponentSkartLength(message.opponentSkartLength);
-        setPlayerCards((prev) => ({ ...prev, [message.username]: message.playerHandLength }));
+        setPlayerCards((prev) => ({
+          ...prev,
+          [message.username]: message.playerHandLength,
+        }));
         setTurnPlayer(message.turnPlayer);
-        setInformation(message.discardedCardsInfo);
+        setPublicInformation(message.discardedCardsInfo);
         console.log("Public skart info updated:", message);
         break;
-        case "game.tarokkInSkart":
-          setDeclarerSkart(message.cards);
-          setInformation(message.info);
-          console.log("Declarer's skart with tarokk updated:", message.cards);
-          break;
+      case "game.tarokkInSkart":
+        setDeclarerSkart(message.cards);
+        setPublicInformation(message.info);
+        console.log("Declarer's skart with tarokk updated:", message.cards);
+        break;
       case "game.turnPlayer":
         setTurnPlayer(message.turnPlayer);
         console.log("Turn player updated:", message.turnPlayer);
         break;
+        case "game.publicBonusInfo":
+          setPublicInformation(message.info);
+          setDeclarerBonuses(message.declarerBonuses);
+          setOpponentBonuses(message.opponentBonuses);
+          setTurnPlayer(message.turnPlayer);
+          setFirstBonusRound(false);
+          console.log("Public bonus info updated:", message.info);
+          break;
       default:
         console.log("Unhandled message type:", message.type);
         break;
@@ -216,6 +230,22 @@ function Game() {
         console.log("Potential bids received:", message);
         setPotentialBids(message.potentialBids);
         break;
+      case "game.firstPotentialBonuses":
+        console.log("First potential bonuses received:", message);
+        setPotentialBonuses(message.bonuses);
+        setCallableTarokks(message.callableTarokks);
+        setHasEightTarokks(message.hasEightTarokks);
+        setHasNineTarokks(message.hasNineTarokks);
+        break;
+      case "game.ultimoCheck":
+        setPrivateInformation(message.info);
+        break;
+        case "game.firstTurnPlayerBonuses":
+          setHasEightTarokks(message.hasEightTarokks);
+          setHasNineTarokks(message.hasNineTarokks);
+          setPotentialBonuses(message.bonuses);
+          setPrivateInformation(message.info);
+          break;
       default:
         console.log("Unhandled private message type:", message.type);
         break;
@@ -247,6 +277,18 @@ function Game() {
     );
   }
 
+  function getFirstPotentialBonuses() {
+    send("/app/game.firstPotentialBonuses", {
+      username: user?.username,
+      gameId: game.gameId,
+    });
+    console.log(
+      "Request for potential bonuses sent:",
+      user?.username,
+      game.gameId,
+    );
+  }
+
   function sendSkartCards() {
     send("/app/game.discardSkart", {
       username: user?.username,
@@ -263,6 +305,12 @@ function Game() {
       getFirstPotentialBids();
     }
   }, [gameState, user, startPlayer]);
+
+  useEffect(() => {
+    if (gameState === "BONUS_ANNOUNCEMENT" && user?.username === declarer) {
+      getFirstPotentialBonuses();
+    }
+  }, [gameState, user, declarer]);
 
   function dealTalonToPlayers() {
     send("/app/game.dealTalonToPlayers", {
@@ -360,12 +408,6 @@ function Game() {
     }
   }
 
-  interface SeatAttributes {
-    playerSeat: string | null;
-    playerBalance: number;
-    playerCardsNumber: number;
-  }
-
   function renderOwnHand(seatAttribute: SeatAttributes) {
     return (
       <div className="flex flex-col h-full">
@@ -411,9 +453,175 @@ function Game() {
     ));
   }
 
+  function createPrivateInfo() {
+    let privateInfo = "";
+    if (selectedTarokkNumber > 0) {
+      privateInfo += `You announced ${selectedTarokkNumber} tarokks!`;
+    }
+    if (calledTarokk) {
+      privateInfo += ` ${calledTarokk}!`;
+    }
+    if (selectedBonuses.length > 0) {
+      privateInfo += ` Selected bonuses: ${selectedBonuses.join(", ")}!`;
+    }
+    return privateInfo;
+  }
+
+  useEffect(() => {
+    if (gameState === "BONUS_ANNOUNCEMENT" && turnPlayer === user?.username) {
+      setPrivateInformation(createPrivateInfo());
+    }
+  }, [
+    selectedTarokkNumber,
+    calledTarokk,
+    selectedBonuses,
+    turnPlayer,
+    user,
+    gameState,
+  ]);
+
+  function renderTarokkNumberButton() {
+    if (hasEightTarokks) {
+      return (
+        <button
+          className="border-black border-2 w-32 h-10 ml-5 mr-5"
+          onClick={() => {
+            setSelectedTarokkNumber(8);
+            console.log("Tarokk number selected: 8");
+          }}
+        >
+          8 Tarokks
+        </button>
+      );
+    } else if (hasNineTarokks) {
+      return (
+        <button
+          className="border-black border-2 w-32 h-10 ml-5 mr-5"
+          onClick={() => {
+            setSelectedTarokkNumber(9);
+            console.log("Tarokk number selected: 9");
+          }}
+        >
+          9 Tarokks
+        </button>
+      );
+    }
+    return null;
+  }
+
+  function renderCallableTarokkButtons() {
+    return callableTarokks.map((tarokk) => (
+      <button
+        key={tarokk}
+        className="border-black border-2 w-32 h-10 ml-5 mr-5"
+        onClick={() => {
+          setCalledTarokk(tarokk);
+          console.log("Tarokk called:", tarokk);
+        }}
+      >
+        {tarokk}
+      </button>
+    ));
+  }
+
+  function renderBonusButtons() {
+    const buttons = potentialBonuses.map((bonus) => (
+      <button
+        key={bonus}
+        className="border-black border-2 w-32 h-10 ml-5 mr-5"
+        onClick={() => {
+          setSelectedBonuses((prev) =>
+            prev.includes(bonus)
+              ? prev.filter((b) => b !== bonus)
+              : [...prev, bonus],
+          );
+        }}
+      >
+        {bonus}
+      </button>
+    ));
+    const confirmButton = (
+      <button
+        className="border-black border-2 w-32 h-10 ml-5 mr-5"
+        onClick={() => {
+          if (
+            declarer === user?.username &&
+            firstBonusRound &&
+            calledTarokk &&
+            selectedBonuses.length > 0
+          ) {
+            send("/app/game.announceFirstBonuses", {
+              declarer: user?.username,
+              gameId: game.gameId,
+              selectedTarokkNumber: selectedTarokkNumber,
+              calledTarokk: calledTarokk,
+              bonuses: selectedBonuses,
+            });
+            console.log(
+              "Selected bonuses sent:",
+              selectedBonuses,
+              calledTarokk,
+              selectedTarokkNumber,
+            );
+            setSelectedTarokkNumber(0);
+            setCalledTarokk(null);
+            setSelectedBonuses([]);
+            setFirstBonusRound(false);
+          } else if (
+            turnPlayer === user?.username &&
+            selectedBonuses.length > 0 &&
+            !firstBonusRound
+          ) {
+            send("/app/game.announceBonuses", {
+              username: user?.username,
+              gameId: game.gameId,
+              selectedTarokkNumber: selectedTarokkNumber,
+              bonuses: selectedBonuses,
+            });
+            console.log(
+              "Selected bonuses sent:",
+              selectedBonuses,
+              calledTarokk,
+              selectedTarokkNumber,
+            );
+            setSelectedTarokkNumber(0);
+            setCalledTarokk(null);
+            setSelectedBonuses([]);
+          } else {
+            if (
+              firstBonusRound &&
+              declarer === user?.username &&
+              !calledTarokk &&
+              selectedBonuses.length === 0
+            ) {
+              setPrivateInformation(
+                "Még nem hívtál meg tarokkot és nem választottál bonust",
+              );
+            } else if (
+              firstBonusRound &&
+              declarer === user?.username &&
+              !calledTarokk
+            ) {
+              setPrivateInformation("Még nem hívtál meg tarokkot");
+            } else if (
+              firstBonusRound &&
+              declarer === user?.username &&
+              selectedBonuses.length === 0
+            ) {
+              setPrivateInformation("Nem választottál bonust");
+            } else {
+              setPrivateInformation("Nem választottál bonust");
+            }
+          }
+        }}
+      >
+        Submit
+      </button>
+    );
+    return [...buttons, confirmButton];
+  }
+
   function renderPlayerHand(seatAttribute: SeatAttributes) {
-    //console.log("Rendering player hand for seat:", seatAttribute.playerSeat);
-    //console.log("Player balance:", seatAttribute.playerBalance);
     return (
       <div className="flex flex-col h-full">
         <div className="h-1/6 flex justify-center items-center font-bold text-xl">
@@ -440,18 +648,6 @@ function Game() {
     send("/app/game.deal", { username: user?.username, gameId: game.gameId });
     console.log("Deal action sent:", user?.username, game.gameId);
     //navigate("/game");
-  }
-
-  function displayTalon(talonCardsNumber: number) {
-    const cardsBack = Array(talonCardsNumber).fill("Back.png");
-    return cardsBack.map((imagePath, index) => (
-      <img
-        key={index}
-        src={imagePath}
-        alt="Talon card back"
-        className="w-20 -mx-14"
-      />
-    ));
   }
 
   function displaySkart(length: number) {
@@ -545,14 +741,14 @@ function Game() {
     ));
   }
 
-  function handleDiscardSkart(card: {
-    cardId: number; imagePath: string; clickable: boolean 
-}) {
+  function handleDiscardSkart(card: Card) {
     if (temporarySelectedCards.includes(card)) {
       setTemporarySelectedCards((prev) =>
         prev.filter((c) => c.imagePath !== card.imagePath),
       );
-      setOwnCards((prev) => [...prev, card].sort((a, b) => a.cardId - b.cardId));
+      setOwnCards((prev) =>
+        [...prev, card].sort((a, b) => a.cardId - b.cardId),
+      );
     } else {
       if (temporarySelectedCards.length < cardsToDiscard.current) {
         setTemporarySelectedCards((prev) => [...prev, card]);
@@ -561,9 +757,9 @@ function Game() {
         );
       } else {
         if (cardsToDiscard.current === 1) {
-          setInformation("You can only select 1 card for the skart.");
+          setPublicInformation("You can only select 1 card for the skart.");
         } else {
-          setInformation(
+          setPublicInformation(
             `You can only select ${cardsToDiscard.current} cards for the skart.`,
           );
         }
@@ -600,26 +796,26 @@ function Game() {
           {/* Game area */}
           <div className="w-full h-11/12 flex flex-col">
             {/* Top row */}
-            <div className="w-full h-1/3 bg-gray-400 flex">
+            <div className="w-full h-1/3 flex">
               {/* Declarer's skart area */}
-              <div className="w-1/3">
+              <div className="w-1/4">
                 <div className="h-1/6 flex justify-center items-end font-bold text-xl">
                   <p>Declarer's skart</p>
                 </div>
                 <div className="flex justify-center items-center h-5/6">
-                {declarerSkart.length > 0
-                  ? displayDeclarerSkartWithTarokk()
-                   : displaySkart(declarerSkartLength)}
+                  {declarerSkart.length > 0
+                    ? displayDeclarerSkartWithTarokk()
+                    : displaySkart(declarerSkartLength)}
                 </div>
               </div>
 
               {/* Player 3's area */}
-              <div className="w-1/3 bg-gray-600">
+              <div className="w-1/2">
                 {renderPlayerHand(getSeatAttributes(seatModifier.current)[2])}
               </div>
 
               {/* Opponent's skart area */}
-              <div className="w-1/3">
+              <div className="w-1/4">
                 <div className="h-1/6 flex justify-center items-end font-bold text-xl">
                   <p>Opponent's skart</p>
                 </div>
@@ -630,49 +826,55 @@ function Game() {
             </div>
 
             {/* Middle row */}
-            <div className="w-full h-1/3 bg-orange-300 flex">
+            <div className="w-full h-1/3 flex">
               {/* Player 4's area */}
-              <div className="w-1/3">
+              <div className="w-1/4">
                 {renderPlayerHand(getSeatAttributes(seatModifier.current)[3])}
               </div>
 
               {/* Talon and play area */}
-              <div className="w-1/3 bg-gray-400">
+              <div className="w-1/2 bg-gray-400">
                 {talonCardsNumber > 0 && (
-                  <>
-                    <div className="h-1/6 flex justify-center items-end font-bold text-xl">
-                      <p>Talon</p>
-                    </div>
-                    <div className="flex justify-center items-center h-5/6">
-                      {displayTalon(talonCardsNumber)}
-                    </div>
-                  </>
+                  <Talon talonCardsNumber={talonCardsNumber} />
                 )}
-                {gameState === "SKART_LAY_DOWN" && (ownCards.length > 9 || temporarySelectedCards.length > 0) && (
-                  <>
-                    <div className="h-1/6 flex justify-center items-end font-bold text-xl">
-                      <p>Skart</p>
-                    </div>
-                    <div className="flex justify-center items-center h-2/3">
-                      {displayTemporarySelectedCards()}
-                    </div>
-                    <div className="h-1/6 flex justify-center items-center font-bold text-xl">
-                      {cardsToDiscard.current ===
-                        temporarySelectedCards.length && (
-                        <button
-                          className="h-full w-1/3 border-2"
-                          onClick={sendSkartCards}
-                        >
-                          Submit
-                        </button>
+                {gameState === "SKART_LAY_DOWN" &&
+                  (ownCards.length > 9 ||
+                    temporarySelectedCards.length > 0) && (
+                    <Skart
+                      temporarySelectedCards={temporarySelectedCards}
+                      onDisplayTemporarySelectedCards={() => (
+                        <>{displayTemporarySelectedCards()}</>
                       )}
+                      cardsToDiscard={cardsToDiscard}
+                      sendSkartCards={sendSkartCards}
+                    />
+                  )}
+                {gameState === "BONUS_ANNOUNCEMENT" &&
+                  turnPlayer === user?.username && (
+                    <div className="h-full flex flex-col justify-center items-center">
+                      {hasEightTarokks || hasNineTarokks ? (
+                        <div className="h-1/5 w-full bg-pink-300 flex justify-center items-center">
+                          {renderTarokkNumberButton()}
+                        </div>
+                      ) : null}
+                      {declarer && callableTarokks.length > 0 && (
+                        <div className="h-1/5 w-full bg-pink-400">
+                          {renderCallableTarokkButtons()}
+                        </div>
+                      )}
+
+                      <div className="h-3/5 w-full bg-pink-500 flex flex-col justify-center items-center">
+                        <p className="h-1/4">Select your bonuses:</p>
+                        <div className="h-3/4 w-full grid grid-flow-row grid-cols-4">
+                          {renderBonusButtons()}
+                        </div>
+                      </div>
                     </div>
-                  </>
-                )}
+                  )}
               </div>
 
               {/* Player 2's area */}
-              <div className="w-1/3">
+              <div className="w-1/4">
                 {renderPlayerHand(getSeatAttributes(seatModifier.current)[1])}
               </div>
             </div>
@@ -689,7 +891,13 @@ function Game() {
           bid={bid}
           declarer={declarer}
           turnPlayer={turnPlayer}
-          info={information}
+          publicInfo={publicInformation}
+          privateInfo={privateInformation}
+          selectedTarokkNumber={selectedTarokkNumber}
+          gameState={gameState}
+          user={user}
+          calledTarokk={calledTarokk}
+          selectedBonuses={selectedBonuses}
         />
       </div>
     </div>

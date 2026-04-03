@@ -37,7 +37,8 @@ public class Player {
     private boolean acceptedXVIII_Invit = false;
     private boolean acceptedXIX_Invit = false;
     private boolean yieldedGame = false;
-
+    private boolean hasEightTarokks = false;
+    private boolean hasNineTarokks = false;
     private boolean eightTarokksInAdvance = false;
     private boolean eightTarokksAfterwards = false;
     private boolean nineTarokksInAdvance = false;
@@ -139,6 +140,37 @@ public class Player {
             }
         }
         return hasTarokk20;
+    }
+
+    public int findMissingStrongestTarokk() {
+        Set<Integer> invalidTarokkStrengths = Set.of(20, 21, 22);
+        int strongestTarokkPlayerHas = 0;
+        for (PlayerCard playerCard : playerCards) {
+            int cardStrength = playerCard.getCard().getStrength();
+            if (cardStrength > strongestTarokkPlayerHas && !invalidTarokkStrengths.contains(cardStrength)) {
+                strongestTarokkPlayerHas = cardStrength;
+            }
+        }
+        return strongestTarokkPlayerHas - 1;
+    }
+
+    public int getNumberOfTarokks() {
+        int tarokks = 0;
+        for (PlayerCard playerCard : playerCards) {
+            if (playerCard.getCard().getSuit().equals("tarokk")) {
+                tarokks++;
+            }
+        }
+        return tarokks;
+    }
+
+    public boolean hasTheGivenTarokk(int tarokkStrength) {
+        for (PlayerCard playerCard : playerCards) {
+            if (playerCard.getCard().getStrength() == tarokkStrength) {
+                return true;
+            }
+        }
+        return false;
     }
 }
 

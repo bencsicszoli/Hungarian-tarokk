@@ -115,7 +115,6 @@ public class BidService {
 
         handleInvitAcceptance(game, sender);
 
-        // The sender has bid first time
         handleInvitAnnouncement(sender, bidLevel, game);
 
         game.setBidLevel(bidLevel);
@@ -167,7 +166,6 @@ public class BidService {
             // Method in case of first bidder
             if (nextPlayer.getBidLevel() == BidLevel.NONE) {
 
-                // There is no honour
                 return methodInCaseFirstBidder(nextPlayer, game, bids);
 
             // Method in case of bidder has already bid
@@ -176,7 +174,7 @@ public class BidService {
                 BidLevel actualLevel = game.getBidLevel();
                 String option1 = actualLevel.getNextLevelAtOtherBids(actualLevel, 1).getDescription();
                 String option2;
-                if (!actualLevel.getDescription().contains("HELD")) {
+                if (!actualLevel.getDescription().contains("Hold")) {
                     option2 = actualLevel.getNextLevelAtOtherBids(actualLevel, 2).getDescription();
                 } else {
                     option2 = actualLevel.getNextLevelAtOtherBids(actualLevel, 3).getDescription();
@@ -263,6 +261,8 @@ public class BidService {
     }
 
     private void handleInvitAnnouncement(Player sender, BidLevel bidLevel, Game game) {
+
+        // The sender has bid first time
         if (sender.getBidLevel() == BidLevel.NONE) {
             if (bidLevel.getBidValue() - game.getBidLevel().getBidValue() == 2) {
                 game.setXIXInvit(true);

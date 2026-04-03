@@ -1,20 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
-
-interface User {
-  id: string;
-  username: string;
-  email: string;
-  // Add other player properties as needed
-}
-
-interface UserContextType {
-  user: User | null;
-  setUser: (user: User | null) => void;
-  logout: () => void;
-  token: string | null;
-  setToken: (token: string | null) => void;
-}
+import type {User, UserContextType} from "../Types";
 
 const UserContext = createContext<UserContextType | null>(null);
 

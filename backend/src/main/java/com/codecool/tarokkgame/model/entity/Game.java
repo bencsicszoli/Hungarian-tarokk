@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -36,6 +37,7 @@ public class Game {
     private String turnPlayer;
     private String declarer;
     private String information;
+    private String lastBonusAnnouncer = "declarer";
     private int cardOrder = 1;
 
     @OneToMany(mappedBy = "game")
@@ -49,6 +51,12 @@ public class Game {
 
     @Enumerated(EnumType.STRING)
     private GameState state = GameState.NEW;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "optional_bonuses", joinColumns = @JoinColumn(name = "game_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "bonus")
+    private Set<Bonus> optionalBonuses;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "declarer_bonuses", joinColumns = @JoinColumn(name = "game_id"))
@@ -148,5 +156,13 @@ public class Game {
             }
         }
         return stringBuilder.toString();
+    }
+
+    public void markPlayersAsOpponent() {
+        for (Player player : players) {
+            if (player.getRoleInGame().equals(RoleInGame.NOT_CLEAR_YET)) {
+                player.setRoleInGame(RoleInGame.OPPONENT);
+            }
+        }
     }
 }
