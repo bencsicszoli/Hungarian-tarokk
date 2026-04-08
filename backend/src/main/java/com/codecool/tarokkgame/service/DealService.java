@@ -1,6 +1,6 @@
 package com.codecool.tarokkgame.service;
 
-import com.codecool.tarokkgame.model.dto.messagedto.PlayerCardDTO;
+import com.codecool.tarokkgame.model.dto.messagedto.response.PlayerCardDTO;
 import com.codecool.tarokkgame.model.entity.*;
 import com.codecool.tarokkgame.repository.DeckCardRepository;
 import com.codecool.tarokkgame.repository.PlayerCardRepository;

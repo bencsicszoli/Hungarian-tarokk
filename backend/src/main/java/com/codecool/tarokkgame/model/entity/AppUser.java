@@ -25,7 +25,6 @@ public class AppUser {
     private int balance = 1000;
     private int games = 0;
 
-
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)

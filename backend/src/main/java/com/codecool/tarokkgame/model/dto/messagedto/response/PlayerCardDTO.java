@@ -1,4 +1,4 @@
-package com.codecool.tarokkgame.model.dto.messagedto;
+package com.codecool.tarokkgame.model.dto.messagedto.response;
 
 public record PlayerCardDTO(int cardId, long playerId, String imagePath, boolean clickable) {
 }

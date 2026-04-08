@@ -2,7 +2,8 @@ package com.codecool.tarokkgame.controller.websocketcontroller;
 
 import com.codecool.tarokkgame.constants.GameState;
 import com.codecool.tarokkgame.exceptionhandling.customexception.NotAllowedOperationException;
-import com.codecool.tarokkgame.model.dto.messagedto.*;
+import com.codecool.tarokkgame.model.dto.messagedto.request.*;
+import com.codecool.tarokkgame.model.dto.messagedto.response.*;
 import com.codecool.tarokkgame.model.entity.Game;
 import com.codecool.tarokkgame.model.entity.Player;
 import com.codecool.tarokkgame.repository.GameRepository;
@@ -239,7 +240,7 @@ public class MessageController {
         if (request.declarer().equals(playerName)) {
             Game game = gameRepository.findById(request.gameId()).orElseThrow(() -> new NoSuchElementException("Game not found"));
             Player declarer = playerRepository.findByUserUsernameAndGameId(game.getDeclarer(), request.gameId()).orElseThrow(() -> new NoSuchElementException("Player not found"));
-            PrivateInfoDTO privateInfoDTO = bonusService.checkUltimoAndTarokkNumber(declarer, request.bonuses(), request.selectedTarokkNumber());
+            PrivateInfoDTO privateInfoDTO = bonusService.checkDeclarerUltimoAndTarokkNumber(declarer, request.bonuses(), request.selectedTarokkNumber());
             if (privateInfoDTO != null) {
                 messagingTemplate.convertAndSendToUser(playerName, "/queue/private", privateInfoDTO);
                 return;
@@ -249,7 +250,6 @@ public class MessageController {
             Player nextPlayer = game.getNextPlayer(declarer);
             PotentialBonusesDTO bonusesDTO = bonusService.getFirstPotentialTurnPlayerBonuses(game, nextPlayer);
             messagingTemplate.convertAndSendToUser(nextPlayer.getName(), "/queue/private", bonusesDTO);
-
         } else {
             throw new NotAllowedOperationException("Invalid username");
         }
@@ -261,6 +261,29 @@ public class MessageController {
     public void handleBonuses(BonusesRequestDTO request, Principal principal) {
         String playerName = principal.getName();
         if (request.username().equals(playerName)) {
+            Game game = gameRepository.findById(request.gameId()).orElseThrow(() -> new NoSuchElementException("Game not found"));
+            Player player = playerRepository.findByUserUsernameAndGameId(playerName, request.gameId()).orElseThrow(() -> new NoSuchElementException("Player not found"));
+            PrivateInfoDTO ultimoInfo = bonusService.checkTurnPlayerUltimoAndTarokkNumber(player, request.bonuses(), request.selectedTarokkNumber());
+            if (ultimoInfo != null) {
+                messagingTemplate.convertAndSendToUser(playerName, "/queue/private", ultimoInfo);
+            }
+            PrivateInfoDTO doubleOrRedoubleInfo = bonusService.checkDoubleOrRedoubleIfNeeded(game, player, request.bonuses());
+            if (doubleOrRedoubleInfo != null) {
+                messagingTemplate.convertAndSendToUser(playerName, "/queue/private", doubleOrRedoubleInfo);
+            }
+            PublicBonusDTO bonusInfo = bonusService.getPublicBonusInfo(game, player, request.bonuses(), request.selectedTarokkNumber());
+            messagingTemplate.convertAndSend("/topic/game." + request.gameId(), bonusInfo);
+            if (game.getBonusPasses() < 3) {
+                Player nextPlayer = game.getNextPlayer(player);
+                game.setTurnPlayer(nextPlayer.getName());
+                PotentialBonusesDTO potentialBonuses = bonusService.getPotentialTurnPlayerBonuses(game, nextPlayer);
+                messagingTemplate.convertAndSendToUser(nextPlayer.getName(), "/queue/private", potentialBonuses);
+            } else {
+                TurnPlayerDTO turnPlayerDTO = new TurnPlayerDTO(game.getStartPlayer(), "game.turnPlayer");
+                messagingTemplate.convertAndSend("/topic/game." + request.gameId(), turnPlayerDTO);
+                GameStateDTO gameStateDTO = new GameStateDTO(game.getState().toString(), "game.gameState");
+                messagingTemplate.convertAndSend("/topic/game." + request.gameId(), gameStateDTO);
+            }
 
         } else {
             throw new NotAllowedOperationException("Invalid username");
@@ -303,5 +326,4 @@ public class MessageController {
             messagingTemplate.convertAndSend("/topic/game." + request.gameId(), gameStateDTO);
         }
     }
-
 }

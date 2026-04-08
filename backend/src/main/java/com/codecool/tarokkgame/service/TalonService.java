@@ -2,14 +2,13 @@ package com.codecool.tarokkgame.service;
 
 import com.codecool.tarokkgame.constants.GameState;
 import com.codecool.tarokkgame.constants.RoleInGame;
-import com.codecool.tarokkgame.model.dto.messagedto.DeclarerSkartWithTarokkDTO;
-import com.codecool.tarokkgame.model.dto.messagedto.PlayerCardDTO;
-import com.codecool.tarokkgame.model.dto.messagedto.PlayerCardListDTO;
-import com.codecool.tarokkgame.model.dto.messagedto.PublicSkartDTO;
+import com.codecool.tarokkgame.model.dto.messagedto.response.DeclarerSkartWithTarokkDTO;
+import com.codecool.tarokkgame.model.dto.messagedto.response.PlayerCardDTO;
+import com.codecool.tarokkgame.model.dto.messagedto.response.PlayerCardListDTO;
+import com.codecool.tarokkgame.model.dto.messagedto.response.PublicSkartDTO;
 import com.codecool.tarokkgame.model.entity.*;
 import com.codecool.tarokkgame.repository.*;
 import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;

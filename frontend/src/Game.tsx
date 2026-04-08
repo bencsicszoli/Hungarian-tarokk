@@ -184,14 +184,14 @@ function Game() {
         setTurnPlayer(message.turnPlayer);
         console.log("Turn player updated:", message.turnPlayer);
         break;
-        case "game.publicBonusInfo":
-          setPublicInformation(message.info);
-          setDeclarerBonuses(message.declarerBonuses);
-          setOpponentBonuses(message.opponentBonuses);
-          setTurnPlayer(message.turnPlayer);
-          setFirstBonusRound(false);
-          console.log("Public bonus info updated:", message.info);
-          break;
+      case "game.publicBonusInfo":
+        setPublicInformation(message.info);
+        setDeclarerBonuses(message.declarerBonuses);
+        setOpponentBonuses(message.opponentBonuses);
+        setTurnPlayer(message.turnPlayer);
+        setFirstBonusRound(false);
+        console.log("Public bonus info updated:", message.info);
+        break;
       default:
         console.log("Unhandled message type:", message.type);
         break;
@@ -237,15 +237,21 @@ function Game() {
         setHasEightTarokks(message.hasEightTarokks);
         setHasNineTarokks(message.hasNineTarokks);
         break;
-      case "game.ultimoCheck":
+      case "game.privateInfo":
         setPrivateInformation(message.info);
         break;
-        case "game.firstTurnPlayerBonuses":
-          setHasEightTarokks(message.hasEightTarokks);
-          setHasNineTarokks(message.hasNineTarokks);
-          setPotentialBonuses(message.bonuses);
-          setPrivateInformation(message.info);
-          break;
+      case "game.firstTurnPlayerBonuses":
+        setHasEightTarokks(message.hasEightTarokks);
+        setHasNineTarokks(message.hasNineTarokks);
+        setPotentialBonuses(message.bonuses);
+        setPrivateInformation(message.info);
+        break;
+      case "game.turnPlayerBonuses":
+        setHasEightTarokks(message.hasEightTarokks);
+        setHasNineTarokks(message.hasNineTarokks);
+        setPotentialBonuses(message.bonuses);
+        setPrivateInformation(message.info);
+        break;
       default:
         console.log("Unhandled private message type:", message.type);
         break;
@@ -563,10 +569,13 @@ function Game() {
               calledTarokk,
               selectedTarokkNumber,
             );
+            
             setSelectedTarokkNumber(0);
             setCalledTarokk(null);
+            setCallableTarokks([]);
             setSelectedBonuses([]);
             setFirstBonusRound(false);
+            
           } else if (
             turnPlayer === user?.username &&
             selectedBonuses.length > 0 &&
@@ -584,9 +593,11 @@ function Game() {
               calledTarokk,
               selectedTarokkNumber,
             );
+            
             setSelectedTarokkNumber(0);
             setCalledTarokk(null);
             setSelectedBonuses([]);
+            
           } else {
             if (
               firstBonusRound &&

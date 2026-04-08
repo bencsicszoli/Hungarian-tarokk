@@ -28,7 +28,9 @@ public enum Bonus {
     XXI_CATCH_RE_DOUBLED(5, 2, 5, "Redouble XXI-catch"),
     VOLAT_RE_DOUBLED(6, 2, 6, "Redouble volat");
 
+    @Getter
     private final int bonusIndex;
+    @Getter
     private final int level;
     private final int order;
     @Getter
@@ -84,8 +86,40 @@ public enum Bonus {
         return bonusNames;
     }
 
-    public static List<Bonus> sortBonuses(List<Bonus> bonuses) {
+    public static List<Bonus> sortBonuses(Set<Bonus> bonuses) {
         return bonuses.stream().sorted(Comparator.comparingInt(b -> b.order)).collect(Collectors.toList());
     }
 
+    public static boolean isContainDoubled(List<Bonus> bonuses) {
+        return bonuses.stream().anyMatch(b -> b.level == 1);
+    }
+
+    public static boolean isContainReDoubled(List<Bonus> bonuses) {
+        return bonuses.stream().anyMatch(b -> b.level == 2);
+    }
+
+    public static boolean canBeFoundBasicLevelBonusInOpponentBonuses(Set<Bonus> opponentBonuses, List<Bonus> announcedBonuses) {
+        boolean isBonusExist = false;
+        for (Bonus ownBonus : announcedBonuses) {
+            if (ownBonus.level == 1) {
+                Bonus baseLevelBonus = getBonusByIndexAndLevel(ownBonus.bonusIndex, 0);
+                boolean bonusFound = baseLevelBonus.isContainBonus(opponentBonuses);
+                if (bonusFound) {
+                    isBonusExist = true;
+                }
+            }
+        }
+        return isBonusExist;
+    }
+
+    private boolean isContainBonus(Set<Bonus> bonuses) {
+        boolean isBonusExist = false;
+        for (Bonus bonus : bonuses) {
+            if (bonus.bonusIndex == bonusIndex && bonus.level == level) {
+                isBonusExist = true;
+                break;
+            }
+        }
+        return isBonusExist;
+    }
 }

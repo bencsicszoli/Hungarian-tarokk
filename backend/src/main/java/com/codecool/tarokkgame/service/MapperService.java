@@ -1,11 +1,10 @@
 package com.codecool.tarokkgame.service;
 
-import com.codecool.tarokkgame.model.dto.messagedto.JoinMessageDTO;
-import com.codecool.tarokkgame.model.dto.messagedto.PlayerCardDTO;
+import com.codecool.tarokkgame.model.dto.messagedto.response.JoinMessageDTO;
+import com.codecool.tarokkgame.model.dto.messagedto.response.PlayerCardDTO;
 import com.codecool.tarokkgame.model.entity.Game;
 import com.codecool.tarokkgame.model.entity.Player;
 import com.codecool.tarokkgame.model.entity.PlayerCard;
-import com.codecool.tarokkgame.model.entity.TalonCard;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;

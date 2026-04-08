@@ -165,4 +165,22 @@ public class Game {
             }
         }
     }
+
+    public int getNumberOfOpponents() {
+        int opponents = 0;
+        for (Player player : players) {
+            if (player.getRoleInGame().equals(RoleInGame.OPPONENT)) {
+                opponents++;
+            }
+        }
+        return opponents;
+    }
+
+    public void setLastPlayerAsDeclarer() {
+        for (Player player : players) {
+            if (player.getRoleInGame().equals(RoleInGame.NOT_CLEAR_YET)) {
+                player.setRoleInGame(RoleInGame.DECLARER_PARTNER);
+            }
+        }
+    }
 }

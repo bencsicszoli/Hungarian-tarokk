@@ -9,8 +9,6 @@ public class TarokkNumberHolder {
     private boolean isEightTarokk = false;
     private boolean isNineTarokk = false;
 
-    public TarokkNumberHolder(boolean isEightTarokk, boolean isNineTarokk) {
-        this.isEightTarokk = isEightTarokk;
-        this.isNineTarokk = isNineTarokk;
+    public TarokkNumberHolder() {
     }
 }

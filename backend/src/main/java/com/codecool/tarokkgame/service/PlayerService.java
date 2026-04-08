@@ -1,6 +1,6 @@
 package com.codecool.tarokkgame.service;
 
-import com.codecool.tarokkgame.model.dto.messagedto.JoinMessageDTO;
+import com.codecool.tarokkgame.model.dto.messagedto.response.JoinMessageDTO;
 import com.codecool.tarokkgame.model.entity.AppUser;
 import com.codecool.tarokkgame.model.entity.Game;
 import com.codecool.tarokkgame.model.entity.Player;

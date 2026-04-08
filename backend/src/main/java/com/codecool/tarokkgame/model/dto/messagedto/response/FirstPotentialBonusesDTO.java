@@ -1,6 +1,4 @@
-package com.codecool.tarokkgame.model.dto.messagedto;
-
-import com.codecool.tarokkgame.constants.Bonus;
+package com.codecool.tarokkgame.model.dto.messagedto.response;
 
 import java.util.List;
 import java.util.Set;
