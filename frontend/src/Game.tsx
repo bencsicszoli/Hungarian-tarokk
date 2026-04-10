@@ -252,6 +252,18 @@ function Game() {
         setPotentialBonuses(message.bonuses);
         setPrivateInformation(message.info);
         break;
+      case "game.ultimoValidation":
+        setSelectedTarokkNumber(0);
+        setCalledTarokk(null);
+        setCallableTarokks([]);
+        setSelectedBonuses([]);
+        setFirstBonusRound(false);
+        break;
+      case "game.validation":
+        setSelectedTarokkNumber(0);
+        setSelectedBonuses([]);
+        setFirstBonusRound(false);
+        break;
       default:
         console.log("Unhandled private message type:", message.type);
         break;
@@ -569,13 +581,6 @@ function Game() {
               calledTarokk,
               selectedTarokkNumber,
             );
-            
-            setSelectedTarokkNumber(0);
-            setCalledTarokk(null);
-            setCallableTarokks([]);
-            setSelectedBonuses([]);
-            setFirstBonusRound(false);
-            
           } else if (
             turnPlayer === user?.username &&
             selectedBonuses.length > 0 &&
@@ -593,11 +598,6 @@ function Game() {
               calledTarokk,
               selectedTarokkNumber,
             );
-            
-            setSelectedTarokkNumber(0);
-            setCalledTarokk(null);
-            setSelectedBonuses([]);
-            
           } else {
             if (
               firstBonusRound &&
@@ -674,8 +674,6 @@ function Game() {
   }
 
   function displayHandBack(cardsNumber: number) {
-    // the rotation utility classes are computed at runtime so Tailwind can’t
-    // generate them; switch to inline styles instead.
     let rotation = INITIAL_ROTATION[cardsNumber];
     console.log("Rotation is:", rotation);
     const rotatedCards = [];

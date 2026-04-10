@@ -244,6 +244,9 @@ public class MessageController {
             if (privateInfoDTO != null) {
                 messagingTemplate.convertAndSendToUser(playerName, "/queue/private", privateInfoDTO);
                 return;
+            } else {
+                PrivateInfoDTO ultimoValidation = new PrivateInfoDTO("Ultimo validation is OK", "game.ultimoValidation");
+                messagingTemplate.convertAndSendToUser(playerName, "/queue/private", ultimoValidation);
             }
             PublicBonusDTO bonusDTO = bonusService.getFirstPublicBonusInfo(game, declarer, request.bonuses(), request.selectedTarokkNumber(), request.calledTarokk());
             messagingTemplate.convertAndSend("/topic/game." + request.gameId(), bonusDTO);
@@ -253,7 +256,6 @@ public class MessageController {
         } else {
             throw new NotAllowedOperationException("Invalid username");
         }
-        // Remember to set firstBonusRound to false in the frontend after handling public message!
     }
 
     @Transactional
@@ -263,26 +265,27 @@ public class MessageController {
         if (request.username().equals(playerName)) {
             Game game = gameRepository.findById(request.gameId()).orElseThrow(() -> new NoSuchElementException("Game not found"));
             Player player = playerRepository.findByUserUsernameAndGameId(playerName, request.gameId()).orElseThrow(() -> new NoSuchElementException("Player not found"));
+
             PrivateInfoDTO ultimoInfo = bonusService.checkTurnPlayerUltimoAndTarokkNumber(player, request.bonuses(), request.selectedTarokkNumber());
             if (ultimoInfo != null) {
                 messagingTemplate.convertAndSendToUser(playerName, "/queue/private", ultimoInfo);
+                return;
             }
             PrivateInfoDTO doubleOrRedoubleInfo = bonusService.checkDoubleOrRedoubleIfNeeded(game, player, request.bonuses());
             if (doubleOrRedoubleInfo != null) {
                 messagingTemplate.convertAndSendToUser(playerName, "/queue/private", doubleOrRedoubleInfo);
+                return;
             }
+
+            PrivateInfoDTO validation = new PrivateInfoDTO("Validation is OK", "game.validation");
+            messagingTemplate.convertAndSendToUser(playerName, "/queue/private", validation);
+
             PublicBonusDTO bonusInfo = bonusService.getPublicBonusInfo(game, player, request.bonuses(), request.selectedTarokkNumber());
             messagingTemplate.convertAndSend("/topic/game." + request.gameId(), bonusInfo);
             if (game.getBonusPasses() < 3) {
-                Player nextPlayer = game.getNextPlayer(player);
-                game.setTurnPlayer(nextPlayer.getName());
-                PotentialBonusesDTO potentialBonuses = bonusService.getPotentialTurnPlayerBonuses(game, nextPlayer);
-                messagingTemplate.convertAndSendToUser(nextPlayer.getName(), "/queue/private", potentialBonuses);
+                sendPotentialBonusesDuringAnnouncement(game, player);
             } else {
-                TurnPlayerDTO turnPlayerDTO = new TurnPlayerDTO(game.getStartPlayer(), "game.turnPlayer");
-                messagingTemplate.convertAndSend("/topic/game." + request.gameId(), turnPlayerDTO);
-                GameStateDTO gameStateDTO = new GameStateDTO(game.getState().toString(), "game.gameState");
-                messagingTemplate.convertAndSend("/topic/game." + request.gameId(), gameStateDTO);
+                finishAnnouncementPhase(game, request);
             }
 
         } else {
@@ -291,7 +294,8 @@ public class MessageController {
     }
 
     private void dealTalonCards(Game game, GeneralRequestDTO request) {
-        shuffleService.addShuffledDeck(game);
+        //shuffleService.addShuffledDeck(game);
+        shuffleService.useFakeDeck(game);
         dealService.setTalonCards(game);
         PublicTalonDTO publicTalonDTO = new PublicTalonDTO(6, "game.talon", "IN_PROGRESS");
         messagingTemplate.convertAndSend("/topic/game." + request.gameId(), publicTalonDTO);
@@ -325,5 +329,19 @@ public class MessageController {
             GameStateDTO gameStateDTO = new GameStateDTO(game.getState().toString(), "game.gameState");
             messagingTemplate.convertAndSend("/topic/game." + request.gameId(), gameStateDTO);
         }
+    }
+
+    private void sendPotentialBonusesDuringAnnouncement(Game game, Player player) {
+        Player nextPlayer = game.getNextPlayer(player);
+        game.setTurnPlayer(nextPlayer.getName());
+        PotentialBonusesDTO potentialBonuses = bonusService.getPotentialTurnPlayerBonuses(game, nextPlayer);
+        messagingTemplate.convertAndSendToUser(nextPlayer.getName(), "/queue/private", potentialBonuses);
+    }
+
+    private void finishAnnouncementPhase(Game game, BonusesRequestDTO request) {
+        TurnPlayerDTO turnPlayerDTO = new TurnPlayerDTO(game.getStartPlayer(), "game.turnPlayer");
+        messagingTemplate.convertAndSend("/topic/game." + request.gameId(), turnPlayerDTO);
+        GameStateDTO gameStateDTO = new GameStateDTO(game.getState().toString(), "game.gameState");
+        messagingTemplate.convertAndSend("/topic/game." + request.gameId(), gameStateDTO);
     }
 }

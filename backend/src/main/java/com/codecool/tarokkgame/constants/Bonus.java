@@ -1,32 +1,33 @@
 package com.codecool.tarokkgame.constants;
 
 import lombok.Getter;
+import lombok.ToString;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 public enum Bonus {
-    PASS(0, 0, 14, "Pass"),
-    TRULL(1, 0, 15, "Trull"),
-    FOUR_KINGS(2, 0, 16, "Four kings"),
-    DOUBLE(3, 0, 17, "Double game"),
-    PAGAT_ULTIMO(4, 0, 18, "Pagat ultimo"),
-    XXI_CATCH(5, 0, 19, "XXI-catch"),
-    VOLAT(6, 0, 20, "Volat"),
-    PARTY_DOUBLED(0, 1, 7, "Double party"),
-    TRULL_DOUBLED(1, 1, 8, "Double trull"),
-    FOUR_KINGS_DOUBLED(2, 1, 9, "Double four kings"),
-    DOUBLE_DOUBLED(3, 1, 10, "Double double game"),
-    PAGAT_ULTIMO_DOUBLED(4, 1, 11, "Double pagat ultimo"),
-    XXI_CATCH_DOUBLED(5, 1, 12, "Double XXI-catch"),
-    VOLAT_DOUBLED(6, 1, 13, "Double volat"),
-    PARTY_RE_DOUBLED(0, 2, 0, "Redouble party"),
-    TRULL_RE_DOUBLED(1, 2, 1, "Redouble trull"),
-    FOUR_KINGS_RE_DOUBLED(2, 2, 2, "Redouble four kings"),
-    DOUBLE_RE_DOUBLED(3, 2, 3, "Redouble double game"),
-    PAGAT_ULTIMO_RE_DOUBLED(4, 2, 4, "Redouble pagat ultimo"),
-    XXI_CATCH_RE_DOUBLED(5, 2, 5, "Redouble XXI-catch"),
-    VOLAT_RE_DOUBLED(6, 2, 6, "Redouble volat");
+    PASS(0, 0, 1, "Pass"),
+    TRULL(1, 0, 16, "Trull"),
+    FOUR_KINGS(2, 0, 17, "Four kings"),
+    DOUBLE(3, 0, 18, "Double game"),
+    PAGAT_ULTIMO(4, 0, 19, "Pagat ultimo"),
+    XXI_CATCH(5, 0, 20, "XXI-catch"),
+    VOLAT(6, 0, 21, "Volat"),
+    PARTY_DOUBLED(0, 1, 3, "Double party"),
+    TRULL_DOUBLED(1, 1, 10, "Double trull"),
+    FOUR_KINGS_DOUBLED(2, 1, 11, "Double four kings"),
+    DOUBLE_DOUBLED(3, 1, 12, "Double double game"),
+    PAGAT_ULTIMO_DOUBLED(4, 1, 13, "Double pagat ultimo"),
+    XXI_CATCH_DOUBLED(5, 1, 14, "Double XXI-catch"),
+    VOLAT_DOUBLED(6, 1, 15, "Double volat"),
+    PARTY_RE_DOUBLED(0, 2, 2, "Redouble party"),
+    TRULL_RE_DOUBLED(1, 2, 4, "Redouble trull"),
+    FOUR_KINGS_RE_DOUBLED(2, 2, 5, "Redouble four kings"),
+    DOUBLE_RE_DOUBLED(3, 2, 6, "Redouble double game"),
+    PAGAT_ULTIMO_RE_DOUBLED(4, 2, 7, "Redouble pagat ultimo"),
+    XXI_CATCH_RE_DOUBLED(5, 2, 8, "Redouble XXI-catch"),
+    VOLAT_RE_DOUBLED(6, 2, 9, "Redouble volat");
 
     @Getter
     private final int bonusIndex;

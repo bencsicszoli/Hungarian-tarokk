@@ -277,7 +277,7 @@ public class BidService {
             if (bidLevel.getGrade() - game.getBidLevel().getGrade() == 2) {
                 game.setXIXInvit(true);
                 sender.setAnnouncedXIX_Invit(true);
-            } else if (bidLevel.getGrade() - sender.getBidLevel().getGrade() == 4) {
+            } else if (bidLevel.getGrade() - game.getBidLevel().getGrade() == 4) {
                 game.setXVIIIInvit(true);
                 sender.setAnnouncedXVIII_Invit(true);
             }
