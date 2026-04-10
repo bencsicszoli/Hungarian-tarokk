@@ -137,11 +137,11 @@ public class MessageController {
             String turnPlayer = game.getTurnPlayer();
             if (potentialBids != null) {
                 messagingTemplate.convertAndSendToUser(turnPlayer, "/queue/private", potentialBids);
-                PublicBidDTO publicBidDTO = bidService.getPublicBidInfo(game, turnPlayer);
+                PublicBidDTO publicBidDTO = bidService.getPublicBidInfo(game, playerName, request.newLevel(), turnPlayer);
                 messagingTemplate.convertAndSend("/topic/game." + request.gameId(), publicBidDTO);
                 System.out.println("Private bid message sent to " + turnPlayer);
             } else {
-                PublicBidDTO publicBidDTO = bidService.getPublicBidInfo(game, turnPlayer);
+                PublicBidDTO publicBidDTO = bidService.getPublicBidInfo(game, playerName, request.newLevel(), turnPlayer);
                 messagingTemplate.convertAndSend("/topic/game." + request.gameId(), publicBidDTO);
                 NewGameStateDTO gameStateDTO = new NewGameStateDTO("TALON_PICK_UP", "game.gameState");
                 messagingTemplate.convertAndSend("/topic/game." + request.gameId(), gameStateDTO);
@@ -297,7 +297,7 @@ public class MessageController {
         //shuffleService.addShuffledDeck(game);
         shuffleService.useFakeDeck(game);
         dealService.setTalonCards(game);
-        PublicTalonDTO publicTalonDTO = new PublicTalonDTO(6, "game.talon", "IN_PROGRESS");
+        PublicTalonDTO publicTalonDTO = new PublicTalonDTO(6, "game.talon", "NEW");
         messagingTemplate.convertAndSend("/topic/game." + request.gameId(), publicTalonDTO);
     }
 

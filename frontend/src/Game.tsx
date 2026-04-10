@@ -8,7 +8,7 @@ import Skart from "./Skart";
 import type { SeatAttributes, Card } from "./Types";
 
 const INITIAL_ROTATION = [
-  0, 0, -22.5, -30, -37.5, -45, -52.5, -60, -67.5, -75, -82.5, -90, -97.5,
+  0, 0, -7.5, -15, -22.5, -30, -37.5, -45, -52.5, -60, -67.5, -75, -82.5
 ];
 
 function Game() {
@@ -37,6 +37,7 @@ function Game() {
   const [startPlayer, setStartPlayer] = useState<string | null>(
     game?.startPlayer || null,
   );
+  const [bidPlayer, setBidPlayer] = useState<string | null>(null);
   const [turnPlayer, setTurnPlayer] = useState<string | null>(
     game?.turnPlayer || null,
   );
@@ -95,8 +96,8 @@ function Game() {
   const [hasNineTarokks, setHasNineTarokks] = useState<boolean>(false);
   const [selectedBonuses, setSelectedBonuses] = useState<string[]>([]);
   const [firstBonusRound, setFirstBonusRound] = useState<boolean>(true);
-  const [declarerBonuses, setDeclarerBonuses] = useState<string[]>([]);
-  const [opponentBonuses, setOpponentBonuses] = useState<string[]>([]);
+  const [declarerBonuses, setDeclarerBonuses] = useState<string | null>(null);
+  const [opponentBonuses, setOpponentBonuses] = useState<string | null>(null);
   const seatModifier = useRef(0);
   const cardsToDiscard = useRef<number>(0);
 
@@ -107,7 +108,6 @@ function Game() {
     console.log("Public message received:", message);
     switch (message.type) {
       case "game.joined":
-        // Update player states based on the message content
         setPlayer1(message.player1);
         setPlayer2(message.player2);
         setPlayer3(message.player3);
@@ -129,7 +129,6 @@ function Game() {
         });
 
         break;
-      // Handle other message types as needed
       case "game.turnTable":
         setTableTurned(true);
         console.log("Table turned, updating state accordingly");
@@ -148,6 +147,7 @@ function Game() {
         break;
       case "game.lastDeal":
         setGameState("BIDDING");
+        setPublicInformation("Bidding phase has started!");
         setPlayerCards((prev) => ({
           ...prev,
           [message.username]: message.cardsNumber,
@@ -158,6 +158,8 @@ function Game() {
         setBid(message.bid);
         setDeclarer(message.declarer);
         setTurnPlayer(message.turnPlayer);
+        setPublicInformation(message.info);
+        setBidPlayer(message.bidPlayer);
         console.log("Public bid info updated:", message);
         break;
       case "game.gameState":
@@ -186,8 +188,8 @@ function Game() {
         break;
       case "game.publicBonusInfo":
         setPublicInformation(message.info);
-        setDeclarerBonuses(message.declarerBonuses);
-        setOpponentBonuses(message.opponentBonuses);
+        setDeclarerBonuses(message.declarerBonuses.join(", "));
+        setOpponentBonuses(message.opponentBonuses.join(", "));
         setTurnPlayer(message.turnPlayer);
         setFirstBonusRound(false);
         console.log("Public bonus info updated:", message.info);
@@ -196,7 +198,6 @@ function Game() {
         console.log("Unhandled message type:", message.type);
         break;
     }
-    // Handle game state updates here
   }, []);
 
   useEffect(() => {
@@ -330,6 +331,17 @@ function Game() {
     }
   }, [gameState, user, declarer]);
 
+  useEffect(() => {
+    if (gameState === "SKART_LAY_DOWN" && turnPlayer === user?.username && cardsToDiscard.current > 0) {
+      setPrivateInformation(`Select ${cardsToDiscard.current} cards to discard!`);
+    } else if (gameState === "SKART_LAY_DOWN") {
+      setPrivateInformation("");
+    } else if (gameState === "BONUS_ANNOUNCEMENT" && privateInformation.includes("cards to discard")) {
+      setPrivateInformation("");
+    }
+  }, [gameState, turnPlayer, user]);
+
+
   function dealTalonToPlayers() {
     send("/app/game.dealTalonToPlayers", {
       username: user?.username,
@@ -429,7 +441,7 @@ function Game() {
   function renderOwnHand(seatAttribute: SeatAttributes) {
     return (
       <div className="flex flex-col h-full">
-        <div className="h-1/6 flex justify-center items-center font-bold text-xl">
+        <div className="h-1/8 flex justify-center items-center font-bold text-xl">
           <p>{seatAttribute.playerSeat}</p>
         </div>
         {gameState === "SKART_LAY_DOWN" && turnPlayer === user?.username && (
@@ -444,7 +456,7 @@ function Game() {
             {displayOwnCards()}
           </div>
         )}
-        <div className="h-1/6 flex justify-center items-center font-bold text-xl">
+        <div className="flex justify-center items-center font-bold text-xl h-auto">
           {renderBidButtons()}
         </div>
       </div>
@@ -455,7 +467,7 @@ function Game() {
     return potentialBids.map((bid) => (
       <button
         key={bid}
-        className="border-black border-2 w-1/8 h-2/3"
+        className="border-black border-2 w-1/8 h-13 rounded-lg font-semibold"
         onClick={() => {
           send("/app/game.bid", {
             username: user?.username,
@@ -531,7 +543,7 @@ function Game() {
     return callableTarokks.map((tarokk) => (
       <button
         key={tarokk}
-        className="border-black border-2 w-32 h-10 ml-5 mr-5"
+        className="border-black border-2 w-32 h-10 ml-5 mr-5 font-semibold rounded-md"
         onClick={() => {
           setCalledTarokk(tarokk);
           console.log("Tarokk called:", tarokk);
@@ -546,7 +558,7 @@ function Game() {
     const buttons = potentialBonuses.map((bonus) => (
       <button
         key={bonus}
-        className="border-black border-2 w-32 h-10 ml-5 mr-5"
+        className="border-black border-2 w-40 h-14 rounded-md font-semibold"
         onClick={() => {
           setSelectedBonuses((prev) =>
             prev.includes(bonus)
@@ -560,7 +572,7 @@ function Game() {
     ));
     const confirmButton = (
       <button
-        className="border-black border-2 w-32 h-10 ml-5 mr-5"
+        className="border-black border-2 w-40 h-14 bg-green-300 rounded-md font-semibold"
         onClick={() => {
           if (
             declarer === user?.username &&
@@ -690,7 +702,7 @@ function Game() {
           }}
         />,
       );
-      rotation += 20;
+      rotation += 15;
     }
     return rotatedCards;
   }
@@ -784,17 +796,17 @@ function Game() {
           {/* Menu buttons */}
           <div className="w-full h-1/12 flex justify-around items-center">
             <button
-              className="border-black border-2 w-1/8 h-2/3 bg-green-300 text-[#2f4b3a] text-2xl font-bold"
+              className="border-black border-2 w-1/8 h-2/3 bg-green-300 text-[#2f4b3a] text-2xl font-bold rounded-lg"
               onClick={handleLogout}
             >
               Logout
             </button>
-            <button className="border-black border-2 w-1/8 h-2/3 bg-green-300 text-[#2f4b3a] text-2xl font-bold">
+            <button className="border-black border-2 w-1/8 h-2/3 bg-green-300 text-[#2f4b3a] text-2xl font-bold rounded-lg">
               Back
             </button>
             {user?.username === dealer && gameState === "NEW" && (
               <button
-                className="border-black border-2 w-1/8 h-2/3 bg-green-300 text-[#2f4b3a] text-2xl font-bold"
+                className="border-black border-2 w-1/8 h-2/3 bg-green-300 text-[#2f4b3a] text-2xl font-bold rounded-lg"
                 onClick={handleDeal}
               >
                 DEAL
@@ -862,18 +874,20 @@ function Game() {
                   turnPlayer === user?.username && (
                     <div className="h-full flex flex-col justify-center items-center">
                       {hasEightTarokks || hasNineTarokks ? (
-                        <div className="h-1/5 w-full bg-pink-300 flex justify-center items-center">
+                        <div className="w-full bg-pink-300 flex justify-center items-center">
                           {renderTarokkNumberButton()}
                         </div>
                       ) : null}
                       {declarer && callableTarokks.length > 0 && (
-                        <div className="h-1/5 w-full bg-pink-400">
+                        <div className="w-full bg-pink-400 flex justify-center items-center">
                           {renderCallableTarokkButtons()}
                         </div>
                       )}
 
-                      <div className="h-3/5 w-full bg-pink-500 flex flex-col justify-center items-center">
-                        <p className="h-1/4">Select your bonuses:</p>
+                      <div className="w-full bg-pink-500 flex flex-col justify-center items-center">
+                        <p className="h-1/4 font-semibold mt-1 text-lg">
+                          Select your bonuses:
+                        </p>
                         <div className="h-3/4 w-full grid grid-flow-row grid-cols-4">
                           {renderBonusButtons()}
                         </div>
@@ -899,6 +913,8 @@ function Game() {
         <InfoTable
           bid={bid}
           declarer={declarer}
+          dealer={dealer}
+          bidPlayer={bidPlayer}
           turnPlayer={turnPlayer}
           publicInfo={publicInformation}
           privateInfo={privateInformation}
@@ -907,6 +923,8 @@ function Game() {
           user={user}
           calledTarokk={calledTarokk}
           selectedBonuses={selectedBonuses}
+          declarerBonuses={declarerBonuses}
+          opponentBonuses={opponentBonuses}
         />
       </div>
     </div>

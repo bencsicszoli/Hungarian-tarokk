@@ -3,6 +3,8 @@ import type { User } from "../Types";
 function InfoTable({
   bid,
   declarer,
+  dealer,
+  bidPlayer,
   turnPlayer,
   publicInfo,
   privateInfo,
@@ -11,9 +13,13 @@ function InfoTable({
   user,
   calledTarokk,
   selectedBonuses,
+  declarerBonuses,
+  opponentBonuses,
 }: {
   bid: string;
   declarer: string | null;
+  dealer: string | null;
+  bidPlayer: string | null;
   turnPlayer: string | null;
   publicInfo: string;
   privateInfo: string;
@@ -22,6 +28,8 @@ function InfoTable({
   user: User | null;
   calledTarokk: string | null;
   selectedBonuses: string[];
+  declarerBonuses: string | null;
+  opponentBonuses: string | null;
 }) {
   function displayInformation(info: string) {
     if (info.indexOf("!") !== info.lastIndexOf("!")) {
@@ -45,7 +53,9 @@ function InfoTable({
         <div className="w-full h-1/2 flex">
           <div className="w-2/3 h-full">
             <div className="w-full h-1/4 flex items-center pl-3">
-              <p className="text-xl font-semibold">Declarer:</p>
+              {gameState !== "NEW" && bid !== "-" && (
+                <p className="text-xl font-semibold">Declarer:</p>
+              )}
             </div>
             <div className="w-full h-3/4 justify-center flex items-center">
               <p className="text-5xl font-bold">{declarer}</p>
@@ -53,20 +63,32 @@ function InfoTable({
           </div>
 
           <div className="w-1/3 h-full flex flex-col">
-            <div className="w-full h-1/4 justify-center flex items-center">
-              <p className="text-xl font-semibold">Bid:</p>
-            </div>
-            <div className="w-full h-3/4 justify-center flex items-center">
-              <p className="text-4xl font-bold">{bid}</p>
-            </div>
+            {gameState !== "NEW" && bid !== "-" && (
+              <>
+                <div className="w-full h-1/4 justify-center flex items-center">
+                  <p className="text-xl font-semibold">Bid:</p>
+                </div>
+                <div className="w-full h-3/4 justify-center flex items-center">
+                  <p className="text-4xl font-bold">{bid}</p>
+                </div>
+              </>
+            )}
           </div>
         </div>
         <div className="w-full h-1/2 flex flex-col">
           <div className="w-full h-1/4 pl-3">
-            <p className="text-xl font-semibold">Turn:</p>
+            {gameState === "NEW" ? (
+              <p className="text-xl font-semibold">Dealer:</p>
+            ) : (
+              <p className="text-xl font-semibold">Turn:</p>
+            )}
           </div>
           <div className="w-full h-3/4 justify-center flex items-center">
-            <p className="text-5xl font-bold">{turnPlayer}</p>
+            {gameState === "NEW" ? (
+              <p className="text-5xl font-bold">{dealer}</p>
+            ) : (
+              <p className="text-5xl font-bold">{turnPlayer}</p>
+            )}
           </div>
         </div>
       </div>
@@ -76,25 +98,20 @@ function InfoTable({
         </p>
       </div>
       <div className="w-full h-1/4 bg-blue-300">
-      {/*}
-        {gameState === "BONUS_ANNOUNCEMENT" &&
-          turnPlayer === user?.username &&
-          selectedTarokkNumber !== 0 && (
-            <p>You announced: {selectedTarokkNumber} tarokks</p>
-          )}
-        {gameState === "BONUS_ANNOUNCEMENT" && turnPlayer === user?.username && calledTarokk && (
-          <p>{calledTarokk}</p>
-        )}
-        {gameState === "BONUS_ANNOUNCEMENT" && turnPlayer === user?.username && selectedBonuses.length > 0 && (
-          <p>You selected bonuses: {selectedBonuses.join(", ")}</p>
-        )}
-          */}
         <p className="text-3xl font-bold text-center">
           {displayInformation(privateInfo)}
         </p>
-
       </div>
-      <div className="w-full h-1/4 bg-blue-500"></div>
+      <div className="w-full h-1/4 bg-blue-500 flex flex-col">
+        <div className="w-full text-2xl flex flex-col justify-center items-center">
+          {declarerBonuses && <p className="font-bold">Declarer's bonuses:</p>}
+          <p className="font-normal">{declarerBonuses}</p>
+        </div>
+        <div className="w-full text-2xl flex flex-col justify-center items-center">
+          {opponentBonuses && <p className="font-bold">Opponent's bonuses:</p>}
+          <p className="font-normal">{opponentBonuses}</p>
+        </div>
+      </div>
     </div>
   );
 }

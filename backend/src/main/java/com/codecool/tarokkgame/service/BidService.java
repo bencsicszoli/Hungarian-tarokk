@@ -52,11 +52,12 @@ public class BidService {
         }
     }
 
-    public PublicBidDTO getPublicBidInfo(Game game, String turnPlayer) {
+    public PublicBidDTO getPublicBidInfo(Game game, String bidPlayer, String announcedLevel, String turnPlayer) {
         String declarer = game.getDeclarer();
         String bid = game.getBidLevel().getBidNameToDisplay();
         System.out.println("Bid name: " + bid);
-        return new PublicBidDTO(declarer, turnPlayer, bid, "game.publicBidInfo");
+        String info = bidPlayer.toUpperCase() + ": " + announcedLevel;
+        return new PublicBidDTO(declarer, bidPlayer, turnPlayer, bid, info,"game.publicBidInfo");
     }
 
     private PotentialBidsDTO getPotentialBidsWithDifferentOptionsAtFirstTime(String level3, String level2, String level1, String pass, Set<String> options) {
