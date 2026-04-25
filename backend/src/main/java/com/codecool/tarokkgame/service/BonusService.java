@@ -70,7 +70,7 @@ public class BonusService {
 
     public PublicBonusDTO getFirstPublicBonusInfo(Game game, Player player, Set<String> bonusNames, int selectedTarokkNumber, String calledTarokk) {
         setAnnouncedTarokkNumberToPlayer(selectedTarokkNumber, player);
-        setNewBonusesToDeclarer(game, bonusNames);
+        setNewBonusesToDeclarer(game, bonusNames, player);
         String turnPlayer = game.getNextPlayer(player).getName();
         calledTarokk = calledTarokk.substring(11);
         int invitedTarokkNumber = RomanTarokkNumber.toArabicNumber(calledTarokk);
@@ -93,7 +93,7 @@ public class BonusService {
         }
         if (player.getRoleInGame().getTeam().equals("opponent")) {
             game.setLastBonusAnnouncer("opponent");
-        } else if (player.getRoleInGame().getTeam().equals("declarer")) {
+        } else if (player.getRoleInGame().getTeam().equals("declarer") && (bonusNames.size() > 1 || !bonusNames.contains("Pass"))) {
             game.setLastBonusAnnouncer("declarer");
         }
         String turnPlayer = game.getNextPlayer(player).getName();
@@ -150,6 +150,23 @@ public class BonusService {
         return null;
     }
 
+    public PrivateInfoDTO checkDoubleGameAndVolat(Set<String> bonusNames) {
+        if (bonusNames.contains("Double game") && bonusNames.contains("Volat")) {
+            return new PrivateInfoDTO("You cannot announce Double game and Volat at the same time!", "game.privateInfo");
+        }
+        return null;
+    }
+
+    public PrivateInfoDTO checkAnnouncementsAfterVolat(Player player, Set<String> bonusNames, Game game) {
+        String side = identifyPlayerSide(player, game.getInvitedTarokk());
+        boolean announcedVolat = game.announcedVolat(side);
+        if (announcedVolat && (bonusNames.contains("Trull") || bonusNames.contains("Four kings") || bonusNames.contains("Double game"))) {
+            return new PrivateInfoDTO("You cannot announce Trull, Four kings or Double game after volat!", "game.privateInfo");
+        } else {
+            return null;
+        }
+    }
+
     private void setCallableTarokks(Game game, Player player, Set<String> callableTarokks) {
         if (game.getInvitedTarokk() == 20) {
             callableTarokks.add("I call the XX");
@@ -161,7 +178,9 @@ public class BonusService {
             callableTarokks.add("I call the XX");
         } else {
             int callableTarokk = player.findMissingStrongestTarokk();
+            System.out.println("Callable tarokk: " + callableTarokk);
             String romanForm = RomanTarokkNumber.fromArabicNumber(callableTarokk).toString();
+            System.out.println("Roman form: " + romanForm);
             callableTarokks.add("I call the " + romanForm);
             callableTarokks.add("I call the XX");
         }
@@ -288,14 +307,15 @@ public class BonusService {
         }
     }
 
-    private void setNewBonusesToDeclarer(Game game, Set<String> bonusNames) {
-        if (bonusNames.size() == 1 && bonusNames.contains("Pass")) {
-            game.setBonusPasses(1);
-        } else {
+    private void setNewBonusesToDeclarer(Game game, Set<String> bonusNames, Player player) {
+        if (!(bonusNames.size() == 1 && bonusNames.contains("Pass"))) {
             for (String bonusName : bonusNames) {
                 Bonus bonus = Bonus.getBonusByName(bonusName);
                 if (!bonus.equals(Bonus.PASS)) {
                     game.getOptionalBonuses().remove(bonus);
+                    if (bonus.equals(Bonus.PAGAT_ULTIMO)) {
+                        player.setAnnouncedUltimo(true);
+                    }
                 }
                 game.getDeclarerBonuses().add(bonus);
             }
@@ -391,13 +411,16 @@ public class BonusService {
     }
 
     private PrivateInfoDTO checkNewDeclarerPartner(Player player, Game game, List<Bonus> bonuses) {
-        player.setRoleInGame(RoleInGame.DECLARER_PARTNER);
-        game.markPlayersAsOpponent();
+
         if (game.getLastBonusAnnouncer().equals("declarer")) {
+            player.setRoleInGame(RoleInGame.DECLARER_PARTNER);
+            game.markPlayersAsOpponent();
             return null;
         } else {
             Set<Bonus> opponentBonuses = game.getOpponentBonuses();
             if (Bonus.isContainReDoubled(bonuses) || Bonus.canBeFoundBasicLevelBonusInOpponentBonuses(opponentBonuses, bonuses)) {
+                player.setRoleInGame(RoleInGame.DECLARER_PARTNER);
+                game.markPlayersAsOpponent();
                 return null;
             } else {
                 return new PrivateInfoDTO("You MUST double or redouble something otherwise it is not clear that you belong to the declarer", "game.privateInfo");
@@ -406,19 +429,36 @@ public class BonusService {
     }
 
     private PrivateInfoDTO checkNewOpponent(Player player, Game game, List<Bonus> bonuses) {
-        player.setRoleInGame(RoleInGame.OPPONENT);
-        if (game.getNumberOfOpponents() == 2) {
-            game.setLastPlayerAsDeclarer();
-        }
+
         if (game.getLastBonusAnnouncer().equals("opponent")) {
+            player.setRoleInGame(RoleInGame.OPPONENT);
+            if (game.getNumberOfOpponents() == 2) {
+                game.setLastPlayerAsDeclarer();
+            }
             return null;
         } else {
             Set<Bonus> declarerBonuses = game.getDeclarerBonuses();
             if (Bonus.isContainReDoubled(bonuses) || Bonus.canBeFoundBasicLevelBonusInOpponentBonuses(declarerBonuses, bonuses)) {
+                player.setRoleInGame(RoleInGame.OPPONENT);
+                if (game.getNumberOfOpponents() == 2) {
+                    game.setLastPlayerAsDeclarer();
+                }
                 return null;
             } else {
                 return new PrivateInfoDTO("You MUST double something otherwise it is not clear that you are an opponent", "game.privateInfo");
             }
+        }
+    }
+
+    private String identifyPlayerSide(Player player, int calledTarokk) {
+        if (player.getRoleInGame().getTeam().equals("declarer")) {
+            return "declarer";
+        } else if (player.getRoleInGame().getTeam().equals("opponent")) {
+            return "opponent";
+        } else if (player.hasTheGivenTarokk(calledTarokk)) {
+            return "declarer";
+        } else {
+            return "opponent";
         }
     }
 }

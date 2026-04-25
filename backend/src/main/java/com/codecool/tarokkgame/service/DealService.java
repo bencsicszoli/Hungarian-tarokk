@@ -59,6 +59,9 @@ public class DealService {
     private List<PlayerCardDTO> createPlayerCardsFromDeck(Player player, int from, int to, List<PlayerCard> playerCards) {
         List<DeckCard> deckCardsForPlayer = deckRepository.findCardsByGameIdAndCardOrder(player.getGame().getId(), from, to);
         for (DeckCard deckCard : deckCardsForPlayer) {
+            if (deckCard.getCard().getStrength() == 1) {
+                player.setHasPagat(true);
+            }
             PlayerCard playerCard = new PlayerCard();
             playerCard.setCard(deckCard.getCard());
             playerCard.setPlayer(player);

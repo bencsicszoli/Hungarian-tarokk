@@ -39,6 +39,8 @@ public class Player {
     private boolean yieldedGame = false;
     private boolean hasEightTarokks = false;
     private boolean hasNineTarokks = false;
+    private boolean hasPagat  = false;
+    private boolean isAnnouncedUltimo = false;
     private boolean eightTarokksInAdvance = false;
     private boolean eightTarokksAfterwards = false;
     private boolean nineTarokksInAdvance = false;
@@ -143,15 +145,16 @@ public class Player {
     }
 
     public int findMissingStrongestTarokk() {
-        Set<Integer> invalidTarokkStrengths = Set.of(20, 21, 22);
-        int strongestTarokkPlayerHas = 0;
-        for (PlayerCard playerCard : playerCards) {
-            int cardStrength = playerCard.getCard().getStrength();
-            if (cardStrength > strongestTarokkPlayerHas && !invalidTarokkStrengths.contains(cardStrength)) {
-                strongestTarokkPlayerHas = cardStrength;
+        int missingStrongestTarokk = 0;
+        for (int i = 19; i >= 12; i--) {
+            System.out.println("i: " + i);
+            if (!hasTheGivenTarokk(i)) {
+                missingStrongestTarokk = i;
+                System.out.println("S");
+                break;
             }
         }
-        return strongestTarokkPlayerHas - 1;
+        return missingStrongestTarokk;
     }
 
     public int getNumberOfTarokks() {
@@ -172,5 +175,60 @@ public class Player {
         }
         return false;
     }
+
+    public boolean hasAnyTarokks() {
+        boolean hasTarokk = false;
+        for (PlayerCard playerCard : playerCards) {
+            if (playerCard.getCard().getSuit().equals("tarokk")) {
+                hasTarokk = true;
+                break;
+            }
+        }
+        return hasTarokk;
+    }
+
+    public boolean hasTheGivenSuit(String suit) {
+        boolean hasSuit = false;
+        for (PlayerCard playerCard : playerCards) {
+            if (playerCard.getCard().getSuit().equals(suit)) {
+                hasSuit = true;
+                break;
+            }
+        }
+        return hasSuit;
+    }
+
+    public void markPlayerCardsClickableBySuit(String suit) {
+        for (PlayerCard playerCard : playerCards) {
+            playerCard.setClickable(playerCard.getCard().getSuit().equals(suit));
+        }
+    }
+
+    public void markAllPlayerCardsClickable() {
+        for (PlayerCard playerCard : playerCards) {
+            playerCard.setClickable(true);
+        }
+    }
+
+    public void markAllTarokksClickable() {
+        for (PlayerCard playerCard : playerCards) {
+            playerCard.setClickable(playerCard.getCard().getSuit().equals("tarokk"));
+        }
+    }
+
+    public boolean hasAtLeastTwoTarokks() {
+        int tarokks = 0;
+        for (PlayerCard playerCard : playerCards) {
+            if (playerCard.getCard().getSuit().equals("tarokk")) {
+                tarokks++;
+                if (tarokks == 2) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+
 }
 

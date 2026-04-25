@@ -8,7 +8,7 @@ import Skart from "./Skart";
 import type { SeatAttributes, Card } from "./Types";
 
 const INITIAL_ROTATION = [
-  0, 0, -7.5, -15, -22.5, -30, -37.5, -45, -52.5, -60, -67.5, -75, -82.5
+  0, 0, -7.5, -15, -22.5, -30, -37.5, -45, -52.5, -60, -67.5, -75, -82.5,
 ];
 
 function Game() {
@@ -77,6 +77,7 @@ function Game() {
     | "TALON_PICK_UP"
     | "SKART_LAY_DOWN"
     | "BONUS_ANNOUNCEMENT"
+    | "TRICK_PHASE"
   >(game?.gameState || "NEW");
   const [tableTurned, setTableTurned] = useState(false);
   const [talonCardsNumber, setTalonCardsNumber] = useState<number>(0);
@@ -98,6 +99,8 @@ function Game() {
   const [firstBonusRound, setFirstBonusRound] = useState<boolean>(true);
   const [declarerBonuses, setDeclarerBonuses] = useState<string | null>(null);
   const [opponentBonuses, setOpponentBonuses] = useState<string | null>(null);
+  const [trickCard, setTrickCard] = useState<Card | null>(null);
+  const [trickCards, setTrickCards] = useState<Card[]>([]);
   const seatModifier = useRef(0);
   const cardsToDiscard = useRef<number>(0);
 
@@ -194,6 +197,15 @@ function Game() {
         setFirstBonusRound(false);
         console.log("Public bonus info updated:", message.info);
         break;
+      case "game.trickCards":
+        setTrickCards(message.cards);
+        console.log("Trick cards updated:", message.cards);
+        break;
+        case "game.newTrickRound":
+          setTrickCards([]);
+          setTrickCard(null);
+          console.log(message.textContent);
+          break;
       default:
         console.log("Unhandled message type:", message.type);
         break;
@@ -332,15 +344,23 @@ function Game() {
   }, [gameState, user, declarer]);
 
   useEffect(() => {
-    if (gameState === "SKART_LAY_DOWN" && turnPlayer === user?.username && cardsToDiscard.current > 0) {
-      setPrivateInformation(`Select ${cardsToDiscard.current} cards to discard!`);
+    if (
+      gameState === "SKART_LAY_DOWN" &&
+      turnPlayer === user?.username &&
+      cardsToDiscard.current > 0
+    ) {
+      setPrivateInformation(
+        `Select ${cardsToDiscard.current} cards to discard!`,
+      );
     } else if (gameState === "SKART_LAY_DOWN") {
       setPrivateInformation("");
-    } else if (gameState === "BONUS_ANNOUNCEMENT" && privateInformation.includes("cards to discard")) {
+    } else if (
+      gameState === "BONUS_ANNOUNCEMENT" &&
+      privateInformation.includes("cards to discard")
+    ) {
       setPrivateInformation("");
     }
   }, [gameState, turnPlayer, user]);
-
 
   function dealTalonToPlayers() {
     send("/app/game.dealTalonToPlayers", {
@@ -444,14 +464,30 @@ function Game() {
         <div className="h-1/8 flex justify-center items-center font-bold text-xl">
           <p>{seatAttribute.playerSeat}</p>
         </div>
+        {(gameState === "NEW" ||
+          gameState === "BIDDING" ||
+          gameState === "TALON_PICK_UP" ||
+          gameState === "BONUS_ANNOUNCEMENT") && (
+          <div className="flex justify-center items-center h-2/3">
+            {displayOwnCards()}
+          </div>
+        )}
         {gameState === "SKART_LAY_DOWN" && turnPlayer === user?.username && (
           <div className="flex justify-center items-center h-2/3">
             {displayOwnCardsWithTalon()}
           </div>
         )}
-        {(gameState !== "SKART_LAY_DOWN" ||
-          (gameState === "SKART_LAY_DOWN" &&
-            turnPlayer !== user?.username)) && (
+        {gameState === "SKART_LAY_DOWN" && turnPlayer !== user?.username && (
+          <div className="flex justify-center items-center h-2/3">
+            {displayOwnCards()}
+          </div>
+        )}
+        {gameState === "TRICK_PHASE" && turnPlayer === user?.username && (
+          <div className="flex justify-center items-center h-2/3">
+            {displayOwnPlayableCards()}
+          </div>
+        )}
+        {gameState === "TRICK_PHASE" && turnPlayer !== user?.username && (
           <div className="flex justify-center items-center h-2/3">
             {displayOwnCards()}
           </div>
@@ -687,7 +723,6 @@ function Game() {
 
   function displayHandBack(cardsNumber: number) {
     let rotation = INITIAL_ROTATION[cardsNumber];
-    console.log("Rotation is:", rotation);
     const rotatedCards = [];
     for (let i = 0; i < cardsNumber; i++) {
       rotatedCards.push(
@@ -750,6 +785,39 @@ function Game() {
     );
   }
 
+  function displayOwnPlayableCards() {
+    return ownCards.map((card, index) =>
+      card.clickable ? (
+        <img
+          key={index}
+          src={card.imagePath}
+          alt={`Card ${index + 1}`}
+          className="w-20 mx-1 hover:-translate-y-1 hover:scale-105 cursor-pointer transition-transform duration-200"
+          onClick={() => handlePlay(card)}
+        />
+      ) : (
+        <img
+          key={index}
+          src={card.imagePath}
+          alt={`Card ${index + 1}`}
+          className="w-20 mx-1"
+        />
+      ),
+    );
+  }
+
+  function handlePlay(card: Card) {
+    if (trickCard === null) {
+      setTrickCard(card);
+      setOwnCards((prev) => prev.filter((c) => c.imagePath !== card.imagePath));
+      send("/app/game.playCard", {
+        username: user?.username,
+        gameId: game.gameId,
+        cardId: card.cardId,
+      });
+    }
+  }
+
   function displayTemporarySelectedCards() {
     return temporarySelectedCards.map((card, index) => (
       <img
@@ -786,6 +854,17 @@ function Game() {
         }
       }
     }
+  }
+
+  function renderTrickCards() {
+    return trickCards.map((card, index) => (
+      <img
+        key={index}
+        src={card.imagePath}
+        alt={`Trick card ${index + 1}`}
+        className="w-20 mx-1"
+      />
+    ));
   }
 
   return (
@@ -891,6 +970,13 @@ function Game() {
                         <div className="h-3/4 w-full grid grid-flow-row grid-cols-4">
                           {renderBonusButtons()}
                         </div>
+                      </div>
+                    </div>
+                  )}
+                  {gameState === "TRICK_PHASE" && (
+                    <div className="h-full flex flex-col justify-center items-center">
+                      <div className="flex justify-center items-center">
+                        {renderTrickCards()}
                       </div>
                     </div>
                   )}

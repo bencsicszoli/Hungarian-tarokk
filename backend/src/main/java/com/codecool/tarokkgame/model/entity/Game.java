@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -32,6 +31,9 @@ public class Game {
     private int biddingPasses = 0;
     private int invitedTarokk = 0;
     private int bonusPasses = 0;
+    private int trickRound = 1;
+    private String XXICatcher;
+    private String successfulUltimo;
     private String dealer;
     private String startPlayer;
     private String turnPlayer;
@@ -42,6 +44,9 @@ public class Game {
 
     @OneToMany(mappedBy = "game")
     private List<Player> players;
+
+    @OneToMany
+    private List<Trick> tricks;
 
     @Enumerated(EnumType.STRING)
     private GameLevel gameLevel = GameLevel.PASKIEVICS;
@@ -182,5 +187,129 @@ public class Game {
                 player.setRoleInGame(RoleInGame.DECLARER_PARTNER);
             }
         }
+    }
+
+    public boolean isDeclarerAnnouncedUltimo() {
+        boolean isAnnouncedUltimo = false;
+        for (Bonus bonus : declarerBonuses) {
+            if (bonus.getBonusIndex() == 4) {
+                isAnnouncedUltimo = true;
+            }
+        }
+        return isAnnouncedUltimo;
+    }
+
+    public boolean isOpponentAnnouncedUltimo() {
+        boolean isAnnouncedUltimo = false;
+        for (Bonus bonus : opponentBonuses) {
+            if (bonus.getBonusIndex() == 4) {
+                isAnnouncedUltimo = true;
+            }
+        }
+        return isAnnouncedUltimo;
+    }
+
+    public boolean isTrickContainTarokk() {
+        boolean isTrickContainTarokk = false;
+        for (Trick trick : tricks) {
+            if (trick.getCard().getStrength() > 0) {
+                isTrickContainTarokk = true;
+                break;
+            }
+        }
+        return isTrickContainTarokk;
+    }
+
+    public Trick getStrongestTarokkInTrick() {
+        Trick strongestTarokk = null;
+        int strength = 0;
+        for (Trick trick : tricks) {
+            if (trick.getCard().getStrength() > strength) {
+                strength = trick.getCard().getStrength();
+                strongestTarokk = trick;
+            }
+        }
+        return strongestTarokk;
+    }
+
+    public Trick getStrongestCardInASuit(String suit) {
+        Trick strongestCard = null;
+        int strength = -6;
+        for (Trick trick : tricks) {
+            if (trick.getCard().getSuit().equals(suit) && trick.getCard().getStrength() > strength) {
+                strength = trick.getCard().getStrength();
+                strongestCard = trick;
+            }
+        }
+        return strongestCard;
+    }
+
+    public void setSuccessfulUltimoInLastRound() {
+        int tarokksInLastTrick = 0;
+        Trick lastTarokk = null;
+        for (Trick trick : tricks) {
+            if (trick.getCard().getStrength() > 0) {
+                tarokksInLastTrick++;
+                lastTarokk = trick;
+            }
+        }
+        if (tarokksInLastTrick == 1 && lastTarokk.getCard().getStrength() == 1) {
+            setSuccessfulUltimo(lastTarokk.getPlayer().getRoleInGame().getTeam());
+        }
+    }
+
+    public void setSuccessfulXXICatching() {
+        boolean XXI_InTrick = false;
+        boolean skizInTrick = false;
+        String XXIOwner = "";
+        String skizOwner = "";
+        for (Trick trick : tricks) {
+            if (trick.getCard().getStrength() == 21) {
+                XXI_InTrick = true;
+                if (trick.getPlayer().getRoleInGame().equals(RoleInGame.NOT_CLEAR_YET)) {
+                    if (trick.getPlayer().hasTheGivenTarokk(invitedTarokk)) {
+                        XXIOwner = "declarer";
+                    } else {
+                        XXIOwner = "opponent";
+                    }
+                } else {
+                    XXIOwner = trick.getPlayer().getRoleInGame().getTeam();
+                }
+            } else if (trick.getCard().getStrength() == 22) {
+                skizInTrick = true;
+                if (trick.getPlayer().getRoleInGame().equals(RoleInGame.NOT_CLEAR_YET)) {
+                    if (trick.getPlayer().hasTheGivenTarokk(invitedTarokk)) {
+                        skizOwner = "declarer";
+                    } else {
+                        skizOwner = "opponent";
+                    }
+                } else {
+                    skizOwner = trick.getPlayer().getRoleInGame().getTeam();
+                }
+            }
+        }
+        if (XXI_InTrick && skizInTrick && !skizOwner.equals(XXIOwner)) {
+            setXXICatcher(skizOwner);
+        }
+    }
+
+    public boolean announcedVolat(String side) {
+        boolean isAnnouncedVolat = false;
+        if (side.equals("declarer")) {
+            for (Bonus bonus : declarerBonuses) {
+                if (bonus.getBonusIndex() == 6) {
+                    isAnnouncedVolat = true;
+                    break;
+                }
+            }
+        } else {
+            for (Bonus bonus : opponentBonuses) {
+                if (bonus.getBonusIndex() == 6) {
+                    isAnnouncedVolat = true;
+                    break;
+                }
+            }
+        }
+        return isAnnouncedVolat;
     }
 }
