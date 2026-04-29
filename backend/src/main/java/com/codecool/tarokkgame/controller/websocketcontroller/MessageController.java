@@ -20,6 +20,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 import java.security.Principal;
+import java.sql.Array;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -151,7 +152,6 @@ public class MessageController {
                 messagingTemplate.convertAndSend("/topic/game." + request.gameId(), publicBidDTO);
                 NewGameStateDTO gameStateDTO = new NewGameStateDTO("TALON_PICK_UP", "game.gameState");
                 messagingTemplate.convertAndSend("/topic/game." + request.gameId(), gameStateDTO);
-                System.out.println("Game state sent to " + turnPlayer + " at the end of bidding");
             }
 
         } else {
@@ -326,15 +326,25 @@ public class MessageController {
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                 }
-                TrickResetDTO trickReset = new TrickResetDTO("Reset trick states", "game.newTrickRound");
-                messagingTemplate.convertAndSend("/topic/game." + request.gameId(), trickReset);
+
                 //First player's playerCards
                 //handle the whole trick
                 PlayerCardListDTO playerCards = trickService.handleWholeTrick(game); // save game?
-                messagingTemplate.convertAndSendToUser(game.getTurnPlayer(), "/queue/private", playerCards);
-                TurnPlayerDTO turnPlayerDTO = new TurnPlayerDTO(game.getTurnPlayer(), "game.turnPlayer");
-                messagingTemplate.convertAndSend("/topic/game." + request.gameId(), turnPlayerDTO);
-                //info about the trick winner
+                TrickResetDTO trickReset = new TrickResetDTO(new int[] {game.getPlayer1TrickCards(), game.getPlayer2TrickCards(), game.getPlayer3TrickCards(), game.getPlayer4TrickCards()}, "game.newTrickRound");
+                messagingTemplate.convertAndSend("/topic/game." + request.gameId(), trickReset);
+                if (playerCards != null) {
+                    messagingTemplate.convertAndSendToUser(game.getTurnPlayer(), "/queue/private", playerCards);
+                    TurnPlayerDTO turnPlayerDTO = new TurnPlayerDTO(game.getTurnPlayer(), "game.turnPlayer");
+                    messagingTemplate.convertAndSend("/topic/game." + request.gameId(), turnPlayerDTO);
+                    //info about the trick winner
+                } else {
+                    GameStateDTO gameStateDTO = new GameStateDTO(GameState.FINISHED.toString(), "game.gameState");
+                    System.out.println("game.gameState: " + gameStateDTO.gameState());
+                    messagingTemplate.convertAndSend("/topic/game." + request.gameId(), gameStateDTO);
+                    GeneralRequestDTO generalRequestDTO = new GeneralRequestDTO(request.username(), request.gameId());
+                    sendResults(generalRequestDTO, principal);
+                }
+
             } else {
                 // Other player's playerCards
                 PlayerCardListDTO playerCards = trickService.getTurnPlayerCards(game, player, game.getTricks().getFirst().getCard());
@@ -347,9 +357,20 @@ public class MessageController {
         }
     }
 
+    @Transactional
+    @MessageMapping("/game.results")  // Kell ez?
+    public void sendResults(GeneralRequestDTO request, Principal principal) {
+        String playerName = principal.getName();
+        if (playerName.equals(request.username())) {
+            System.out.println("Message received");
+        } else {
+            throw new NotAllowedOperationException("Invalid username");
+        }
+    }
+
     private void dealTalonCards(Game game, GeneralRequestDTO request) {
-        //shuffleService.addShuffledDeck(game);
-        shuffleService.useFakeDeck(game);
+        shuffleService.addShuffledDeck(game);
+        //shuffleService.useFakeDeck(game);
         dealService.setTalonCards(game);
         PublicTalonDTO publicTalonDTO = new PublicTalonDTO(6, "game.talon", "NEW");
         messagingTemplate.convertAndSend("/topic/game." + request.gameId(), publicTalonDTO);

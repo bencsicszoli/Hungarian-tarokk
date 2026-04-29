@@ -17,10 +17,17 @@ export interface SeatAttributes {
     playerSeat: string | null;
     playerBalance: number;
     playerCardsNumber: number;
+    playerTrickCards: number;
 }
 
 export interface Card {
   cardId: number;
   imagePath: string;
   clickable: boolean;
+}
+
+export interface TrickCard extends Card {
+  x: number;
+  y: number;
+  rotation: number;
 }

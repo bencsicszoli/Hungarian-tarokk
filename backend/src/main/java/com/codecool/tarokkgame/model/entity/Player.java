@@ -46,6 +46,9 @@ public class Player {
     private boolean nineTarokksInAdvance = false;
     private boolean nineTarokksAfterwards = false;
 
+    @OneToOne(mappedBy = "player", cascade = CascadeType.ALL, orphanRemoval = true)
+    private RoundResult result;
+
     @Enumerated(EnumType.STRING)
     private BidLevel bidLevel = BidLevel.NONE;
 
@@ -228,7 +231,5 @@ public class Player {
         }
         return false;
     }
-
-
 }
 

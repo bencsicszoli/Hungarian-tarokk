@@ -2,9 +2,8 @@ package com.codecool.tarokkgame.service;
 
 import com.codecool.tarokkgame.model.dto.messagedto.response.JoinMessageDTO;
 import com.codecool.tarokkgame.model.dto.messagedto.response.PlayerCardDTO;
-import com.codecool.tarokkgame.model.entity.Game;
-import com.codecool.tarokkgame.model.entity.Player;
-import com.codecool.tarokkgame.model.entity.PlayerCard;
+import com.codecool.tarokkgame.model.dto.messagedto.response.TrickCardDTO;
+import com.codecool.tarokkgame.model.entity.*;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -55,4 +54,29 @@ public class MapperService {
         return playerCardDTOs;
     }
 
+    public List<TrickCardDTO> mapToTrickCardListDTO(List<Trick> tricks) {
+        List<TrickCardDTO> trickCardDTOList = new ArrayList<>();
+        for (Trick trickCard : tricks) {
+            TrickCardDTO trickCardDTO = new TrickCardDTO(
+                    trickCard.getCard().getId(),
+                    trickCard.getPlayer().getId(),
+                    trickCard.getCard().getFrontImagePath(),
+                    trickCard.getX(),
+                    trickCard.getY(),
+                    trickCard.getRotation());
+            trickCardDTOList.add(trickCardDTO);
+        }
+        return trickCardDTOList;
+    }
+
+    public List<OwnTrick> mapToOwnTrickList(List<Trick> tricks, Player trickWinner) {
+        List<OwnTrick> wonCards = new ArrayList<>();
+        for (Trick trick : tricks) {
+            OwnTrick ownTrick = new OwnTrick();
+            ownTrick.setCard(trick.getCard());
+            ownTrick.setPlayer(trickWinner);
+            wonCards.add(ownTrick);
+        }
+        return wonCards;
+    }
 }

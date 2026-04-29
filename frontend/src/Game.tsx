@@ -5,7 +5,8 @@ import { useWebSocket } from "./context/WebSocketContext";
 import InfoTable from "./pageComponents/InfoTable";
 import Talon from "./pageComponents/Talon";
 import Skart from "./Skart";
-import type { SeatAttributes, Card } from "./Types";
+import type { SeatAttributes, Card, TrickCard } from "./Types";
+import Bonuses from "./Bonuses";
 
 const INITIAL_ROTATION = [
   0, 0, -7.5, -15, -22.5, -30, -37.5, -45, -52.5, -60, -67.5, -75, -82.5,
@@ -78,6 +79,7 @@ function Game() {
     | "SKART_LAY_DOWN"
     | "BONUS_ANNOUNCEMENT"
     | "TRICK_PHASE"
+    | "FINISHED"
   >(game?.gameState || "NEW");
   const [tableTurned, setTableTurned] = useState(false);
   const [talonCardsNumber, setTalonCardsNumber] = useState<number>(0);
@@ -100,7 +102,11 @@ function Game() {
   const [declarerBonuses, setDeclarerBonuses] = useState<string | null>(null);
   const [opponentBonuses, setOpponentBonuses] = useState<string | null>(null);
   const [trickCard, setTrickCard] = useState<Card | null>(null);
-  const [trickCards, setTrickCards] = useState<Card[]>([]);
+  const [trickCards, setTrickCards] = useState<TrickCard[]>([]);
+  const [player1TrickCards, setPlayer1TrickCards] = useState<number>(0);
+  const [player2TrickCards, setPlayer2TrickCards] = useState<number>(0);
+  const [player3TrickCards, setPlayer3TrickCards] = useState<number>(0);
+  const [player4TrickCards, setPlayer4TrickCards] = useState<number>(0);
   const seatModifier = useRef(0);
   const cardsToDiscard = useRef<number>(0);
 
@@ -199,13 +205,21 @@ function Game() {
         break;
       case "game.trickCards":
         setTrickCards(message.cards);
-        console.log("Trick cards updated:", message.cards);
+        setPlayerCards((prev) => ({
+          ...prev,
+          [message.turnName]: message.cardsInHand,
+        }));
+        console.log("Trick cards updated:", message);
         break;
-        case "game.newTrickRound":
-          setTrickCards([]);
-          setTrickCard(null);
-          console.log(message.textContent);
-          break;
+      case "game.newTrickRound":
+        setTrickCards([]);
+        setTrickCard(null);
+        setPlayer1TrickCards(message.playerTricks[0]);
+        setPlayer2TrickCards(message.playerTricks[1]);
+        setPlayer3TrickCards(message.playerTricks[2]);
+        setPlayer4TrickCards(message.playerTricks[3]);
+        console.log("Trick reset message:", message);
+        break;
       default:
         console.log("Unhandled message type:", message.type);
         break;
@@ -361,6 +375,17 @@ function Game() {
       setPrivateInformation("");
     }
   }, [gameState, turnPlayer, user]);
+  /*
+  useEffect(() => {
+    if (gameState === "FINISHED" && user?.username === turnPlayer) {
+      send("/app/game.results", {
+        username: user?.username,
+        gameId: game.gameId,
+      });
+      console.log("Request for game results sent:", user?.username, game.gameId);
+    }
+  }, [gameState, turnPlayer, user]);
+*/
 
   function dealTalonToPlayers() {
     send("/app/game.dealTalonToPlayers", {
@@ -398,6 +423,16 @@ function Game() {
     player3Balance,
   ];
 
+  const playerTrickCards = [
+    player1TrickCards,
+    player2TrickCards,
+    player3TrickCards,
+    player4TrickCards,
+    player1TrickCards,
+    player2TrickCards,
+    player3TrickCards,
+  ];
+
   const playerCardsNumbers = [
     playerCards[player1 || ""] || 0,
     playerCards[player2 || ""] || 0,
@@ -415,21 +450,25 @@ function Game() {
         playerSeat: playerSeats[0 + seatModifier],
         playerBalance: playerBalances[0 + seatModifier],
         playerCardsNumber: playerCardsNumbers[0 + seatModifier],
+        playerTrickCards: playerTrickCards[0 + seatModifier],
       },
       {
         playerSeat: playerSeats[1 + seatModifier],
         playerBalance: playerBalances[1 + seatModifier],
         playerCardsNumber: playerCardsNumbers[1 + seatModifier],
+        playerTrickCards: playerTrickCards[1 + seatModifier],
       },
       {
         playerSeat: playerSeats[2 + seatModifier],
         playerBalance: playerBalances[2 + seatModifier],
         playerCardsNumber: playerCardsNumbers[2 + seatModifier],
+        playerTrickCards: playerTrickCards[2 + seatModifier],
       },
       {
         playerSeat: playerSeats[3 + seatModifier],
         playerBalance: playerBalances[3 + seatModifier],
         playerCardsNumber: playerCardsNumbers[3 + seatModifier],
+        playerTrickCards: playerTrickCards[3 + seatModifier],
       },
     ];
   }
@@ -462,39 +501,99 @@ function Game() {
     return (
       <div className="flex flex-col h-full">
         <div className="h-1/8 flex justify-center items-center font-bold text-xl">
-          <p>{seatAttribute.playerSeat}</p>
+          <div className="w-1/8 flex justify-center items-center">
+            {seatAttribute.playerTrickCards > 0 && (
+              <p>{seatAttribute.playerSeat}'s tricks</p>
+            )}
+          </div>
+          <div className="w-3/4 flex justify-center items-center mt-1">
+            {seatAttribute.playerSeat === turnPlayer ? (
+              <p className="bg-green-300 text-[#2f4b3a] text-2xl rounded-md w-auto pt-0.5 pb-0.5 pl-3 pr-3">
+                {seatAttribute.playerSeat}
+              </p>
+            ) : (
+              <p>{seatAttribute.playerSeat}</p>
+            )}
+          </div>
+          <div className="w-1/8"></div>
         </div>
         {(gameState === "NEW" ||
-          gameState === "BIDDING" ||
           gameState === "TALON_PICK_UP" ||
           gameState === "BONUS_ANNOUNCEMENT") && (
-          <div className="flex justify-center items-center h-2/3">
-            {displayOwnCards()}
+          <div className="flex flex-col justify-center items-center h-full">
+            <div className="flex justify-center items-center h-3/4">
+              {displayOwnCards()}
+            </div>
+            <div className="h-1/6 flex justify-center items-center font-bold text-xl w-full">
+              <p>Balance: {seatAttribute.playerBalance}</p>
+            </div>
+          </div>
+        )}
+        {gameState === "BIDDING" && (
+          <div className="flex flex-col justify-center items-center h-full">
+            <div className="flex justify-center items-center h-3/4">
+              {displayOwnCards()}
+            </div>
+            <div className="flex justify-center items-center font-bold text-xl w-full h-1/8 mt-1">
+              {renderBidButtons()}
+            </div>
           </div>
         )}
         {gameState === "SKART_LAY_DOWN" && turnPlayer === user?.username && (
-          <div className="flex justify-center items-center h-2/3">
-            {displayOwnCardsWithTalon()}
+          <div className="w-full h-full flex flex-col justify-center items-center">
+            <div className="h-5/6 flex justify-center items-center">
+              {displayOwnCardsWithTalon()}
+            </div>
+            <div className="h-1/6 flex justify-center items-center font-bold text-xl w-full">
+              <p>Balance: {seatAttribute.playerBalance}</p>
+            </div>
           </div>
         )}
         {gameState === "SKART_LAY_DOWN" && turnPlayer !== user?.username && (
-          <div className="flex justify-center items-center h-2/3">
-            {displayOwnCards()}
+          <div className="w-full h-full flex flex-col justify-center items-center">
+            <div className="h-5/6 flex justify-center items-center">
+              {displayOwnCards()}
+            </div>
+            <div className="h-1/6 flex justify-center items-center font-bold text-xl w-full">
+              <p>Balance: {seatAttribute.playerBalance}</p>
+            </div>
           </div>
         )}
-        {gameState === "TRICK_PHASE" && turnPlayer === user?.username && (
-          <div className="flex justify-center items-center h-2/3">
-            {displayOwnPlayableCards()}
-          </div>
-        )}
-        {gameState === "TRICK_PHASE" && turnPlayer !== user?.username && (
-          <div className="flex justify-center items-center h-2/3">
-            {displayOwnCards()}
-          </div>
-        )}
-        <div className="flex justify-center items-center font-bold text-xl h-auto">
-          {renderBidButtons()}
-        </div>
+        {(gameState === "TRICK_PHASE" || gameState === "FINISHED") &&
+          turnPlayer === user?.username && (
+            <div className="flex h-7/8">
+              <div className="w-1/8 flex justify-center items-start mt-3">
+                {displayTricksBack(seatAttribute.playerTrickCards)}
+              </div>
+              <div className="w-3/4 h-full flex flex-col justify-center items-center">
+                <div className="h-5/6 flex justify-center items-center">
+                  {displayOwnPlayableCards()}
+                </div>
+                <div className="h-1/6 flex justify-center items-center font-bold text-xl w-full">
+                  <p>Balance: {seatAttribute.playerBalance}</p>
+                </div>
+              </div>
+
+              <div className="w-1/8 h-2/3"></div>
+            </div>
+          )}
+        {(gameState === "TRICK_PHASE" || gameState === "FINISHED") &&
+          turnPlayer !== user?.username && (
+            <div className="flex h-7/8">
+              <div className="w-1/8 flex justify-center items-start mt-3">
+                {displayTricksBack(seatAttribute.playerTrickCards)}
+              </div>
+              <div className="w-3/4 h-full flex flex-col justify-center items-center">
+                <div className="h-5/6 flex justify-center items-center">
+                  {displayOwnCards()}
+                </div>
+                <div className="h-1/6 flex justify-center items-center font-bold text-xl w-full">
+                  <p>Balance: {seatAttribute.playerBalance}</p>
+                </div>
+              </div>
+              <div className="w-1/8 h-2/3"></div>
+            </div>
+          )}
       </div>
     );
   }
@@ -684,7 +783,13 @@ function Game() {
     return (
       <div className="flex flex-col h-full">
         <div className="h-1/6 flex justify-center items-center font-bold text-xl">
-          <p>{seatAttribute.playerSeat}</p>
+          {seatAttribute.playerSeat === turnPlayer && turnPlayer !== null ? (
+            <p className="bg-green-300 text-[#2f4b3a] text-2xl rounded-md w-auto pt-0.5 pb-0.5 pl-3 pr-3">
+              {seatAttribute.playerSeat}
+            </p>
+          ) : (
+            <p>{seatAttribute.playerSeat}</p>
+          )}
         </div>
 
         <div className="flex justify-center items-center h-2/3 relative -top-5">
@@ -693,6 +798,119 @@ function Game() {
         <div className="h-1/6 flex justify-center items-center font-bold text-xl">
           <p>Balance: {seatAttribute.playerBalance}</p>
         </div>
+      </div>
+    );
+  }
+
+  function renderPlayerHandInTrickPhase(seatAttribute: SeatAttributes) {
+    return (
+      <div className="flex justify-around h-full">
+        <div className="w-1/3 flex flex-col">
+          <div className="h-1/6 flex justify-center items-center font-bold text-xl">
+            {seatAttribute.playerTrickCards > 0 && (
+              <p>{seatAttribute.playerSeat}'s tricks</p>
+            )}
+          </div>
+          <div className="h-5/6 flex justify-center items-start">
+            {displayTricksBack(seatAttribute.playerTrickCards)}
+          </div>
+        </div>
+
+        <div className="w-2/3 flex justify-center items-center">
+          <div className="flex flex-col h-full">
+            <div className="h-1/6 flex justify-center items-center font-bold text-xl">
+              {seatAttribute.playerSeat === turnPlayer ? (
+                <p className="bg-green-300 text-[#2f4b3a] text-2xl rounded-md w-auto pt-0.5 pb-0.5 pl-3 pr-3">
+                  {seatAttribute.playerSeat}
+                </p>
+              ) : (
+                <p>{seatAttribute.playerSeat}</p>
+              )}
+            </div>
+
+            <div className="flex justify-center items-center h-2/3 relative -top-5">
+              {displayHandBack(seatAttribute.playerCardsNumber)}
+            </div>
+            <div className="h-1/6 flex justify-center items-center font-bold text-xl">
+              <p>Balance: {seatAttribute.playerBalance}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function renderEasternPlayerHandInTrickPhase(seatAttribute: SeatAttributes) {
+    return (
+      <div className="flex justify-around h-full">
+        <div className="w-2/3 flex justify-center items-center">
+          <div className="flex flex-col h-full">
+            <div className="h-1/6 flex justify-center items-center font-bold text-xl">
+              {seatAttribute.playerSeat === turnPlayer ? (
+                <p className="bg-green-300 text-[#2f4b3a] text-2xl rounded-md w-auto pt-0.5 pb-0.5 pl-3 pr-3">
+                  {seatAttribute.playerSeat}
+                </p>
+              ) : (
+                <p>{seatAttribute.playerSeat}</p>
+              )}
+            </div>
+
+            <div className="flex justify-center items-center h-2/3 relative -top-5">
+              {displayHandBack(seatAttribute.playerCardsNumber)}
+            </div>
+            <div className="h-1/6 flex justify-center items-center font-bold text-xl">
+              <p>Balance: {seatAttribute.playerBalance}</p>
+            </div>
+          </div>
+        </div>
+        <div className="w-1/3 flex flex-col">
+          <div className="h-1/6 flex justify-center items-center font-bold text-xl">
+            {seatAttribute.playerTrickCards > 0 && (
+              <p>{seatAttribute.playerSeat}'s tricks</p>
+            )}
+          </div>
+          <div className="h-5/6 flex justify-center items-start">
+            {displayTricksBack(seatAttribute.playerTrickCards)}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function renderNorthernPlayerHandInTrickPhase(seatAttribute: SeatAttributes) {
+    return (
+      <div className="flex justify-around h-full">
+        <div className="w-1/4 flex flex-col">
+          <div className="h-1/6 flex justify-center items-center font-bold text-xl">
+            {seatAttribute.playerTrickCards > 0 && (
+              <p>{seatAttribute.playerSeat}'s tricks</p>
+            )}
+          </div>
+          <div className="h-5/6 flex justify-center items-start">
+            {displayTricksBack(seatAttribute.playerTrickCards)}
+          </div>
+        </div>
+        <div className="w-1/2 flex justify-center items-center">
+          <div className="flex flex-col h-full">
+            <div className="h-1/6 flex justify-center items-center font-bold text-xl">
+              {seatAttribute.playerSeat === turnPlayer ? (
+                <p className="bg-green-300 text-[#2f4b3a] text-2xl rounded-md w-auto pt-0.5 pb-0.5 pl-3 pr-3">
+                  {seatAttribute.playerSeat}
+                </p>
+              ) : (
+                <p>{seatAttribute.playerSeat}</p>
+              )}
+            </div>
+
+            <div className="flex justify-center items-center h-2/3 relative -top-5">
+              {displayHandBack(seatAttribute.playerCardsNumber)}
+            </div>
+            <div className="h-1/6 flex justify-center items-center font-bold text-xl">
+              <p>Balance: {seatAttribute.playerBalance}</p>
+            </div>
+          </div>
+        </div>
+        <div className="w-1/4 h-full flex justify-center items-center"></div>
       </div>
     );
   }
@@ -717,6 +935,18 @@ function Game() {
         src={imagePath}
         alt={`Skart card back ${index + 1}`}
         className="w-20 -mx-14"
+      />
+    ));
+  }
+
+  function displayTricksBack(length: number) {
+    const cardsBack = Array(length).fill("Back.png");
+    return cardsBack.map((imagePath, index) => (
+      <img
+        key={index}
+        src={imagePath}
+        alt={`Trick card back ${index + 1}`}
+        className="w-20 -mx-9.75"
       />
     ));
   }
@@ -857,14 +1087,27 @@ function Game() {
   }
 
   function renderTrickCards() {
-    return trickCards.map((card, index) => (
-      <img
-        key={index}
-        src={card.imagePath}
-        alt={`Trick card ${index + 1}`}
-        className="w-20 mx-1"
-      />
-    ));
+    return (
+      <div className="relative w-full h-full">
+        {trickCards.map((card, index) => {
+
+          return (
+            <img
+              key={index}
+              src={card.imagePath}
+              alt={`Trick card ${index + 1}`}
+              className="w-20 absolute"
+              style={{
+                left: `calc(50% + ${card?.x ?? 0}%)`,
+                top: `calc(50% + ${card?.y ?? 0}%)`,
+                transform: `translate(-50%, -50%) rotate(${card?.rotation ?? 0}deg)`,
+                zIndex: index,
+              }}
+            />
+          );
+        })}
+      </div>
+    );
   }
 
   return (
@@ -900,9 +1143,9 @@ function Game() {
               {/* Declarer's skart area */}
               <div className="w-1/4">
                 <div className="h-1/6 flex justify-center items-end font-bold text-xl">
-                  <p>Declarer's skart</p>
+                  {declarerSkartLength > 0 && <p>Declarer's skart</p>}
                 </div>
-                <div className="flex justify-center items-center h-5/6">
+                <div className="flex justify-center items-start h-5/6 mt-2">
                   {declarerSkart.length > 0
                     ? displayDeclarerSkartWithTarokk()
                     : displaySkart(declarerSkartLength)}
@@ -910,16 +1153,24 @@ function Game() {
               </div>
 
               {/* Player 3's area */}
-              <div className="w-1/2">
-                {renderPlayerHand(getSeatAttributes(seatModifier.current)[2])}
-              </div>
+              {gameState !== "TRICK_PHASE" && gameState !== "FINISHED" ? (
+                <div className="w-1/2">
+                  {renderPlayerHand(getSeatAttributes(seatModifier.current)[2])}
+                </div>
+              ) : (
+                <div className="w-1/2">
+                  {renderNorthernPlayerHandInTrickPhase(
+                    getSeatAttributes(seatModifier.current)[2],
+                  )}
+                </div>
+              )}
 
               {/* Opponent's skart area */}
               <div className="w-1/4">
-                <div className="h-1/6 flex justify-center items-end font-bold text-xl">
-                  <p>Opponent's skart</p>
+                <div className="h-1/6 flex justify-center items-center font-bold text-xl">
+                  {opponentSkartLength > 0 && <p>Opponent's skart</p>}
                 </div>
-                <div className="flex justify-center items-center h-5/6">
+                <div className="flex justify-center items-start h-5/6 mt-2">
                   {displaySkart(opponentSkartLength)}
                 </div>
               </div>
@@ -928,64 +1179,75 @@ function Game() {
             {/* Middle row */}
             <div className="w-full h-1/3 flex">
               {/* Player 4's area */}
-              <div className="w-1/4">
-                {renderPlayerHand(getSeatAttributes(seatModifier.current)[3])}
-              </div>
+              {gameState !== "TRICK_PHASE" && gameState !== "FINISHED" ? (
+                <div className="w-1/4">
+                  {renderPlayerHand(getSeatAttributes(seatModifier.current)[3])}
+                </div>
+              ) : (
+                <div className="w-[35%]">
+                  {renderPlayerHandInTrickPhase(
+                    getSeatAttributes(seatModifier.current)[3],
+                  )}
+                </div>
+              )}
 
               {/* Talon and play area */}
-              <div className="w-1/2 bg-gray-400">
-                {talonCardsNumber > 0 && (
-                  <Talon talonCardsNumber={talonCardsNumber} />
-                )}
-                {gameState === "SKART_LAY_DOWN" &&
-                  (ownCards.length > 9 ||
-                    temporarySelectedCards.length > 0) && (
-                    <Skart
-                      temporarySelectedCards={temporarySelectedCards}
-                      onDisplayTemporarySelectedCards={() => (
-                        <>{displayTemporarySelectedCards()}</>
-                      )}
-                      cardsToDiscard={cardsToDiscard}
-                      sendSkartCards={sendSkartCards}
-                    />
+              {gameState !== "TRICK_PHASE" && gameState !== "FINISHED" ? (
+                <div className="w-1/2 bg-gray-400">
+                  {talonCardsNumber > 0 && (
+                    <Talon talonCardsNumber={talonCardsNumber} />
                   )}
-                {gameState === "BONUS_ANNOUNCEMENT" &&
-                  turnPlayer === user?.username && (
-                    <div className="h-full flex flex-col justify-center items-center">
-                      {hasEightTarokks || hasNineTarokks ? (
-                        <div className="w-full bg-pink-300 flex justify-center items-center">
-                          {renderTarokkNumberButton()}
-                        </div>
-                      ) : null}
-                      {declarer && callableTarokks.length > 0 && (
-                        <div className="w-full bg-pink-400 flex justify-center items-center">
-                          {renderCallableTarokkButtons()}
-                        </div>
-                      )}
-
-                      <div className="w-full bg-pink-500 flex flex-col justify-center items-center">
-                        <p className="h-1/4 font-semibold mt-1 text-lg">
-                          Select your bonuses:
-                        </p>
-                        <div className="h-3/4 w-full grid grid-flow-row grid-cols-4">
-                          {renderBonusButtons()}
-                        </div>
-                      </div>
+                  {gameState === "SKART_LAY_DOWN" &&
+                    (ownCards.length > 9 ||
+                      temporarySelectedCards.length > 0) && (
+                      <Skart
+                        temporarySelectedCards={temporarySelectedCards}
+                        onDisplayTemporarySelectedCards={() => (
+                          <>{displayTemporarySelectedCards()}</>
+                        )}
+                        cardsToDiscard={cardsToDiscard}
+                        sendSkartCards={sendSkartCards}
+                      />
+                    )}
+                  {gameState === "BONUS_ANNOUNCEMENT" &&
+                    turnPlayer === user?.username && (
+                      <Bonuses
+                        hasEightTarokks={hasEightTarokks}
+                        hasNineTarokks={hasNineTarokks}
+                        declarer={declarer}
+                        callableTarokks={callableTarokks}
+                        onRenderTarokkNumberButton={() =>
+                          renderTarokkNumberButton()
+                        }
+                        onRenderCallableTarokkButtons={() =>
+                          renderCallableTarokkButtons()
+                        }
+                        onRenderBonusButtons={() => renderBonusButtons()}
+                      />
+                    )}
+                </div>
+              ) : (
+                <div className="w-[30%] bg-gray-400">
+                  <div className="h-full flex flex-col justify-center items-center">
+                    <div className="relative w-full h-full">
+                      {renderTrickCards()}
                     </div>
-                  )}
-                  {gameState === "TRICK_PHASE" && (
-                    <div className="h-full flex flex-col justify-center items-center">
-                      <div className="flex justify-center items-center">
-                        {renderTrickCards()}
-                      </div>
-                    </div>
-                  )}
-              </div>
+                  </div>
+                </div>
+              )}
 
               {/* Player 2's area */}
-              <div className="w-1/4">
-                {renderPlayerHand(getSeatAttributes(seatModifier.current)[1])}
-              </div>
+              {gameState !== "TRICK_PHASE" && gameState !== "FINISHED" ? (
+                <div className="w-1/4">
+                  {renderPlayerHand(getSeatAttributes(seatModifier.current)[1])}
+                </div>
+              ) : (
+                <div className="w-[35%]">
+                  {renderEasternPlayerHandInTrickPhase(
+                    getSeatAttributes(seatModifier.current)[1],
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Bottom row */}
@@ -1011,6 +1273,7 @@ function Game() {
           selectedBonuses={selectedBonuses}
           declarerBonuses={declarerBonuses}
           opponentBonuses={opponentBonuses}
+          startPlayer={startPlayer}
         />
       </div>
     </div>

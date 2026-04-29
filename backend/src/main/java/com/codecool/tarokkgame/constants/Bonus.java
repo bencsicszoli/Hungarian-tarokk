@@ -80,8 +80,9 @@ public enum Bonus {
     }
 
     public static List<String> getBonusNames(Set<Bonus> bonuses) {
+        List<Bonus> sortedBonuses = bonuses.stream().sorted(Comparator.comparingInt(b -> b.bonusIndex)).toList();
         List<String> bonusNames = new ArrayList<>();
-        for (Bonus bonus : bonuses) {
+        for (Bonus bonus : sortedBonuses) {
             bonusNames.add(bonus.bonusName);
         }
         return bonusNames;

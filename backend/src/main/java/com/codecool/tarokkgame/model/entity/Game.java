@@ -20,18 +20,20 @@ public class Game {
     private String player2;
     private String player3;
     private String player4;
-
     private boolean isXIXInvit = false;
     private boolean isXVIIIInvit = false;
     private boolean isYielded = false;
     private boolean isTarokkInDeclarerSkart = false;
     private boolean isTarokkInOpponentSkart = false;
-
     private String invitAcceptor;
     private int biddingPasses = 0;
     private int invitedTarokk = 0;
     private int bonusPasses = 0;
     private int trickRound = 1;
+    private int player1TrickCards = 0;
+    private int player2TrickCards = 0;
+    private int player3TrickCards = 0;
+    private int player4TrickCards = 0;
     private String XXICatcher;
     private String successfulUltimo;
     private String dealer;

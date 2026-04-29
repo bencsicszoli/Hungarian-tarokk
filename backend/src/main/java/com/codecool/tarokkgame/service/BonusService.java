@@ -178,9 +178,7 @@ public class BonusService {
             callableTarokks.add("I call the XX");
         } else {
             int callableTarokk = player.findMissingStrongestTarokk();
-            System.out.println("Callable tarokk: " + callableTarokk);
             String romanForm = RomanTarokkNumber.fromArabicNumber(callableTarokk).toString();
-            System.out.println("Roman form: " + romanForm);
             callableTarokks.add("I call the " + romanForm);
             callableTarokks.add("I call the XX");
         }

@@ -36,7 +36,6 @@ public class AuthService {
         this.jwtUtils = jwtUtils;
     }
 
-
     public Map<String, String> createPlayer(RegisterDTO request) {
         if (appUserRepository.existsByUsername(request.username())) {
             throw new UsernameAlreadyExistsException(request.username());

@@ -13,6 +13,10 @@ public class Trick {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
+    int x = 0;
+    int y = 0;
+    int rotation = 0;
+
     @ManyToOne
     private Player player;
 

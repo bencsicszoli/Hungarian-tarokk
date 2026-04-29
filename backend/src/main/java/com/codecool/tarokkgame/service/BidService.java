@@ -38,7 +38,6 @@ public class BidService {
     public PotentialBidsDTO getPotentialBidsToTurnPlayer(String username, long gameId, String newBidLevel) {
         Player sender = playerRepository.findByUserUsernameAndGameId(username, gameId).orElseThrow(() -> new NoSuchElementException("Player not found"));
         BidLevel bidLevel = BidLevel.getLevelByDescription(newBidLevel);
-        System.out.println(bidLevel);
         Game game = gameRepository.findById(gameId).orElseThrow(() -> new NoSuchElementException("Game not found"));
         Set<String> bids = new LinkedHashSet<>();
 
@@ -55,7 +54,6 @@ public class BidService {
     public PublicBidDTO getPublicBidInfo(Game game, String bidPlayer, String announcedLevel, String turnPlayer) {
         String declarer = game.getDeclarer();
         String bid = game.getBidLevel().getBidNameToDisplay();
-        System.out.println("Bid name: " + bid);
         String info = bidPlayer.toUpperCase() + ": " + announcedLevel;
         return new PublicBidDTO(declarer, bidPlayer, turnPlayer, bid, info,"game.publicBidInfo");
     }
