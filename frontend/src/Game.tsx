@@ -291,6 +291,9 @@ function Game() {
         setSelectedBonuses([]);
         setFirstBonusRound(false);
         break;
+      case "game.privateResult":
+        console.log("Private result message received:", message);
+        break;
       default:
         console.log("Unhandled private message type:", message.type);
         break;
@@ -1090,7 +1093,6 @@ function Game() {
     return (
       <div className="relative w-full h-full">
         {trickCards.map((card, index) => {
-
           return (
             <img
               key={index}

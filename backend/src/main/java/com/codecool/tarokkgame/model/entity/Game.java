@@ -35,6 +35,9 @@ public class Game {
     private int player3TrickCards = 0;
     private int player4TrickCards = 0;
     private String XXICatcher;
+    private String volatAnnouncer;
+    private String trullAnnouncer;
+    private String fourKingsAnnouncer;
     private String successfulUltimo;
     private String dealer;
     private String startPlayer;
@@ -313,5 +316,42 @@ public class Game {
             }
         }
         return isAnnouncedVolat;
+    }
+
+    public boolean announcedBonus(String side, Bonus bonus) {
+        boolean isAnnouncedBonus = false;
+        if (side.equals("declarer")) {
+            for (Bonus declarerBonus : declarerBonuses) {
+                if (declarerBonus.getBonusIndex() == bonus.getBonusIndex()) {
+                    isAnnouncedBonus = true;
+                    break;
+                }
+            }
+        } else {
+            for (Bonus opponentBonus : opponentBonuses) {
+                if (opponentBonus.getBonusIndex() == bonus.getBonusIndex()) {
+                    isAnnouncedBonus = true;
+                    break;
+                }
+            }
+        }
+        return isAnnouncedBonus;
+    }
+
+    public Bonus findBonusByIndex(Bonus bonus, String side) {
+        if (side.equals("declarer")) {
+            for (Bonus declarerBonus : declarerBonuses) {
+                if (declarerBonus.getBonusIndex() == bonus.getBonusIndex()) {
+                    return declarerBonus;
+                }
+            }
+        } else {
+            for (Bonus opponentBonus : opponentBonuses) {
+                if (opponentBonus.getBonusIndex() == bonus.getBonusIndex()) {
+                    return opponentBonus;
+                }
+            }
+        }
+        return null;
     }
 }

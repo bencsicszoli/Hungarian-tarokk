@@ -42,8 +42,8 @@ public class RoundResult {
     private int volatRedoubled = 0;
     private int eightTarokksInAdvance = 0;
     private int nineTarokksInAdvance = 0;
-    private int eightTarokksAfterWards = 0;
-    private int nineTarokksAfterWards = 0;
+    private int eightTarokksAfterwards = 0;
+    private int nineTarokksAfterwards = 0;
 
     @OneToOne
     private Player player;

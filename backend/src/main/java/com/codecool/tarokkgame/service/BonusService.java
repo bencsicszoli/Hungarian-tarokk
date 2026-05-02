@@ -313,6 +313,12 @@ public class BonusService {
                     game.getOptionalBonuses().remove(bonus);
                     if (bonus.equals(Bonus.PAGAT_ULTIMO)) {
                         player.setAnnouncedUltimo(true);
+                    } else if (bonus.equals(Bonus.VOLAT)) {
+                        game.setVolatAnnouncer("declarer");
+                    } else if (bonus.equals(Bonus.TRULL)) {
+                        game.setTrullAnnouncer("declarer");
+                    } else if (bonus.equals(Bonus.FOUR_KINGS)) {
+                        game.setFourKingsAnnouncer("declarer");
                     }
                 }
                 game.getDeclarerBonuses().add(bonus);
@@ -346,8 +352,26 @@ public class BonusService {
         game.getOptionalBonuses().remove(bonus);
         if (player.getRoleInGame().getTeam().equals("declarer")) {
             game.getDeclarerBonuses().add(bonus);
+            if (bonus.equals(Bonus.VOLAT)) {
+                game.setVolatAnnouncer("declarer");
+            } else if (bonus.equals(Bonus.TRULL)) {
+                game.setTrullAnnouncer("declarer");
+            } else if (bonus.equals(Bonus.FOUR_KINGS)) {
+                game.setFourKingsAnnouncer("declarer");
+            } else if (bonus.equals(Bonus.PAGAT_ULTIMO)) {
+                player.setAnnouncedUltimo(true);
+            }
         } else if (player.getRoleInGame().equals(RoleInGame.OPPONENT)) {
             game.getOpponentBonuses().add(bonus);
+            if (bonus.equals(Bonus.VOLAT)) {
+                game.setVolatAnnouncer("opponent");
+            } else if (bonus.equals(Bonus.TRULL)) {
+                game.setTrullAnnouncer("opponent");
+            } else if (bonus.equals(Bonus.FOUR_KINGS)) {
+                game.setFourKingsAnnouncer("opponent");
+            } else if (bonus.equals(Bonus.PAGAT_ULTIMO)) {
+                player.setAnnouncedUltimo(true);
+            }
         }
     }
 

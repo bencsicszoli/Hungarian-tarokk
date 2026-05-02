@@ -37,7 +37,6 @@ public class TrickService {
         setPlayerCardsClickableAndHandleCaseUltimo(player, game, playerCards, calledTarokk);
 
         List<PlayerCardDTO> playerCardList = mapperService.mapToPlayerCardListDTO(playerCards);
-        System.out.println("Kártyaszám: " + playerCardList.size());
         List<PlayerCardDTO> sortedcardList = playerCardList.stream().sorted(Comparator.comparingInt(PlayerCardDTO::cardId)).toList();
         return new PlayerCardListDTO(sortedcardList, "game.playerCards");
     }

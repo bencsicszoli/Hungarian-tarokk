@@ -2,6 +2,7 @@ package com.codecool.tarokkgame.service;
 
 import com.codecool.tarokkgame.model.dto.messagedto.response.JoinMessageDTO;
 import com.codecool.tarokkgame.model.dto.messagedto.response.PlayerCardDTO;
+import com.codecool.tarokkgame.model.dto.messagedto.response.PrivateResultDTO;
 import com.codecool.tarokkgame.model.dto.messagedto.response.TrickCardDTO;
 import com.codecool.tarokkgame.model.entity.*;
 import org.springframework.stereotype.Service;
@@ -78,5 +79,43 @@ public class MapperService {
             wonCards.add(ownTrick);
         }
         return wonCards;
+    }
+
+    public PrivateResultDTO mapToPrivateResult(Player player) {
+        RoundResult result = player.getResult();
+        PrivateResultDTO dto = new PrivateResultDTO();
+        dto.setParty(result.getParty());
+        dto.setPartyDoubled(result.getPartyDoubled());
+        dto.setPartyRedoubled(result.getPartyRedoubled());
+        dto.setSilentTrull(result.getSilentTrull());
+        dto.setTrull(result.getTrull());
+        dto.setTrullDoubled(result.getTrullDoubled());
+        dto.setTrullRedoubled(result.getTrullRedoubled());
+        dto.setSilentFourKings(result.getSilentFourKings());
+        dto.setFourKings(result.getFourKings());
+        dto.setFourKingsDoubled(result.getFourKingsDoubled());
+        dto.setFourKingsRedoubled(result.getFourKingsRedoubled());
+        dto.setSilentDoubleGame(result.getSilentDoubleGame());
+        dto.setDoubleGame(result.getDoubleGame());
+        dto.setDoubleGameDoubled(result.getDoubleGameDoubled());
+        dto.setDoubleGameRedoubled(result.getDoubleGameRedoubled());
+        dto.setSilentUltimo(result.getSilentUltimo());
+        dto.setUltimo(result.getUltimo());
+        dto.setUltimoDoubled(result.getUltimoDoubled());
+        dto.setUltimoRedoubled(result.getUltimoRedoubled());
+        dto.setSilentXXICatch(result.getSilentXXICatch());
+        dto.setXXICatch(result.getXXICatch());
+        dto.setXXICatchDoubled(result.getXXICatchDoubled());
+        dto.setXXICatchRedoubled(result.getXXICatchRedoubled());
+        dto.setSilentVolat(result.getSilentVolat());
+        dto.setVolat(result.getVolat());
+        dto.setVolatDoubled(result.getVolatDoubled());
+        dto.setVolatRedoubled(result.getVolatRedoubled());
+        dto.setEightTarokksInAdvance(result.getEightTarokksInAdvance());
+        dto.setNineTarokksInAdvance(result.getNineTarokksInAdvance());
+        dto.setEightTarokksAfterwards(result.getEightTarokksAfterwards());
+        dto.setNineTarokksAfterwards(result.getNineTarokksAfterwards());
+        dto.setType("game.privateResult");
+        return dto;
     }
 }

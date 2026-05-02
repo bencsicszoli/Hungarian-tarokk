@@ -7,6 +7,7 @@ import com.codecool.tarokkgame.model.dto.messagedto.response.*;
 import com.codecool.tarokkgame.model.entity.Card;
 import com.codecool.tarokkgame.model.entity.Game;
 import com.codecool.tarokkgame.model.entity.Player;
+import com.codecool.tarokkgame.model.entity.RoundResult;
 import com.codecool.tarokkgame.repository.CardRepository;
 import com.codecool.tarokkgame.repository.GameRepository;
 import com.codecool.tarokkgame.repository.PlayerRepository;
@@ -39,8 +40,10 @@ public class MessageController {
     private final BonusService bonusService;
     private final TrickService trickService;
     private final CardRepository cardRepository;
+    private final ResultService resultService;
+    private final MapperService mapperService;
 
-    public MessageController(SimpMessagingTemplate messagingTemplate, PlayerService playerService, GameRepository gameRepository, ShuffleService shuffleService, DealService dealService, PlayerRepository playerRepository, TalonCardRepository talonCardRepository, BidService bidService, TalonService talonService, BonusService bonusService, TrickService trickService, CardRepository cardRepository) {
+    public MessageController(SimpMessagingTemplate messagingTemplate, PlayerService playerService, GameRepository gameRepository, ShuffleService shuffleService, DealService dealService, PlayerRepository playerRepository, TalonCardRepository talonCardRepository, BidService bidService, TalonService talonService, BonusService bonusService, TrickService trickService, CardRepository cardRepository, ResultService resultService, MapperService mapperService) {
 
         this.messagingTemplate = messagingTemplate;
         this.playerService = playerService;
@@ -54,6 +57,8 @@ public class MessageController {
         this.bonusService = bonusService;
         this.trickService = trickService;
         this.cardRepository = cardRepository;
+        this.resultService = resultService;
+        this.mapperService = mapperService;
     }
 
     @MessageMapping("/game.join")
@@ -339,7 +344,6 @@ public class MessageController {
                     //info about the trick winner
                 } else {
                     GameStateDTO gameStateDTO = new GameStateDTO(GameState.FINISHED.toString(), "game.gameState");
-                    System.out.println("game.gameState: " + gameStateDTO.gameState());
                     messagingTemplate.convertAndSend("/topic/game." + request.gameId(), gameStateDTO);
                     GeneralRequestDTO generalRequestDTO = new GeneralRequestDTO(request.username(), request.gameId());
                     sendResults(generalRequestDTO, principal);
@@ -363,14 +367,22 @@ public class MessageController {
         String playerName = principal.getName();
         if (playerName.equals(request.username())) {
             System.out.println("Message received");
+            resultService.setResult(request.gameId());
+            Game game = gameRepository.findById(request.gameId()).orElseThrow(() -> new NoSuchElementException("Game not found"));
+            List<Player> players = game.getPlayers();
+            for (Player player : players) {
+                PrivateResultDTO dto = mapperService.mapToPrivateResult(player);
+                messagingTemplate.convertAndSendToUser(player.getName(), "/queue/private", dto);
+            }
+            System.out.println("DTO elkészült");
         } else {
             throw new NotAllowedOperationException("Invalid username");
         }
     }
 
     private void dealTalonCards(Game game, GeneralRequestDTO request) {
-        shuffleService.addShuffledDeck(game);
-        //shuffleService.useFakeDeck(game);
+        //shuffleService.addShuffledDeck(game);
+        shuffleService.useFakeDeck(game);
         dealService.setTalonCards(game);
         PublicTalonDTO publicTalonDTO = new PublicTalonDTO(6, "game.talon", "NEW");
         messagingTemplate.convertAndSend("/topic/game." + request.gameId(), publicTalonDTO);
