@@ -366,7 +366,6 @@ public class MessageController {
     public void sendResults(GeneralRequestDTO request, Principal principal) {
         String playerName = principal.getName();
         if (playerName.equals(request.username())) {
-            System.out.println("Message received");
             resultService.setResult(request.gameId());
             Game game = gameRepository.findById(request.gameId()).orElseThrow(() -> new NoSuchElementException("Game not found"));
             List<Player> players = game.getPlayers();
@@ -374,7 +373,6 @@ public class MessageController {
                 PrivateResultDTO dto = mapperService.mapToPrivateResult(player);
                 messagingTemplate.convertAndSendToUser(player.getName(), "/queue/private", dto);
             }
-            System.out.println("DTO elkészült");
         } else {
             throw new NotAllowedOperationException("Invalid username");
         }

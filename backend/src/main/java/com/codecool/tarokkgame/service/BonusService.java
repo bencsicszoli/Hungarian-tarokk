@@ -75,6 +75,9 @@ public class BonusService {
         calledTarokk = calledTarokk.substring(11);
         int invitedTarokkNumber = RomanTarokkNumber.toArabicNumber(calledTarokk);
         game.setInvitedTarokk(invitedTarokkNumber);
+        if (player.hasTheGivenTarokk(invitedTarokkNumber)) {
+            game.setDeclarerAlone(true);
+        }
         String upperCaseName = player.getName().toUpperCase();
         String announceTarokkNumber = announceTarokkNumber(selectedTarokkNumber, upperCaseName);
         String bonusNamesToString = String.join(", ", bonusNames);
@@ -161,7 +164,7 @@ public class BonusService {
         String side = identifyPlayerSide(player, game.getInvitedTarokk());
         boolean announcedVolat = game.announcedVolat(side);
         if (announcedVolat && (bonusNames.contains("Trull") || bonusNames.contains("Four kings") || bonusNames.contains("Double game"))) {
-            return new PrivateInfoDTO("You cannot announce Trull, Four kings or Double game after volat!", "game.privateInfo");
+            return new PrivateInfoDTO("You cannot announce Trull, Four kings or Double game after Volat!", "game.privateInfo");
         } else {
             return null;
         }
@@ -311,15 +314,7 @@ public class BonusService {
                 Bonus bonus = Bonus.getBonusByName(bonusName);
                 if (!bonus.equals(Bonus.PASS)) {
                     game.getOptionalBonuses().remove(bonus);
-                    if (bonus.equals(Bonus.PAGAT_ULTIMO)) {
-                        player.setAnnouncedUltimo(true);
-                    } else if (bonus.equals(Bonus.VOLAT)) {
-                        game.setVolatAnnouncer("declarer");
-                    } else if (bonus.equals(Bonus.TRULL)) {
-                        game.setTrullAnnouncer("declarer");
-                    } else if (bonus.equals(Bonus.FOUR_KINGS)) {
-                        game.setFourKingsAnnouncer("declarer");
-                    }
+                    setBonusAnnouncer(bonus, player, game, "declarer");
                 }
                 game.getDeclarerBonuses().add(bonus);
             }
@@ -352,26 +347,26 @@ public class BonusService {
         game.getOptionalBonuses().remove(bonus);
         if (player.getRoleInGame().getTeam().equals("declarer")) {
             game.getDeclarerBonuses().add(bonus);
-            if (bonus.equals(Bonus.VOLAT)) {
-                game.setVolatAnnouncer("declarer");
-            } else if (bonus.equals(Bonus.TRULL)) {
-                game.setTrullAnnouncer("declarer");
-            } else if (bonus.equals(Bonus.FOUR_KINGS)) {
-                game.setFourKingsAnnouncer("declarer");
-            } else if (bonus.equals(Bonus.PAGAT_ULTIMO)) {
-                player.setAnnouncedUltimo(true);
-            }
+            setBonusAnnouncer(bonus, player, game, "declarer");
         } else if (player.getRoleInGame().equals(RoleInGame.OPPONENT)) {
             game.getOpponentBonuses().add(bonus);
-            if (bonus.equals(Bonus.VOLAT)) {
-                game.setVolatAnnouncer("opponent");
-            } else if (bonus.equals(Bonus.TRULL)) {
-                game.setTrullAnnouncer("opponent");
-            } else if (bonus.equals(Bonus.FOUR_KINGS)) {
-                game.setFourKingsAnnouncer("opponent");
-            } else if (bonus.equals(Bonus.PAGAT_ULTIMO)) {
-                player.setAnnouncedUltimo(true);
-            }
+            setBonusAnnouncer(bonus, player, game, "opponent");
+        }
+    }
+
+    private void setBonusAnnouncer(Bonus bonus, Player player, Game game, String announcerTeam) {
+        if (bonus.equals(Bonus.PAGAT_ULTIMO)) {
+            player.setAnnouncedUltimo(true);
+        } else if (bonus.equals(Bonus.VOLAT)) {
+            game.setVolatAnnouncer(announcerTeam);
+        } else if (bonus.equals(Bonus.TRULL)) {
+            game.setTrullAnnouncer(announcerTeam);
+        } else if (bonus.equals(Bonus.FOUR_KINGS)) {
+            game.setFourKingsAnnouncer(announcerTeam);
+        } else if (bonus.equals(Bonus.DOUBLE)) {
+            game.setDoubleGameAnnouncer(announcerTeam);
+        } else if (bonus.equals(Bonus.XXI_CATCH)) {
+            game.setXXICatchAnnouncer(announcerTeam); // ?
         }
     }
 
@@ -454,17 +449,11 @@ public class BonusService {
 
         if (game.getLastBonusAnnouncer().equals("opponent")) {
             player.setRoleInGame(RoleInGame.OPPONENT);
-            if (game.getNumberOfOpponents() == 2) {
-                game.setLastPlayerAsDeclarer();
-            }
             return null;
         } else {
             Set<Bonus> declarerBonuses = game.getDeclarerBonuses();
             if (Bonus.isContainReDoubled(bonuses) || Bonus.canBeFoundBasicLevelBonusInOpponentBonuses(declarerBonuses, bonuses)) {
                 player.setRoleInGame(RoleInGame.OPPONENT);
-                if (game.getNumberOfOpponents() == 2) {
-                    game.setLastPlayerAsDeclarer();
-                }
                 return null;
             } else {
                 return new PrivateInfoDTO("You MUST double something otherwise it is not clear that you are an opponent", "game.privateInfo");

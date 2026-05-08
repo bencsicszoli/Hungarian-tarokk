@@ -57,16 +57,16 @@ public class TrickService {
         trick.setY(y);
         int rotation = (int) (Math.random() * 90);
         trick.setRotation(rotation);
+        System.out.println("Trick id: " + trick.getId());
         List<Trick> tricks = game.getTricks();
         tricks.add(trick);
         trickRepository.saveAll(tricks);  // ?
-
-        List<TrickCardDTO> trickCardDTOList = mapperService.mapToTrickCardListDTO(tricks);
         int cardsInHand = playerCardRepository.countAllByPlayerId(player.getId());
-        gameRepository.save(game);
+        Game savedGame = gameRepository.save(game);
+        List<Trick> sortedTricks = savedGame.getTricks().stream().sorted(Comparator.comparingLong(Trick::getId)).toList();
+        List<TrickCardDTO> trickCardDTOList = mapperService.mapToTrickCardListDTO(sortedTricks);
         return new TrickCardListDTO(trickCardDTOList, player.getName(), cardsInHand, "game.trickCards");
     }
-
 
     public PlayerCardListDTO getTurnPlayerCards(Game game, Player player, Card firstCardInTrick) {  //First trick
         Player nextPlayer = game.getNextPlayer(player);

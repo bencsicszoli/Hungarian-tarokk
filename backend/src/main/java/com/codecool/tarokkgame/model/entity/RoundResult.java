@@ -44,7 +44,43 @@ public class RoundResult {
     private int nineTarokksInAdvance = 0;
     private int eightTarokksAfterwards = 0;
     private int nineTarokksAfterwards = 0;
+    private int sum = 0;
 
     @OneToOne
     private Player player;
+
+    public void setSum() {
+        int sum = party +
+                partyDoubled +
+                partyRedoubled +
+                silentTrull +
+                trull +
+                trullDoubled +
+                trullRedoubled +
+                silentFourKings +
+                fourKings +
+                fourKingsDoubled +
+                fourKingsRedoubled +
+                silentDoubleGame +
+                doubleGame +
+                doubleGameDoubled +
+                doubleGameRedoubled +
+                silentUltimo +
+                ultimo +
+                ultimoDoubled +
+                ultimoRedoubled +
+                silentXXICatch +
+                XXICatch +
+                XXICatchDoubled +
+                XXICatchRedoubled +
+                silentVolat +
+                volat +
+                volatDoubled +
+                volatRedoubled +
+                eightTarokksInAdvance +
+                nineTarokksInAdvance +
+                eightTarokksAfterwards +
+                nineTarokksAfterwards;
+        setSum(sum);
+    }
 }

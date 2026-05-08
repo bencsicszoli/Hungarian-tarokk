@@ -37,5 +37,6 @@ public class PrivateResultDTO{
         int nineTarokksInAdvance;
         int eightTarokksAfterwards;
         int nineTarokksAfterwards;
+        int sum;
         String type;
 }

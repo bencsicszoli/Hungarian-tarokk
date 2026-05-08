@@ -92,7 +92,7 @@ function InfoTable({
           {displayInformation(publicInfo)}
         </p>
       </div>
-      <div className="w-full h-1/4 bg-blue-300">
+      <div className="w-full h-1/4 bg-blue-300 items-center justify-center flex">
         <p className="text-3xl font-bold text-center">
           {displayInformation(privateInfo)}
         </p>

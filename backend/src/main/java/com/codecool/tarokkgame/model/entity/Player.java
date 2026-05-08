@@ -150,10 +150,8 @@ public class Player {
     public int findMissingStrongestTarokk() {
         int missingStrongestTarokk = 0;
         for (int i = 19; i >= 12; i--) {
-            System.out.println("i: " + i);
             if (!hasTheGivenTarokk(i)) {
                 missingStrongestTarokk = i;
-                System.out.println("S");
                 break;
             }
         }

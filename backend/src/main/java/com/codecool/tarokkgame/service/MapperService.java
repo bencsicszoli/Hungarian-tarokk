@@ -115,6 +115,7 @@ public class MapperService {
         dto.setNineTarokksInAdvance(result.getNineTarokksInAdvance());
         dto.setEightTarokksAfterwards(result.getEightTarokksAfterwards());
         dto.setNineTarokksAfterwards(result.getNineTarokksAfterwards());
+        dto.setSum(result.getSum());
         dto.setType("game.privateResult");
         return dto;
     }

@@ -25,6 +25,7 @@ public class Game {
     private boolean isYielded = false;
     private boolean isTarokkInDeclarerSkart = false;
     private boolean isTarokkInOpponentSkart = false;
+    private boolean declarerAlone = false;
     private String invitAcceptor;
     private int biddingPasses = 0;
     private int invitedTarokk = 0;
@@ -35,9 +36,11 @@ public class Game {
     private int player3TrickCards = 0;
     private int player4TrickCards = 0;
     private String XXICatcher;
-    private String volatAnnouncer;
+    private String volatAnnouncer; // ?
     private String trullAnnouncer;
     private String fourKingsAnnouncer;
+    private String doubleGameAnnouncer;
+    private String XXICatchAnnouncer; // ?
     private String successfulUltimo;
     private String dealer;
     private String startPlayer;
