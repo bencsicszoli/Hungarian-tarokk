@@ -22,4 +22,7 @@ public class Trick {
 
     @ManyToOne
     private Card card;
+
+    @ManyToOne
+    private Game game;
 }

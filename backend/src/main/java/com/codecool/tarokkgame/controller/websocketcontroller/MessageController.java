@@ -7,11 +7,8 @@ import com.codecool.tarokkgame.model.dto.messagedto.response.*;
 import com.codecool.tarokkgame.model.entity.Card;
 import com.codecool.tarokkgame.model.entity.Game;
 import com.codecool.tarokkgame.model.entity.Player;
-import com.codecool.tarokkgame.model.entity.RoundResult;
-import com.codecool.tarokkgame.repository.CardRepository;
-import com.codecool.tarokkgame.repository.GameRepository;
-import com.codecool.tarokkgame.repository.PlayerRepository;
-import com.codecool.tarokkgame.repository.TalonCardRepository;
+import com.codecool.tarokkgame.model.entity.PlayerCard;
+import com.codecool.tarokkgame.repository.*;
 import com.codecool.tarokkgame.service.*;
 import jakarta.transaction.Transactional;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -19,9 +16,8 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
-
 import java.security.Principal;
-import java.sql.Array;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -42,8 +38,10 @@ public class MessageController {
     private final CardRepository cardRepository;
     private final ResultService resultService;
     private final MapperService mapperService;
+    private final ResetService resetService;
+    private final PlayerCardRepository playerCardRepository;
 
-    public MessageController(SimpMessagingTemplate messagingTemplate, PlayerService playerService, GameRepository gameRepository, ShuffleService shuffleService, DealService dealService, PlayerRepository playerRepository, TalonCardRepository talonCardRepository, BidService bidService, TalonService talonService, BonusService bonusService, TrickService trickService, CardRepository cardRepository, ResultService resultService, MapperService mapperService) {
+    public MessageController(SimpMessagingTemplate messagingTemplate, PlayerService playerService, GameRepository gameRepository, ShuffleService shuffleService, DealService dealService, PlayerRepository playerRepository, TalonCardRepository talonCardRepository, BidService bidService, TalonService talonService, BonusService bonusService, TrickService trickService, CardRepository cardRepository, ResultService resultService, MapperService mapperService, ResetService resetService, PlayerCardRepository playerCardRepository) {
 
         this.messagingTemplate = messagingTemplate;
         this.playerService = playerService;
@@ -59,6 +57,8 @@ public class MessageController {
         this.cardRepository = cardRepository;
         this.resultService = resultService;
         this.mapperService = mapperService;
+        this.resetService = resetService;
+        this.playerCardRepository = playerCardRepository;
     }
 
     @MessageMapping("/game.join")
@@ -98,6 +98,10 @@ public class MessageController {
         String playerName = principal.getName();
         if (playerName.equals(request.username())) {
             Game game = gameRepository.findById(request.gameId()).orElseThrow(() -> new NoSuchElementException("Game not found"));
+            resetService.resetGame(game);
+            resetService.resetPlayers(game);
+            NewRoundDTO newRoundDTO = new NewRoundDTO(game.getDealer().toUpperCase() + " is dealing", "game.newRound");
+            messagingTemplate.convertAndSend("/topic/game." + request.gameId(), newRoundDTO);
             dealTalonCards(game, request);
 
             int from = 2;
@@ -190,6 +194,17 @@ public class MessageController {
                 talonCards -= talonCardsToDeal[i];
                 PlayerCardListDTO cardList = talonService.allocateTalonCards(game, player, idFrom, idTo);
                 messagingTemplate.convertAndSendToUser(playerToDeal, "/queue/private", cardList);
+
+
+
+                String discardHandInfo = player.checkIfHandIsThrowable();
+                if (discardHandInfo != null) {
+                    PrivateInfoDTO infoDTO = new PrivateInfoDTO(discardHandInfo, "game.discardHand");
+                    messagingTemplate.convertAndSendToUser(playerToDeal, "/queue/private", infoDTO);
+                }
+
+
+
                 PublicTalonDTO talonDTO = new PublicTalonDTO(talonCards, "game.talon", game.getState().toString());
                 messagingTemplate.convertAndSend("/topic/game." + request.gameId(), talonDTO);
                 PublicCardsNumberDTO cardsNumberDTO = new PublicCardsNumberDTO(playerCards + talonCardsToDeal[i], "game.cardNumber", playerToDeal);
@@ -207,6 +222,26 @@ public class MessageController {
                 messagingTemplate.convertAndSend("/topic/game." + request.gameId(), turnPlayerDTO);
             }
 
+        } else {
+            throw new NotAllowedOperationException("Invalid username");
+        }
+    }
+
+    @MessageMapping("/game.discardHand")
+    @Transactional
+    public void discardHand(@Payload GeneralRequestDTO request, Principal principal) {
+        String playerName = principal.getName();
+        if (playerName.equals(request.username())) {
+            Player player = playerRepository.findByUserUsernameAndGameId(playerName, request.gameId()).orElseThrow(() -> new NoSuchElementException("Player not found"));
+            List<PlayerCardDTO> playerCardList = mapperService.mapToPlayerCardListDTO(player.getPlayerCards());
+            DiscardedHandDTO discardedHand = new DiscardedHandDTO(
+                    playerCardList,
+                    playerName,
+                    player.getDiscardReason() + ", discards their hand and requires new deal",
+                    "game.discardHand");
+            player.getPlayerCards().clear();
+            messagingTemplate.convertAndSend("/topic/game." + request.gameId(), discardedHand);
+            playerCardRepository.deleteAllByPlayerGameId(request.gameId());
         } else {
             throw new NotAllowedOperationException("Invalid username");
         }
@@ -373,6 +408,21 @@ public class MessageController {
                 PrivateResultDTO dto = mapperService.mapToPrivateResult(player);
                 messagingTemplate.convertAndSendToUser(player.getName(), "/queue/private", dto);
             }
+            String newDealer = game.getNextPlayerName(game.getDealer());
+            String newStartPlayer = game.getNextPlayerName(newDealer);
+            FinalPublicMessage playerBalances = new FinalPublicMessage(
+                    players.getFirst().getBalance(),
+                    players.get(1).getBalance(),
+                    players.get(2).getBalance(),
+                    players.getLast().getBalance(),
+                    newDealer,
+                    newStartPlayer,
+                    "game.newBalances");
+            messagingTemplate.convertAndSend("/topic/game." + request.gameId(), playerBalances);
+            game.setDealer(newDealer);
+            game.setStartPlayer(newStartPlayer);
+            game.setTurnPlayer(newStartPlayer);
+            gameRepository.save(game);
         } else {
             throw new NotAllowedOperationException("Invalid username");
         }
@@ -426,8 +476,8 @@ public class MessageController {
     private void finishAnnouncementPhase(Game game, BonusesRequestDTO request) {
         TurnPlayerDTO turnPlayerDTO = new TurnPlayerDTO(game.getStartPlayer(), "game.turnPlayer");
         messagingTemplate.convertAndSend("/topic/game." + request.gameId(), turnPlayerDTO);
-        GameStateDTO gameStateDTO = new GameStateDTO(game.getState().toString(), "game.gameState");
-        messagingTemplate.convertAndSend("/topic/game." + request.gameId(), gameStateDTO);
+        NewGameStateWithInfoDTO infoDTO = new NewGameStateWithInfoDTO(game.getState().toString(), "Trick phase", "game.gameStateInfo");
+        messagingTemplate.convertAndSend("/topic/game." + request.gameId(), infoDTO);
         Player turnPlayer = game.getPlayerByName(game.getStartPlayer());
         PlayerCardListDTO playerCardList = trickService.getFirstPlayerCards(turnPlayer, game, game.getInvitedTarokk());
         messagingTemplate.convertAndSendToUser(game.getStartPlayer(), "/queue/private", playerCardList);

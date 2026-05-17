@@ -13,4 +13,5 @@ import java.util.List;
 public interface OwnTrickRepository extends JpaRepository<OwnTrick, Long> {
     List<OwnTrick> findAllByPlayer(Player player);
     List<OwnTrick> findAllByPlayerGameAndPlayerRoleInGame(Game game, RoleInGame roleInGame);
+    void deleteAllByPlayerGameId(Long playerGameId);
 }

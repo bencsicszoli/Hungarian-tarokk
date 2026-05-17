@@ -10,13 +10,16 @@ import com.codecool.tarokkgame.repository.PlayerRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class PlayerService {
 
+    public static final int NUMBER_OF_NECESSARY_PLAYERS = 4;
     private final AppUserRepository userRepository;
     private final GameRepository gameRepository;
     private final PlayerRepository playerRepository;
@@ -57,13 +60,14 @@ public class PlayerService {
         findEmptySeatAtCardTable(gameWithEmptySeat, newPlayer, username);
         List<Player> players = gameWithEmptySeat.getPlayers();
         players.add(newPlayer);
-        if (players.size() == 4) {
-            setRolesAtCardTable(players, gameWithEmptySeat);
+        List<Player> sortedPlayers = players.stream().sorted(Comparator.comparing(Player::getPlace)).toList();
+        if (players.size() == NUMBER_OF_NECESSARY_PLAYERS) {
+            setRolesAtCardTable(sortedPlayers, gameWithEmptySeat);
         }
         newPlayer.setGame(gameWithEmptySeat);
         playerRepository.save(newPlayer);
         gameRepository.save(gameWithEmptySeat);
-        return mapper.mapToJoinMessageDTO(gameWithEmptySeat, players);
+        return mapper.mapToJoinMessageDTO(gameWithEmptySeat, sortedPlayers);
     }
 
     private void findEmptySeatAtCardTable(Game gameWithEmptySeat, Player newPlayer, String username) {
@@ -82,10 +86,12 @@ public class PlayerService {
         }
     }
 
-    private void setRolesAtCardTable(List<Player> players, Game gameWithEmptySeat) {
+    private void setRolesAtCardTable(List<Player> players, Game gameWithEmptySeat) {;
         Player player1 = players.getFirst();
+        System.out.println("First player is " + player1.getName());
         gameWithEmptySeat.setDealer(player1.getName());
         Player player2 = players.get(1);
+        System.out.println("Second player is " + player2.getName());
         gameWithEmptySeat.setStartPlayer(player2.getName());
         gameWithEmptySeat.setTurnPlayer(player2.getName());
     }

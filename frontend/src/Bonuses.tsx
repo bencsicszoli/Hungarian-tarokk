@@ -20,7 +20,7 @@ function Bonuses({
   return (
     <div className="h-full flex flex-col justify-center items-center">
       {hasEightTarokks || hasNineTarokks ? (
-        <div className="w-full bg-pink-300 flex justify-center items-center">
+        <div className="w-full bg-pink-300 flex justify-center items-center mb-1">
           {onRenderTarokkNumberButton()}
         </div>
       ) : null}

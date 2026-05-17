@@ -138,7 +138,7 @@ public class BonusService {
     }
 
     public PrivateInfoDTO checkTurnPlayerUltimoAndTarokkNumber(Player player, Set<String> bonusNames, int selectedTarokkNumber) {
-        if ((bonusNames.contains("Pagat ultimo") || bonusNames.contains("Double pagat ultimo")) && selectedTarokkNumber == 0) {
+        if ((bonusNames.contains("Pagat ultimo") || bonusNames.contains("Pagat ultimo doubled")) && selectedTarokkNumber == 0) {
             if (player.isEightTarokksInAdvance() || player.isNineTarokksInAdvance()) {
                 return null;
             }

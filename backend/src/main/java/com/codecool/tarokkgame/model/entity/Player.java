@@ -45,6 +45,7 @@ public class Player {
     private boolean eightTarokksAfterwards = false;
     private boolean nineTarokksInAdvance = false;
     private boolean nineTarokksAfterwards = false;
+    private String discardReason;
 
     @OneToOne(mappedBy = "player", cascade = CascadeType.ALL, orphanRemoval = true)
     private RoundResult result;
@@ -228,6 +229,51 @@ public class Player {
             }
         }
         return false;
+    }
+
+    public String checkIfHandIsThrowable() {
+        int tarokks = 0;
+        boolean hasPagat  = false;
+        boolean hasXXI  = false;
+        int kings = 0;
+        for (PlayerCard playerCard : playerCards) {
+            if (playerCard.getCard().getSuit().equals("tarokk")) {
+                tarokks++;
+                if (playerCard.getCard().getStrength() == 1) {
+                    hasPagat = true;
+                } else if (playerCard.getCard().getStrength() == 21) {
+                    hasXXI = true;
+                }
+            } else if (playerCard.getCard().getStrength() == -1) {
+                kings++;
+            }
+        }
+        if (tarokks == 0) {
+            setDiscardReason(" does not have any tarokks");
+            return "You don't have any tarokks. Would you like to discard your hand and require new deal?";
+        } else if (tarokks == 1 && hasPagat) {
+            setDiscardReason(" has a solo pagat");
+            return "You have a solo pagat.  Would you like to discard your hand and require new deal?";
+        } else if (tarokks == 1 && hasXXI) {
+            setDiscardReason(" has a solo XXI");
+            return "You have a solo XXI. Would you like to discard your hand and require new deal?";
+        } else if (tarokks == 2 && hasPagat && hasXXI) {
+            setDiscardReason(" has a pagat and a XXI alone");
+            return "You have pagat and XXI alone. Would you like to discard your hand and require new deal?";
+        } else if (kings == 4) {
+            setDiscardReason(" has four kings");
+            return "You have four kings. Would you like to discard your hand and require new deal?";
+        } else {
+            return null;
+        }
+    }
+
+    public void setTarokkNumberAfterwards() {
+        if (hasEightTarokks && !eightTarokksInAdvance) {
+            setEightTarokksAfterwards(true);
+        } else if (hasNineTarokks && !nineTarokksInAdvance) {
+            setNineTarokksAfterwards(true);
+        }
     }
 }
 

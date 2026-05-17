@@ -2,6 +2,7 @@ package com.codecool.tarokkgame.service;
 
 import com.codecool.tarokkgame.constants.Bonus;
 import com.codecool.tarokkgame.constants.RoleInGame;
+import com.codecool.tarokkgame.model.TarokkNumberAnnouncers;
 import com.codecool.tarokkgame.model.entity.*;
 import com.codecool.tarokkgame.repository.DeclarerSkartRepository;
 import com.codecool.tarokkgame.repository.GameRepository;
@@ -10,6 +11,7 @@ import com.codecool.tarokkgame.repository.PlayerRepository;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
 @Service
 public class ResultService {
@@ -31,6 +33,7 @@ public class ResultService {
         List<OwnTrick> partnerTricks = ownTrickRepository.findAllByPlayerGameAndPlayerRoleInGame(game, RoleInGame.DECLARER_PARTNER);
         List<DeclarerSkart> declarerSkartCards = declarerSkartRepository.findAllByGameId(gameId);
         int bidMultiplier = game.getBidLevel().getBidValue();
+        String bidLevel = game.getBidLevel().getBidLevelByBidValue(bidMultiplier).getDescription();
         int cardCount = declarerTricks.size() + partnerTricks.size();
         int cardValues = 0;
         int honours = 0;
@@ -58,6 +61,7 @@ public class ResultService {
         for (DeclarerSkart skart : declarerSkartCards) {
             cardValues += skart.getCardValue();
         }
+        TarokkNumberAnnouncers announcers = game.getAnnouncers();
         System.out.println("Card values: " + cardValues);
         System.out.println("Honours: " + honours);
         System.out.println("Kings: " + kings);
@@ -65,6 +69,7 @@ public class ResultService {
         List<Player> players = game.getPlayers();
 
         Bonus party = game.findBonusByIndex(Bonus.PASS, "declarer");
+        System.out.println("Party name: " + party.getBonusName());
 
         for (Player player : players) {
             RoundResult result = new RoundResult();
@@ -75,9 +80,19 @@ public class ResultService {
             handleXXICatch(game, player, result);
             handleVolat(player, game, result, party, cardCount, cardValues, bidMultiplier);
             handleDoubleGame(player, result, party, cardCount, cardValues, bidMultiplier, game);
-            result.setSum();
+            //result.setSum();
+            //String resultInfo = createResultInfo(result, bidLevel);
+            //result.setInfo(resultInfo);
             result.setPlayer(player); // ?
             player.setResult(result);
+            //player.setBalance(player.getBalance() + result.getSum());
+        }
+        handleTarokkNumber(players, announcers.getPlayers());
+        for (Player player : players) {
+            player.getResult().setSum();
+            String resultInfo = createResultInfo(player.getResult(), bidLevel);
+            player.getResult().setInfo(resultInfo);
+            player.setBalance(player.getBalance() + player.getResult().getSum());
         }
         playerRepository.saveAll(players);
         gameRepository.save(game); // ?
@@ -101,7 +116,7 @@ public class ResultService {
         if (game.getFourKingsAnnouncer() == null) {
             handleFourKingsWithoutAnnouncer(kings, player, result, game);
         } else if (game.getFourKingsAnnouncer().equals("declarer")) {
-            handleFourKingfWithDeclarerAnnouncer(kings, player, result, declarerFourKings, game);
+            handleFourKingsWithDeclarerAnnouncer(kings, player, result, declarerFourKings, game);
         } else {
             handleFourKingsWithOpponentAnnouncer(kings, player, result, opponentFourKings, game);
         }
@@ -171,7 +186,7 @@ public class ResultService {
         Bonus declarerDoubleGame = game.findBonusByIndex(Bonus.DOUBLE, "declarer");
         Bonus opponentDoubleGame = game.findBonusByIndex(Bonus.DOUBLE, "opponent");
         if (cardValues > 70) { // Declarer has double game
-            handleDoubleGameDeclarerAchieved(player, result, declarerDoubleGame, opponentDoubleGame, cardCount, cardValues, game);
+            handleDoubleGameDeclarerAchieved(player, result, declarerDoubleGame, opponentDoubleGame, cardCount, bidMultiplier, game);
         } else if (cardValues < 24) { // opponent has double game
             handleDoubleGameOpponentAchieved(player, result, declarerDoubleGame, opponentDoubleGame, cardCount, bidMultiplier, game);
         } else { // Neither side has double game
@@ -181,6 +196,35 @@ public class ResultService {
             handlePartyDoubledOrRedoubled(player, result, party, cardValues, bidMultiplier, game);
         } else { // Party was not doubled
             handlePartyNotDoubled(player, result, declarerDoubleGame, opponentDoubleGame, party, cardValues, bidMultiplier, game);
+        }
+        if (player.getRoleInGame().getTeam().equals("declarer")) {
+            result.setCardValue(cardValues);
+        } else {
+            result.setCardValue(94 - cardValues);
+        }
+    }
+
+    private void handleTarokkNumber(List<Player> players, Set<Player> announcers) {
+        if (!announcers.isEmpty()) {
+            for (Player announcer : announcers) {
+                for (Player player : players) {
+                    if (!announcer.getName().equals(player.getName())) {
+                        if (announcer.isEightTarokksInAdvance()) {
+                            announcer.getResult().setEightTarokksInAdvance(announcer.getResult().getEightTarokksInAdvance() + 1);
+                            player.getResult().setEightTarokksInAdvance(player.getResult().getEightTarokksInAdvance() - 1);
+                        } else if (announcer.isNineTarokksInAdvance()) {
+                            announcer.getResult().setNineTarokksInAdvance(announcer.getResult().getNineTarokksInAdvance() + 2);
+                            player.getResult().setNineTarokksInAdvance(player.getResult().getNineTarokksInAdvance() - 2);
+                        } else if (announcer.isEightTarokksAfterwards() && announcer.getRoleInGame().getTeam().equals(player.getRoleInGame().getTeam())) {
+                            announcer.getResult().setEightTarokksAfterwards(1);
+                            player.getResult().setEightTarokksAfterwards(-1);
+                        } else if (announcer.isNineTarokksAfterwards() && announcer.getRoleInGame().getTeam().equals(player.getRoleInGame().getTeam())) {
+                            announcer.getResult().setNineTarokksAfterwards(2);
+                            player.getResult().setNineTarokksAfterwards(-2);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -234,7 +278,7 @@ public class ResultService {
             }
         }
     }
-
+// Refactor!
     private void handlePartyNotDoubled(Player player, RoundResult result, Bonus declarerDoubleGame, Bonus opponentDoubleGame, Bonus party, int cardValues, int bidMultiplier, Game game) {
         if (cardValues < 48 && cardValues > 23 && declarerDoubleGame != null) {
             if (player.getRoleInGame().getTeam().equals("declarer")) {
@@ -243,7 +287,6 @@ public class ResultService {
                 } else {
                     result.setParty(-3 * party.getPointValue() * bidMultiplier);
                 }
-
             } else {
                 result.setParty(party.getPointValue() * bidMultiplier);
             }
@@ -257,6 +300,26 @@ public class ResultService {
 
             } else {
                 result.setParty(-party.getPointValue() * bidMultiplier);
+            }
+        } else if (cardValues > 47 && cardValues < 71 && declarerDoubleGame == null) {
+            if (player.getRoleInGame().getTeam().equals("declarer")) {
+                if (!game.isDeclarerAlone()) {
+                    result.setParty(party.getPointValue() * bidMultiplier);
+                } else {
+                    result.setParty(3 * party.getPointValue() * bidMultiplier);
+                }
+            } else {
+                result.setParty(- party.getPointValue() * bidMultiplier);
+            }
+        } else if (cardValues < 48 && cardValues > 23 && opponentDoubleGame == null) {
+            if (player.getRoleInGame().getTeam().equals("declarer")) {
+                if (!game.isDeclarerAlone()) {
+                    result.setParty(-party.getPointValue() * bidMultiplier);
+                } else {
+                    result.setParty(-3 * party.getPointValue() * bidMultiplier);
+                }
+            } else {
+                result.setParty(party.getPointValue() * bidMultiplier);
             }
         }
     }
@@ -317,7 +380,7 @@ public class ResultService {
                 if (!game.isDeclarerAlone()) {
                     setUltimoPayment(declarerUltimo, result, -1);
                 } else {
-                    setUltimoPayment(opponentUltimo, result, -3);
+                    setUltimoPayment(declarerUltimo, result, -3);
                 }
             } else {
                 setUltimoPayment(declarerUltimo, result, 1);
@@ -398,7 +461,7 @@ public class ResultService {
             } else {
                 setDoubleGamePayment(declarerDoubleGame, result, bidMultiplier, 1);
             }
-        } else { // Opponent's double game failed
+        } else if (opponentDoubleGame != null) { // Opponent's double game failed
             if (player.getRoleInGame().getTeam().equals("declarer")) {
                 if (!game.isDeclarerAlone()) {
                     setDoubleGamePayment(opponentDoubleGame, result, bidMultiplier, 1);
@@ -452,7 +515,7 @@ public class ResultService {
     }
 
     // Refactor?
-    private void handleFourKingfWithDeclarerAnnouncer(int kings, Player player, RoundResult roundResult, Bonus declarerBonus, Game game) {
+    private void handleFourKingsWithDeclarerAnnouncer(int kings, Player player, RoundResult roundResult, Bonus declarerBonus, Game game) {
         if (kings == 4) {
             if (player.getRoleInGame().getTeam().equals("declarer")) {
                 if (!game.isDeclarerAlone()) {
@@ -460,7 +523,6 @@ public class ResultService {
                 } else {
                     setFourKingsPayment(declarerBonus, roundResult, 3);
                 }
-
             } else {
                 setFourKingsPayment(declarerBonus, roundResult, -1);
             }
@@ -483,7 +545,6 @@ public class ResultService {
                     setFourKingsPayment(declarerBonus, roundResult, -3);
                     roundResult.setSilentFourKings(-3);
                 }
-
             } else {
                 setFourKingsPayment(declarerBonus, roundResult, 1);
                 roundResult.setSilentFourKings(1);
@@ -581,10 +642,15 @@ public class ResultService {
         }
     }
 
+    // Refactor!
     private void handleDoubleGameDeclarerAchieved(Player player, RoundResult result, Bonus declarerDoubleGame, Bonus opponentDoubleGame, int cardCount, int bidMultiplier, Game game) {
         if (declarerDoubleGame != null) { // Declarer announced double game
             if (player.getRoleInGame().getTeam().equals("declarer")) {
-                setDoubleGamePayment(declarerDoubleGame, result, bidMultiplier, 1);
+                if (!game.isDeclarerAlone()) {
+                    setDoubleGamePayment(declarerDoubleGame, result, bidMultiplier, 1);
+                } else {
+                    setDoubleGamePayment(declarerDoubleGame, result, bidMultiplier, 3);
+                }
             } else {
                 setDoubleGamePayment(declarerDoubleGame, result, bidMultiplier, -1);
             }
@@ -596,27 +662,30 @@ public class ResultService {
                     } else {
                         setDoubleGamePayment(opponentDoubleGame, result, bidMultiplier, 3);
                     }
-
                     if (cardCount < 36) {
-                        result.setSilentDoubleGame(opponentDoubleGame.getPointValue() * bidMultiplier);
+                        if (!game.isDeclarerAlone()) {
+                            result.setSilentDoubleGame(2 * bidMultiplier);
+                        } else {
+                            result.setSilentDoubleGame(6 * bidMultiplier);
+                        }
                     }
                 } else {
                     setDoubleGamePayment(opponentDoubleGame, result, bidMultiplier, -1);
                     if (cardCount < 36) {
-                        result.setSilentDoubleGame(-opponentDoubleGame.getPointValue() * bidMultiplier);
+                        result.setSilentDoubleGame(-2 * bidMultiplier);
                     }
                 }
             } else { // Neither side announced double game
                 if (cardCount < 36) {
                     if (player.getRoleInGame().getTeam().equals("declarer")) {
                         if (!game.isDeclarerAlone()) {
-                            result.setSilentDoubleGame(4 * bidMultiplier);
+                            result.setSilentDoubleGame(2 * bidMultiplier);
                         } else {
-                            result.setSilentDoubleGame(12 * bidMultiplier);
+                            result.setSilentDoubleGame(6 * bidMultiplier);
                         }
 
                     } else {
-                        result.setSilentDoubleGame(-4 * bidMultiplier);
+                        result.setSilentDoubleGame(-2 * bidMultiplier);
                     }
                 }
             }
@@ -805,31 +874,31 @@ public class ResultService {
                     if (!game.isDeclarerAlone()) {
                         setDoubleGamePayment(declarerDoubleGame, result, bidMultiplier, -1);
                         if (cardCount > 0) {
-                            result.setSilentDoubleGame(-declarerDoubleGame.getPointValue() * bidMultiplier);
+                            result.setSilentDoubleGame(-2 * bidMultiplier);
                         }
                     } else {
                         setDoubleGamePayment(declarerDoubleGame, result, bidMultiplier, -3);
                         if (cardCount > 0) {
-                            result.setSilentDoubleGame(-3 * declarerDoubleGame.getPointValue() * bidMultiplier);
+                            result.setSilentDoubleGame(-6 * bidMultiplier);
                         }
                     }
 
                 } else {
                     setDoubleGamePayment(declarerDoubleGame, result, bidMultiplier, 1);
                     if (cardCount > 0) {
-                        result.setSilentDoubleGame(declarerDoubleGame.getPointValue() * bidMultiplier);
+                        result.setSilentDoubleGame(2 * bidMultiplier);
                     }
                 }
             } else { // Neither side announced double game
                 if (cardCount > 0) {
                     if (player.getRoleInGame().getTeam().equals("declarer")) {
                         if (!game.isDeclarerAlone()) {
-                            result.setSilentDoubleGame(-4 * bidMultiplier);
+                            result.setSilentDoubleGame(-2 * bidMultiplier);
                         } else {
-                            result.setSilentDoubleGame(-12 * bidMultiplier);
+                            result.setSilentDoubleGame(-6 * bidMultiplier);
                         }
                     } else {
-                        result.setSilentDoubleGame(4 * bidMultiplier);
+                        result.setSilentDoubleGame(2 * bidMultiplier);
                     }
                 }
             }
@@ -888,7 +957,7 @@ public class ResultService {
 
     private void setEdgeCaseVolatPayment(Bonus bonus, RoundResult result, int bidMultiplier, int winnerMultiplier) {
         if (bonus.getLevel() == 0) {
-            result.setVolat(-bonus.getPointValue() * bidMultiplier * winnerMultiplier);
+            result.setVolat(bonus.getPointValue() * bidMultiplier * winnerMultiplier);
             result.setSilentVolat(3 * bidMultiplier * winnerMultiplier);
         } else if (bonus.getLevel() == 1) {
             result.setVolatDoubled(bonus.getPointValue() * bidMultiplier * winnerMultiplier);
@@ -916,4 +985,89 @@ public class ResultService {
             result.setPartyRedoubled(party.getPointValue() * bidMultiplier * winnerMultiplier);
         }
     }
+
+    private String createResultInfo(RoundResult result, String bidLevel) {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("Bid: ").append(bidLevel).append("!");
+        stringBuilder.append("Game score: ").append(result.getCardValue()).append("!");
+        if (result.getParty() != 0) {
+            stringBuilder.append("Party: ").append(result.getParty()).append("!");
+        } else if (result.getPartyDoubled() != 0) {
+            stringBuilder.append("Party doubled: ").append(result.getPartyDoubled()).append("!");
+        } else if (result.getPartyRedoubled() != 0) {
+            stringBuilder.append("Party redoubled").append(result.getPartyRedoubled()).append("!");
+        }
+        if (result.getSilentTrull() != 0) {
+            stringBuilder.append("Silent trull: ").append(result.getSilentTrull()).append("!");
+        }
+        if (result.getTrull() != 0) {
+            stringBuilder.append("Trull: ").append(result.getTrull()).append("!");
+        } else if (result.getTrullDoubled() != 0) {
+            stringBuilder.append("Trull doubled: ").append(result.getTrullDoubled()).append("!");
+        } else if (result.getTrullRedoubled() != 0) {
+            stringBuilder.append("Trull redoubled: ").append(result.getTrullRedoubled()).append("!");
+        }
+        if (result.getSilentFourKings() != 0) {
+            stringBuilder.append("Silent four kings: ").append(result.getSilentFourKings()).append("!");
+        }
+        if (result.getFourKings() != 0) {
+            stringBuilder.append("Four kings: ").append(result.getFourKings()).append("!");
+        } else if (result.getFourKingsDoubled() != 0) {
+            stringBuilder.append("Four kings doubled: ").append(result.getFourKingsDoubled()).append("!");
+        } else if (result.getFourKingsRedoubled() != 0) {
+            stringBuilder.append("Four kings redoubled: ").append(result.getFourKingsRedoubled()).append("!");
+        }
+        if (result.getSilentDoubleGame() != 0) {
+            stringBuilder.append("Silent double game: ").append(result.getSilentDoubleGame()).append("!");
+        }
+        if (result.getDoubleGame() != 0) {
+            stringBuilder.append("Double game: ").append(result.getDoubleGame()).append("!");
+        } else if (result.getDoubleGameDoubled() != 0) {
+            stringBuilder.append("Double game doubled: ").append(result.getDoubleGameDoubled()).append("!");
+        } else if (result.getDoubleGameRedoubled() != 0) {
+            stringBuilder.append("Double game redoubled: ").append(result.getDoubleGameRedoubled()).append("!");
+        }
+        if (result.getSilentUltimo() != 0) {
+            stringBuilder.append("Silent pagat ultimo: ").append(result.getSilentUltimo()).append("!");
+        }
+        if (result.getUltimo() != 0) {
+            stringBuilder.append("Pagat ultimo: ").append(result.getUltimo()).append("!");
+        } else if (result.getUltimoDoubled() != 0) {
+            stringBuilder.append("Pagat ultimo doubled: ").append(result.getUltimoDoubled()).append("!");
+        } else if (result.getUltimoRedoubled() != 0) {
+            stringBuilder.append("Pagat ultimo redoubled: ").append(result.getUltimoRedoubled()).append("!");
+        }
+        if (result.getSilentXXICatch() != 0) {
+            stringBuilder.append("Silent XXI-catch: ").append(result.getSilentXXICatch()).append("!");
+        }
+        if (result.getXXICatch() != 0) {
+            stringBuilder.append("XXI-catch: ").append(result.getXXICatch()).append("!");
+        } else if (result.getXXICatchDoubled() != 0) {
+            stringBuilder.append("XXI-catch doubled: ").append(result.getXXICatchDoubled()).append("!");
+        } else if (result.getXXICatchRedoubled() != 0) {
+            stringBuilder.append("XXI-catch redoubled: ").append(result.getXXICatchRedoubled()).append("!");
+        }
+        if (result.getSilentVolat() != 0) {
+            stringBuilder.append("Silent volat: ").append(result.getSilentVolat()).append("!");
+        }
+        if (result.getVolat() != 0) {
+            stringBuilder.append("Volat: ").append(result.getVolat()).append("!");
+        } else if (result.getVolatDoubled() != 0) {
+            stringBuilder.append("Volat doubled: ").append(result.getVolatDoubled()).append("!");
+        } else if (result.getVolatRedoubled() != 0) {
+            stringBuilder.append("Volat redoubled: ").append(result.getVolatRedoubled()).append("!");
+        }
+        if (result.getEightTarokksInAdvance() != 0) {
+            stringBuilder.append("Eight tarokks in advance: ").append(result.getEightTarokksInAdvance()).append("!");
+        } else if (result.getNineTarokksInAdvance() != 0) {
+            stringBuilder.append("Nine tarokks in advance: ").append(result.getNineTarokksInAdvance()).append("!");
+        } else if (result.getEightTarokksAfterwards() != 0) {
+            stringBuilder.append("Eight tarokks afterwards: ").append(result.getEightTarokksAfterwards()).append("!");
+        } else if (result.getNineTarokksAfterwards() != 0) {
+            stringBuilder.append("Nine tarokks afterwards: ").append(result.getNineTarokksAfterwards()).append("!");
+        }
+        stringBuilder.append("TOTAL: ").append(result.getSum()).append("units!");
+        return stringBuilder.toString();
+    }
+
 }

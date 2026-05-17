@@ -20,15 +20,13 @@ public class TrickService {
     private final MapperService mapperService;
     private final TrickRepository trickRepository;
     private final OwnTrickRepository ownTrickRepository;
-    private final PlayerRepository playerRepository;
 
-    public TrickService(GameRepository gameRepository, PlayerCardRepository playerCardRepository, MapperService mapperService, TrickRepository trickRepository, OwnTrickRepository ownTrickRepository, PlayerRepository playerRepository) {
+    public TrickService(GameRepository gameRepository, PlayerCardRepository playerCardRepository, MapperService mapperService, TrickRepository trickRepository, OwnTrickRepository ownTrickRepository) {
         this.gameRepository = gameRepository;
         this.playerCardRepository = playerCardRepository;
         this.mapperService = mapperService;
         this.trickRepository = trickRepository;
         this.ownTrickRepository = ownTrickRepository;
-        this.playerRepository = playerRepository;
     }
 
     public PlayerCardListDTO getFirstPlayerCards(Player player, Game game, int calledTarokk) {
@@ -51,16 +49,16 @@ public class TrickService {
         Trick trick = new Trick();
         trick.setCard(card);
         trick.setPlayer(player);
+        trick.setGame(game);
         int x = (int) ((Math.random() - 0.5) * 30);
         trick.setX(x);
         int y = (int) ((Math.random() - 0.5) * 20);
         trick.setY(y);
         int rotation = (int) (Math.random() * 90);
         trick.setRotation(rotation);
-        System.out.println("Trick id: " + trick.getId());
+        trickRepository.save(trick);
         List<Trick> tricks = game.getTricks();
         tricks.add(trick);
-        trickRepository.saveAll(tricks);  // ?
         int cardsInHand = playerCardRepository.countAllByPlayerId(player.getId());
         Game savedGame = gameRepository.save(game);
         List<Trick> sortedTricks = savedGame.getTricks().stream().sorted(Comparator.comparingLong(Trick::getId)).toList();

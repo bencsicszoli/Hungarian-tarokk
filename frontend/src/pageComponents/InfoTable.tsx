@@ -41,8 +41,9 @@ function InfoTable({
 
   return (
     <div className="w-100 h-207.5 bg-info-table rounded-[70px] shadow-2xl text-[#2f4b3a] px-6 sm:px-8 flex flex-col">
+      
+      {/* Role and bid information */}
       <div className="w-full h-1/4 flex flex-col">
-        
         <div className="w-full h-1/2 flex flex-col">
           <div className="w-full h-1/4 pl-3">
             {gameState === "NEW" && startPlayer !== null && (
@@ -86,25 +87,36 @@ function InfoTable({
           </div>
         </div>
       </div>
-      <div className="w-full h-1/4 bg-blue-500 items-center justify-center flex">
       
-        <p className="text-3xl font-bold text-center">
+      {/* Public information */}
+      <div className="w-full bg-blue-500 text-3xl p-4 font-bold text-center flex-auto">
+        
           {displayInformation(publicInfo)}
-        </p>
+        
       </div>
-      <div className="w-full h-1/4 bg-blue-300 items-center justify-center flex">
-        <p className="text-3xl font-bold text-center">
-          {displayInformation(privateInfo)}
-        </p>
+
+      {/* Private information */}
+      <div className="w-full bg-blue-300 text-2xl p-4 font-bold text-center flex-auto">
+      {gameState === "FINISHED" ? (
+        
+          displayInformation(privateInfo)
+        
+      ) : (
+        
+          displayInformation(privateInfo)
+      
+      )}  
       </div>
-      <div className="w-full h-1/4 bg-blue-500 flex flex-col">
+
+      {/* Bonuses information */}
+      <div className="w-full bg-blue-500 text-2xl p-4 font-bold text-center flex-auto">
         <div className="w-full text-2xl flex flex-col justify-center items-center">
           {declarerBonuses && <p className="font-bold">Declarer's bonuses:</p>}
-          <p className="font-normal">{declarerBonuses}</p>
+          <p className="text-xl">{declarerBonuses}</p>
         </div>
         <div className="w-full text-2xl flex flex-col justify-center items-center">
           {opponentBonuses && <p className="font-bold">Opponent's bonuses:</p>}
-          <p className="font-normal">{opponentBonuses}</p>
+          <p className="text-xl">{opponentBonuses}</p>
         </div>
       </div>
     </div>

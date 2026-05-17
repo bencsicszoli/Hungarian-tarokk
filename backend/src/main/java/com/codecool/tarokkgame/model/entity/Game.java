@@ -1,10 +1,12 @@
 package com.codecool.tarokkgame.model.entity;
 
 import com.codecool.tarokkgame.constants.*;
+import com.codecool.tarokkgame.model.TarokkNumberAnnouncers;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -48,7 +50,7 @@ public class Game {
     private String declarer;
     private String information;
     private String lastBonusAnnouncer = "declarer";
-    private int cardOrder = 1;
+    private int cardOrder = 1; // ?
 
     @OneToMany(mappedBy = "game")
     private List<Player> players;
@@ -57,7 +59,7 @@ public class Game {
     private List<Trick> tricks;
 
     @Enumerated(EnumType.STRING)
-    private GameLevel gameLevel = GameLevel.PASKIEVICS;
+    private GameLevel gameLevel = GameLevel.PASKIEVICS; // ?
 
     @Enumerated(EnumType.STRING)
     private BidLevel bidLevel = BidLevel.NONE;
@@ -96,6 +98,19 @@ public class Game {
                     return activePlayer;
                 }
             }
+        }
+        throw new NoSuchElementException("Next player not found");
+    }
+
+    public String getNextPlayerName(String playerName) {
+        if (playerName.equals(player1)) {
+            return player2;
+        } else if (playerName.equals(player2)) {
+            return player3;
+        } else if (playerName.equals(player3)) {
+            return player4;
+        } else if (playerName.equals(player4)) {
+            return player1;
         }
         throw new NoSuchElementException("Next player not found");
     }
@@ -356,5 +371,16 @@ public class Game {
             }
         }
         return null;
+    }
+
+    public TarokkNumberAnnouncers getAnnouncers() {
+        Set<Player> announcers = new HashSet<>();
+        for (Player player : getPlayers()) {
+            player.setTarokkNumberAfterwards();
+            if (player.isEightTarokksInAdvance() || player.isNineTarokksInAdvance() || player.isEightTarokksAfterwards() || player.isNineTarokksAfterwards()) {
+                announcers.add(player);
+            }
+        }
+        return new TarokkNumberAnnouncers(announcers);
     }
 }

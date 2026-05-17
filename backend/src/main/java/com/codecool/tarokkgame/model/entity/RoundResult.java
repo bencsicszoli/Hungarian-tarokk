@@ -45,6 +45,8 @@ public class RoundResult {
     private int eightTarokksAfterwards = 0;
     private int nineTarokksAfterwards = 0;
     private int sum = 0;
+    private int cardValue = 0;
+    private String info;
 
     @OneToOne
     private Player player;

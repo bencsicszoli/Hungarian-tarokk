@@ -6,6 +6,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class PrivateResultDTO{
+        int cardValue;
         int party;
         int partyDoubled;
         int partyRedoubled;
@@ -38,5 +39,6 @@ public class PrivateResultDTO{
         int eightTarokksAfterwards;
         int nineTarokksAfterwards;
         int sum;
+        String info;
         String type;
 }

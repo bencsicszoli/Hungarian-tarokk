@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface TrickRepository extends JpaRepository<Trick, Long> {
 
+    void deleteAllByGameId(Long gameId);
 }

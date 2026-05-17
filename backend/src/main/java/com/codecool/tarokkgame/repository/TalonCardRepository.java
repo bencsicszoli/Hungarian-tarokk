@@ -23,4 +23,6 @@ public interface TalonCardRepository extends JpaRepository<TalonCard, Long> {
 
     @NativeQuery(value = "SELECT * FROM talon_card WHERE id BETWEEN ?1 AND ?2 AND game_id = ?3")
     List<TalonCard> findAllByIdRangeAndGameId(Long idFrom, Long idTo, Long gameId);
+
+    void deleteAllByGameId(Long gameId);
 }

@@ -4,9 +4,7 @@ import com.codecool.tarokkgame.model.entity.Card;
 import com.codecool.tarokkgame.model.entity.DeckCard;
 import com.codecool.tarokkgame.model.entity.FakeDeckCard;
 import com.codecool.tarokkgame.model.entity.Game;
-import com.codecool.tarokkgame.repository.CardRepository;
-import com.codecool.tarokkgame.repository.DeckCardRepository;
-import com.codecool.tarokkgame.repository.FakeDeckCardRepository;
+import com.codecool.tarokkgame.repository.*;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -19,20 +17,32 @@ import java.util.stream.IntStream;
 @Service
 public class ShuffleService {
 
-    public final Random random;
-    public final CardRepository cardRepository;
-    public final DeckCardRepository deckCardRepository;
-    public final FakeDeckCardRepository fakeDeckCardRepository;
+    private final Random random;
+    private final CardRepository cardRepository;
+    private final DeckCardRepository deckCardRepository;
+    private final FakeDeckCardRepository fakeDeckCardRepository;
+    private final SkartRepository skartRepository;
+    private final OwnTrickRepository ownTrickRepository;
+    private final TalonCardRepository talonCardRepository;
+    private final TrickRepository trickRepository;
 
-    public ShuffleService(Random random, CardRepository cardRepository, DeckCardRepository deckCardRepository, FakeDeckCardRepository fakeDeckCardRepository) {
+    public ShuffleService(Random random, CardRepository cardRepository, DeckCardRepository deckCardRepository, FakeDeckCardRepository fakeDeckCardRepository, SkartRepository skartRepository, OwnTrickRepository ownTrickRepository, TalonCardRepository talonCardRepository, TrickRepository trickRepository) {
         this.random = random;
         this.cardRepository = cardRepository;
         this.deckCardRepository = deckCardRepository;
         this.fakeDeckCardRepository = fakeDeckCardRepository;
+        this.skartRepository = skartRepository;
+        this.ownTrickRepository = ownTrickRepository;
+        this.talonCardRepository = talonCardRepository;
+        this.trickRepository = trickRepository;
     }
 
     public void addShuffledDeck(Game game) {
         deckCardRepository.deleteAllByGameId(game.getId());
+        skartRepository.deleteAllByGameId(game.getId());
+        ownTrickRepository.deleteAllByPlayerGameId(game.getId());
+        talonCardRepository.deleteAllByGameId(game.getId());
+        trickRepository.deleteAllByGameId(game.getId());
         List<Card> cards = cardRepository.findAll();
         List<DeckCard> deckCards = new ArrayList<>();
         int cardOrder = 1;
@@ -51,6 +61,10 @@ public class ShuffleService {
 
     public void useFakeDeck(Game game) {
         deckCardRepository.deleteAllByGameId(game.getId());
+        skartRepository.deleteAllByGameId(game.getId());
+        ownTrickRepository.deleteAllByPlayerGameId(game.getId());
+        talonCardRepository.deleteAllByGameId(game.getId());
+        trickRepository.deleteAllByGameId(game.getId());
         List<FakeDeckCard> fakeDeckCards = fakeDeckCardRepository.findAll();
         List<DeckCard> deckCards = new ArrayList<>();
         int cardOrder = 1;

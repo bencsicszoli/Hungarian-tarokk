@@ -12,4 +12,5 @@ public interface PlayerCardRepository extends JpaRepository<PlayerCard, Long> {
     void deleteAllByPlayerId(Long playerId);
     void deleteByPlayerIdAndCardId(Long playerId, int cardId);
     int countAllByPlayerId(Long playerId);
+    void deleteAllByPlayerGameId(Long playerGameId);
 }
