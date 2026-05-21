@@ -4,6 +4,7 @@ import com.codecool.tarokkgame.model.dto.messagedto.response.PlayerCardDTO;
 import com.codecool.tarokkgame.model.entity.*;
 import com.codecool.tarokkgame.repository.DeckCardRepository;
 import com.codecool.tarokkgame.repository.PlayerCardRepository;
+import com.codecool.tarokkgame.repository.PlayerRepository;
 import com.codecool.tarokkgame.repository.TalonCardRepository;
 import org.springframework.stereotype.Service;
 
@@ -16,11 +17,13 @@ public class DealService {
     private final DeckCardRepository deckRepository;
     private final TalonCardRepository talonRepository;
     private final PlayerCardRepository playerCardRepository;
+    private final PlayerRepository playerRepository;
 
-    public DealService(DeckCardRepository deckRepository, TalonCardRepository talonRepository, PlayerCardRepository playerCardRepository) {
+    public DealService(DeckCardRepository deckRepository, TalonCardRepository talonRepository, PlayerCardRepository playerCardRepository, PlayerRepository playerRepository) {
         this.deckRepository = deckRepository;
         this.talonRepository = talonRepository;
         this.playerCardRepository = playerCardRepository;
+        this.playerRepository = playerRepository;
     }
 
     public void setTalonCards(Game game) {
@@ -41,7 +44,8 @@ public class DealService {
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
         }
-        List<PlayerCard> playerCards = new ArrayList<>();
+        //List<PlayerCard> playerCards = new ArrayList<>();
+        List<PlayerCard> playerCards = player.getPlayerCards();
         return createPlayerCardsFromDeck(player, from, to, playerCards);
     }
 
@@ -51,9 +55,11 @@ public class DealService {
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
         }
-        List<PlayerCard> playerCards = playerCardRepository.findAllByPlayerId(player.getId());
-        List<PlayerCardDTO> playerCardDTOs = createPlayerCardsFromDeck(player, from, to, playerCards);
-        return playerCardDTOs.stream().sorted(Comparator.comparingInt(PlayerCardDTO::cardId)).toList();
+       // List<PlayerCard> playerCards = playerCardRepository.findAllByPlayerId(player.getId());
+        List<PlayerCard> playerCards = player.getPlayerCards();
+
+        return createPlayerCardsFromDeck(player, from, to, playerCards);
+        //return playerCardDTOs.stream().sorted(Comparator.comparingInt(PlayerCardDTO::cardId)).toList();
     }
 
     private List<PlayerCardDTO> createPlayerCardsFromDeck(Player player, int from, int to, List<PlayerCard> playerCards) {
@@ -68,7 +74,8 @@ public class DealService {
             playerCards.add(playerCard);
         }
         List<PlayerCardDTO> playerCardDTOs = new ArrayList<>();
-        for (PlayerCard playerCard : playerCards) {
+        List<PlayerCard> orderedCards = player.getPlayerCards();
+        for (PlayerCard playerCard : orderedCards) {
             PlayerCardDTO dto = new PlayerCardDTO(
                     playerCard.getCard().getId(),
                     playerCard.getPlayer().getId(),
@@ -76,7 +83,8 @@ public class DealService {
                     playerCard.isClickable());
             playerCardDTOs.add(dto);
         }
-        playerCardRepository.saveAll(playerCards);
+        //playerCardRepository.saveAll(playerCards);
+       // playerRepository.save(player);
         return playerCardDTOs;
     }
 }

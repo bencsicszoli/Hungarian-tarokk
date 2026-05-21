@@ -8,7 +8,7 @@ function Talon({ talonCardsNumber }: { talonCardsNumber: number }) {
         key={index}
         src={imagePath}
         alt="Talon card back"
-        className="w-20 -mx-14"
+        className="w-19 -mx-15"
       />
     ));
   }

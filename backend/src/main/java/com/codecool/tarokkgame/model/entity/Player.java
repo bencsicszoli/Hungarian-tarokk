@@ -19,6 +19,7 @@ public class Player {
     private Long id;
 
     int place = 0;
+
     int tarokksInSkart = 0;
 
     @ManyToOne
@@ -274,6 +275,13 @@ public class Player {
         } else if (hasNineTarokks && !nineTarokksInAdvance) {
             setNineTarokksAfterwards(true);
         }
+    }
+
+    public List<PlayerCard> getPlayerCards() {
+        if (this.playerCards != null) {
+            this.playerCards.sort(Comparator.comparing(pc -> pc.getCard().getId()));
+        }
+        return this.playerCards;
     }
 }
 

@@ -54,14 +54,16 @@ public class TrickService {
         trick.setX(x);
         int y = (int) ((Math.random() - 0.5) * 20);
         trick.setY(y);
-        int rotation = (int) (Math.random() * 90);
+        int rotation = (int) (Math.random() * 180);
         trick.setRotation(rotation);
         trickRepository.save(trick);
         List<Trick> tricks = game.getTricks();
         tricks.add(trick);
+        List<Trick> sortedTricks = tricks.stream().sorted(Comparator.comparingLong(Trick::getId)).toList();
+        game.setTricks(sortedTricks);
         int cardsInHand = playerCardRepository.countAllByPlayerId(player.getId());
-        Game savedGame = gameRepository.save(game);
-        List<Trick> sortedTricks = savedGame.getTricks().stream().sorted(Comparator.comparingLong(Trick::getId)).toList();
+        gameRepository.save(game); // ?
+        //List<Trick> sortedTricks = savedGame.getTricks().stream().sorted(Comparator.comparingLong(Trick::getId)).toList();
         List<TrickCardDTO> trickCardDTOList = mapperService.mapToTrickCardListDTO(sortedTricks);
         return new TrickCardListDTO(trickCardDTOList, player.getName(), cardsInHand, "game.trickCards");
     }
@@ -102,7 +104,7 @@ public class TrickService {
         List<OwnTrick> wonCards = mapperService.mapToOwnTrickList(tricks, trickWinner);
 
         ownTrickRepository.saveAll(wonCards);
-        //game.getTricks().removeAll(tricks);
+        game.getTricks().removeAll(tricks);
         game.setTricks(new ArrayList<>(4));
         game.setTurnPlayer(trickWinner.getName());
         game.setTrickRound(game.getTrickRound() + 1);

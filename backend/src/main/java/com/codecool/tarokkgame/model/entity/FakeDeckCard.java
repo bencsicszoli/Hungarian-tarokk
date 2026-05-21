@@ -10,11 +10,7 @@ import lombok.Setter;
 @Table(name = "fake_deck")
 
 public class FakeDeckCard {
-/*
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
 
- */
     @Id
     private int id;
 

@@ -100,7 +100,7 @@ public class MessageController {
             Game game = gameRepository.findById(request.gameId()).orElseThrow(() -> new NoSuchElementException("Game not found"));
             resetService.resetGame(game);
             resetService.resetPlayers(game);
-            NewRoundDTO newRoundDTO = new NewRoundDTO(game.getDealer().toUpperCase() + " is dealing", "game.newRound");
+            NewRoundDTO newRoundDTO = new NewRoundDTO(game.getDealer().toUpperCase() + " is dealing...", "game.newRound");
             messagingTemplate.convertAndSend("/topic/game." + request.gameId(), newRoundDTO);
             dealTalonCards(game, request);
 
@@ -184,6 +184,8 @@ public class MessageController {
                 int playerCards = player.getPlayerCards().size();
                 if (i == 3) {
                     game.setState(GameState.SKART_LAY_DOWN);
+                    PublicInfoDTO publicInfoDTO = new PublicInfoDTO("Discard skart phase has started!", "game.publicInfo");
+                    messagingTemplate.convertAndSend("/topic/game." + request.gameId(), publicInfoDTO);
                 }
                 idTo = idFrom + talonCardsToDeal[i] - 1;
                 try {
@@ -195,15 +197,11 @@ public class MessageController {
                 PlayerCardListDTO cardList = talonService.allocateTalonCards(game, player, idFrom, idTo);
                 messagingTemplate.convertAndSendToUser(playerToDeal, "/queue/private", cardList);
 
-
-
                 String discardHandInfo = player.checkIfHandIsThrowable();
                 if (discardHandInfo != null) {
                     PrivateInfoDTO infoDTO = new PrivateInfoDTO(discardHandInfo, "game.discardHand");
                     messagingTemplate.convertAndSendToUser(playerToDeal, "/queue/private", infoDTO);
                 }
-
-
 
                 PublicTalonDTO talonDTO = new PublicTalonDTO(talonCards, "game.talon", game.getState().toString());
                 messagingTemplate.convertAndSend("/topic/game." + request.gameId(), talonDTO);
@@ -405,7 +403,7 @@ public class MessageController {
             Game game = gameRepository.findById(request.gameId()).orElseThrow(() -> new NoSuchElementException("Game not found"));
             List<Player> players = game.getPlayers();
             for (Player player : players) {
-                PrivateResultDTO dto = mapperService.mapToPrivateResult(player);
+                PrivateInfoDTO dto = mapperService.mapToPrivateResult(player);
                 messagingTemplate.convertAndSendToUser(player.getName(), "/queue/private", dto);
             }
             String newDealer = game.getNextPlayerName(game.getDealer());
@@ -429,8 +427,8 @@ public class MessageController {
     }
 
     private void dealTalonCards(Game game, GeneralRequestDTO request) {
-        //shuffleService.addShuffledDeck(game);
-        shuffleService.useFakeDeck(game);
+        shuffleService.addShuffledDeck(game);
+        //shuffleService.useFakeDeck(game);
         dealService.setTalonCards(game);
         PublicTalonDTO publicTalonDTO = new PublicTalonDTO(6, "game.talon", "NEW");
         messagingTemplate.convertAndSend("/topic/game." + request.gameId(), publicTalonDTO);

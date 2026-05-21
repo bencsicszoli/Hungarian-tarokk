@@ -20,18 +20,18 @@ function Bonuses({
   return (
     <div className="h-full flex flex-col justify-center items-center">
       {hasEightTarokks || hasNineTarokks ? (
-        <div className="w-full bg-pink-300 flex justify-center items-center mb-1">
+        <div className="w-full flex justify-center items-center mb-1">
           {onRenderTarokkNumberButton()}
         </div>
       ) : null}
       {declarer && callableTarokks.length > 0 && (
-        <div className="w-full bg-pink-400 flex justify-center items-center">
+        <div className="w-full flex justify-center items-center">
           {onRenderCallableTarokkButtons()}
         </div>
       )}
 
-      <div className="w-full bg-pink-500 flex flex-col justify-center items-center">
-        <p className="h-1/4 font-semibold mt-1 text-lg">Select your bonuses:</p>
+      <div className="w-full flex flex-col justify-center items-center">
+        <p className="h-1/4 font-semibold mt-1 mb-1 text-lg">Select your bonuses:</p>
         <div className="h-3/4 w-full grid grid-flow-row grid-cols-4">
           {onRenderBonusButtons()}
         </div>

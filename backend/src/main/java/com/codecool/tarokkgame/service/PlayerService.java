@@ -59,7 +59,9 @@ public class PlayerService {
         gameWithEmptySeat.setInformation(String.format("%s has joined the game", username.toUpperCase()));
         findEmptySeatAtCardTable(gameWithEmptySeat, newPlayer, username);
         List<Player> players = gameWithEmptySeat.getPlayers();
+        System.out.println("Players: " + players.size());
         players.add(newPlayer);
+        System.out.println("Players: " + players.size());
         List<Player> sortedPlayers = players.stream().sorted(Comparator.comparing(Player::getPlace)).toList();
         if (players.size() == NUMBER_OF_NECESSARY_PLAYERS) {
             setRolesAtCardTable(sortedPlayers, gameWithEmptySeat);

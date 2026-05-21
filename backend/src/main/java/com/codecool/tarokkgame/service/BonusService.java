@@ -33,10 +33,11 @@ public class BonusService {
         Set<String> callableTarokks = new LinkedHashSet<>();
         setCallableTarokks(game, player, callableTarokks);
         TarokkNumberHolder tarokkNumberHolder = getTarokkNumber(player);
+        String playerInfo = createPlayerInfo(tarokkNumberHolder);
         game.getOptionalBonuses().addAll(bonuses);
         gameRepository.save(game);
         playerRepository.save(player);
-        return new FirstPotentialBonusesDTO(tarokkNumberHolder.isEightTarokk(), tarokkNumberHolder.isNineTarokk(), bonusNames, callableTarokks, "game.firstPotentialBonuses");
+        return new FirstPotentialBonusesDTO(tarokkNumberHolder.isEightTarokk(), tarokkNumberHolder.isNineTarokk(), bonusNames, callableTarokks, playerInfo, "game.firstPotentialBonuses");
     }
 
     public PotentialBonusesDTO getFirstPotentialTurnPlayerBonuses(Game game, Player player) {
@@ -155,7 +156,7 @@ public class BonusService {
 
     public PrivateInfoDTO checkDoubleGameAndVolat(Set<String> bonusNames) {
         if (bonusNames.contains("Double game") && bonusNames.contains("Volat")) {
-            return new PrivateInfoDTO("You cannot announce Double game and Volat at the same time!", "game.privateInfo");
+            return new PrivateInfoDTO("You cannot announce Double game and Volat at the same time! Click on the bonus again to remove it!", "game.privateInfo");
         }
         return null;
     }
@@ -164,7 +165,7 @@ public class BonusService {
         String side = identifyPlayerSide(player, game.getInvitedTarokk());
         boolean announcedVolat = game.announcedVolat(side);
         if (announcedVolat && (bonusNames.contains("Trull") || bonusNames.contains("Four kings") || bonusNames.contains("Double game"))) {
-            return new PrivateInfoDTO("You cannot announce Trull, Four kings or Double game after Volat!", "game.privateInfo");
+            return new PrivateInfoDTO("You cannot announce Trull, Four kings or Double game after Volat! Click on the bonus again to remove it!", "game.privateInfo");
         } else {
             return null;
         }
@@ -209,15 +210,15 @@ public class BonusService {
     private String createPlayerInfo(TarokkNumberHolder tarokkNumberHolder, Player player, Game game, Set<Bonus> bonuses) {
         String playerInfo = "";
         if (tarokkNumberHolder.isEightTarokk() || tarokkNumberHolder.isNineTarokk()) {
-            playerInfo += "Announce tarokknumber (optional)! !";
+            playerInfo += "Announce tarokknumber (optional, except for Pagat ultimo or doubling it)! !";
         }
         if (player.getRoleInGame().equals(RoleInGame.DECLARER_PARTNER) || player.hasTheGivenTarokk(game.getInvitedTarokk())) {
             playerInfo += "Choose at least one bonus or pass! !";
         } else {
             if (player.getRoleInGame().equals(RoleInGame.OPPONENT)) {
-                playerInfo += "Choose at least one bonus or pass!";
+                playerInfo += "Choose at least one bonus or pass! !";
             } else {
-                playerInfo += "Pass or choose at least one bonus after doubling something!";
+                playerInfo += "Pass or choose at least one bonus after doubling something! !";
             }
             addDoubledBonusesToBonuses(game, bonuses);
         }

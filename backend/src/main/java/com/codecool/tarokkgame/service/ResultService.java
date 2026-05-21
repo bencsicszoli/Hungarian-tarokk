@@ -69,23 +69,17 @@ public class ResultService {
         List<Player> players = game.getPlayers();
 
         Bonus party = game.findBonusByIndex(Bonus.PASS, "declarer");
-        System.out.println("Party name: " + party.getBonusName());
 
         for (Player player : players) {
             RoundResult result = new RoundResult();
-            //RoundResult result = handleTrull(game, honours, player, declarerTrull, opponentBonus);
             handleTrull(game, honours, player, result);
             handleFourKings(game, kings, player, result);
             handlePagatUltimo(game, player, result);
             handleXXICatch(game, player, result);
             handleVolat(player, game, result, party, cardCount, cardValues, bidMultiplier);
             handleDoubleGame(player, result, party, cardCount, cardValues, bidMultiplier, game);
-            //result.setSum();
-            //String resultInfo = createResultInfo(result, bidLevel);
-            //result.setInfo(resultInfo);
             result.setPlayer(player); // ?
             player.setResult(result);
-            //player.setBalance(player.getBalance() + result.getSum());
         }
         handleTarokkNumber(players, announcers.getPlayers());
         for (Player player : players) {
@@ -137,11 +131,11 @@ public class ResultService {
     private void handleXXICatch(Game game, Player player, RoundResult result) {
         Bonus declarerXXICatch = game.findBonusByIndex(Bonus.XXI_CATCH, "declarer");
         Bonus opponentXXICatch = game.findBonusByIndex(Bonus.XXI_CATCH, "opponent");
-        if (game.getXXICatcher() == null) { // No one has ultimo
+        if (game.getXXICatcher() == null) { // No one has XXI-catch
             handleXXICatchNoOneAchieved(player, result, declarerXXICatch, opponentXXICatch, game);
-        } else if (game.getXXICatcher().equals("declarer")) { // Declarer has ultimo
+        } else if (game.getXXICatcher().equals("declarer")) { // Declarer has XXI-catch
             handleXXICatchDeclarerAchieved(player, result, declarerXXICatch, game);
-        } else { // Opponent has ultimo
+        } else { // Opponent has XXI-catch
             handleXXICatchOpponentAchieved(player, result, opponentXXICatch, game);
         }
     }
@@ -158,26 +152,9 @@ public class ResultService {
             handlePartyDoubledOrRedoubled(player, result, party, cardValues, bidMultiplier, game);
         } else { // Party level = 0
             if (cardCount > 0 && cardCount < 36 && declarerVolat != null && cardValues < 48) {
-                if (player.getRoleInGame().getTeam().equals("opponent")) {
-                    result.setParty(party.getPointValue() * bidMultiplier);
-                } else {
-                    if (!game.isDeclarerAlone()) {
-                        result.setParty(-party.getPointValue() * bidMultiplier);
-                    } else {
-                        result.setParty(-3 * party.getPointValue() * bidMultiplier);
-                    }
-
-                }
+                decidePaymentForParty(player, game, result, party, bidMultiplier, -1, 1);
             } else if (cardCount > 0 && cardCount < 36 && opponentVolat != null && cardValues > 47) {
-                if (player.getRoleInGame().getTeam().equals("declarer")) {
-                    if (!game.isDeclarerAlone()) {
-                        result.setParty(party.getPointValue() * bidMultiplier);
-                    } else {
-                        result.setParty(3 * party.getPointValue() * bidMultiplier);
-                    }
-                } else {
-                    result.setParty(-party.getPointValue() * bidMultiplier);
-                }
+                decidePaymentForParty(player, game, result, party, bidMultiplier, 1, -1);
             }
         }
     }
@@ -228,99 +205,25 @@ public class ResultService {
         }
     }
 
-    // Refactor!
     private void handlePartyDoubledOrRedoubled(Player player, RoundResult result, Bonus party, int cardValues, int bidMultiplier, Game game) {
-        if (cardValues > 47) {
-            if (player.getRoleInGame().getTeam().equals("declarer")) {
-                if (!game.isDeclarerAlone()) {
-                    setHigherLevelPartyPayment(party, result, bidMultiplier, 1);
-                } else {
-                    setHigherLevelPartyPayment(party, result, bidMultiplier, 3);
-                }
-
-            } else { // team = "opponent"
-                setHigherLevelPartyPayment(party, result, bidMultiplier, -1);
-            }
-        } else if (cardValues < 47) {
-            if (player.getRoleInGame().getTeam().equals("declarer")) {
-                if (!game.isDeclarerAlone()) {
-                    setHigherLevelPartyPayment(party, result, bidMultiplier, -1);
-                } else {
-                    setHigherLevelPartyPayment(party, result, bidMultiplier, -3);
-                }
-
-            } else { // team = "opponent"
-                setHigherLevelPartyPayment(party, result, bidMultiplier, 1);
-            }
+        if (cardValues > 47) { // Declarer won the party
+            decidePaymentForHigherLevelParty(player, game, result, party, bidMultiplier, List.of(1, 3, -1));
+        } else if (cardValues < 47) { // Opponent won the party
+            decidePaymentForHigherLevelParty(player, game, result, party, bidMultiplier, List.of(-1, -3, 1));
         } else { // cardValue = 47;
-            if (party.getLevel() == 1) {
-                if (player.getRoleInGame().getTeam().equals("declarer")) {
-                    if (!game.isDeclarerAlone()) {
-                        result.setPartyDoubled(party.getPointValue() * bidMultiplier);
-                    } else {
-                        result.setPartyDoubled(3 * party.getPointValue() * bidMultiplier);
-                    }
-
-                } else {
-                    result.setPartyRedoubled(-party.getPointValue() * bidMultiplier);
-                }
-            } else { // level = 2
-                if (player.getRoleInGame().getTeam().equals("declarer")) {
-                    if (!game.isDeclarerAlone()) {
-                        result.setPartyDoubled(-party.getPointValue() * bidMultiplier);
-                    } else {
-                        result.setPartyDoubled(-3 * party.getPointValue() * bidMultiplier);
-                    }
-
-                } else {
-                    result.setPartyRedoubled(party.getPointValue() * bidMultiplier);
-                }
+            if (party.getLevel() == 1) { // The party was doubled
+                decidePaymentAtEqualPoints(player, game, result, party, bidMultiplier, 1, -1);
+            } else { // level = 2; the party was redoubled
+                decidePaymentAtEqualPoints(player, game, result, party, bidMultiplier, -1, 1);
             }
         }
     }
-// Refactor!
-    private void handlePartyNotDoubled(Player player, RoundResult result, Bonus declarerDoubleGame, Bonus opponentDoubleGame, Bonus party, int cardValues, int bidMultiplier, Game game) {
-        if (cardValues < 48 && cardValues > 23 && declarerDoubleGame != null) {
-            if (player.getRoleInGame().getTeam().equals("declarer")) {
-                if (!game.isDeclarerAlone()) {
-                    result.setParty(-party.getPointValue() * bidMultiplier);
-                } else {
-                    result.setParty(-3 * party.getPointValue() * bidMultiplier);
-                }
-            } else {
-                result.setParty(party.getPointValue() * bidMultiplier);
-            }
-        } else if (cardValues > 47 && cardValues < 71 && opponentDoubleGame != null) {
-            if (player.getRoleInGame().getTeam().equals("declarer")) {
-                if (!game.isDeclarerAlone()) {
-                    result.setParty(party.getPointValue() * bidMultiplier);
-                } else {
-                    result.setParty(3 * party.getPointValue() * bidMultiplier);
-                }
 
-            } else {
-                result.setParty(-party.getPointValue() * bidMultiplier);
-            }
-        } else if (cardValues > 47 && cardValues < 71 && declarerDoubleGame == null) {
-            if (player.getRoleInGame().getTeam().equals("declarer")) {
-                if (!game.isDeclarerAlone()) {
-                    result.setParty(party.getPointValue() * bidMultiplier);
-                } else {
-                    result.setParty(3 * party.getPointValue() * bidMultiplier);
-                }
-            } else {
-                result.setParty(- party.getPointValue() * bidMultiplier);
-            }
-        } else if (cardValues < 48 && cardValues > 23 && opponentDoubleGame == null) {
-            if (player.getRoleInGame().getTeam().equals("declarer")) {
-                if (!game.isDeclarerAlone()) {
-                    result.setParty(-party.getPointValue() * bidMultiplier);
-                } else {
-                    result.setParty(-3 * party.getPointValue() * bidMultiplier);
-                }
-            } else {
-                result.setParty(party.getPointValue() * bidMultiplier);
-            }
+    private void handlePartyNotDoubled(Player player, RoundResult result, Bonus declarerDoubleGame, Bonus opponentDoubleGame, Bonus party, int cardValues, int bidMultiplier, Game game) {
+        if (cardValues < 48 && cardValues > 23 && (declarerDoubleGame != null || opponentDoubleGame == null)) {
+            decidePaymentForParty(player, game, result, party, bidMultiplier, -1, 1);
+        } else if (cardValues > 47 && cardValues < 71 && (opponentDoubleGame != null || declarerDoubleGame == null)) {
+            decidePaymentForParty(player, game, result, party, bidMultiplier, 1, -1);
         }
     }
 
@@ -1066,8 +969,44 @@ public class ResultService {
         } else if (result.getNineTarokksAfterwards() != 0) {
             stringBuilder.append("Nine tarokks afterwards: ").append(result.getNineTarokksAfterwards()).append("!");
         }
-        stringBuilder.append("TOTAL: ").append(result.getSum()).append("units!");
+        stringBuilder.append("TOTAL: ").append(result.getSum()).append(" units!");
         return stringBuilder.toString();
     }
 
+    private void decidePaymentForParty(Player player, Game game, RoundResult result, Bonus party, int bidMultiplier, int declarerFactor, int opponentFactor) {
+        if (player.getRoleInGame().getTeam().equals("declarer")) {
+            if (!game.isDeclarerAlone()) {
+                result.setParty(party.getPointValue() * bidMultiplier * declarerFactor);
+            } else {
+                result.setParty(3 * party.getPointValue() * bidMultiplier * declarerFactor);
+            }
+        } else {
+            result.setParty(party.getPointValue() * bidMultiplier * opponentFactor);
+        }
+    }
+
+    private void decidePaymentForHigherLevelParty(Player player, Game game, RoundResult result, Bonus party, int bidMultiplier, List<Integer> winningMultipliers) {
+        if (player.getRoleInGame().getTeam().equals("declarer")) {
+            if (!game.isDeclarerAlone()) {
+                setHigherLevelPartyPayment(party, result, bidMultiplier, winningMultipliers.getFirst());
+            } else {
+                setHigherLevelPartyPayment(party, result, bidMultiplier, winningMultipliers.get(1));
+            }
+
+        } else { // team = "opponent"
+            setHigherLevelPartyPayment(party, result, bidMultiplier, winningMultipliers.getLast());
+        }
+    }
+
+    private void decidePaymentAtEqualPoints(Player player, Game game, RoundResult result, Bonus party, int bidMultiplier, int declarerFactor, int opponentFactor) {
+        if (player.getRoleInGame().getTeam().equals("declarer")) {
+            if (!game.isDeclarerAlone()) {
+                result.setPartyDoubled(party.getPointValue() * bidMultiplier * declarerFactor);
+            } else {
+                result.setPartyDoubled(3 * party.getPointValue() * bidMultiplier * declarerFactor);
+            }
+        } else {
+            result.setPartyRedoubled(party.getPointValue() * bidMultiplier * opponentFactor);
+        }
+    }
 }

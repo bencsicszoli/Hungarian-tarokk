@@ -6,10 +6,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Set;
+import java.util.*;
 
 @Entity
 @Getter
@@ -52,10 +49,10 @@ public class Game {
     private String lastBonusAnnouncer = "declarer";
     private int cardOrder = 1; // ?
 
-    @OneToMany(mappedBy = "game")
+    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL)
     private List<Player> players;
 
-    @OneToMany
+    @OneToMany(cascade = CascadeType.ALL)
     private List<Trick> tricks;
 
     @Enumerated(EnumType.STRING)
@@ -87,13 +84,13 @@ public class Game {
 
     public Player getNextPlayer(Player player) {
         if (player.getPlace() == 4) {
-            for (Player activePlayer : players) {
+            for (Player activePlayer : getPlayers()) {
                 if (activePlayer.getPlace() == 1) {
                     return activePlayer;
                 }
             }
         } else {
-            for (Player activePlayer : players) {
+            for (Player activePlayer : getPlayers()) {
                 if (activePlayer.getPlace() == player.getPlace() + 1) {
                     return activePlayer;
                 }
@@ -116,7 +113,7 @@ public class Game {
     }
 
     public Player getPlayerByName(String name) {
-        for (Player player : players) {
+        for (Player player : getPlayers()) {
             if (player.getUser().getUsername().equals(name)) {
                 return player;
             }
@@ -128,7 +125,7 @@ public class Game {
         int[] places = {0, 1, 2, 3, 4, 1, 2, 3};
         int playerIndex = places[player.getPlace()];
         for (int i = playerIndex + 1; i <= playerIndex + 3; i++) {
-            for (Player biddingPlayer : players) {
+            for (Player biddingPlayer : getPlayers()) {
                 if (biddingPlayer.getPlace() == places[i] && biddingPlayer.getBidLevel() != BidLevel.PASS) {
                     return biddingPlayer;
                 }
@@ -140,7 +137,7 @@ public class Game {
     public void setPlayerRolesInCaseYieldedGameOrInvit(Player declarer) {
         if (isYielded) {
             setInvitedTarokk(20);
-            for (Player player : players) {
+            for (Player player : getPlayers()) {
                 if (player.isYieldedGame()) {
                     player.setRoleInGame(RoleInGame.DECLARER_PARTNER);
                 } else if (player.getRoleInGame() != RoleInGame.DECLARER) {
@@ -150,7 +147,7 @@ public class Game {
         } else if (isXIXInvit) {
             if (declarer.isAcceptedXIX_Invit()) {
                 setInvitedTarokk(19);
-                for (Player player : players) {
+                for (Player player : getPlayers()) {
                     if (player.isAnnouncedXIX_Invit()) {
                         player.setRoleInGame(RoleInGame.DECLARER_PARTNER);
                     } else if (player.getRoleInGame() != RoleInGame.DECLARER) {
@@ -161,7 +158,7 @@ public class Game {
         } else if (isXVIIIInvit) {
             if (declarer.isAcceptedXVIII_Invit()) {
                 setInvitedTarokk(18);
-                for (Player player : players) {
+                for (Player player : getPlayers()) {
                     if (player.isAnnouncedXVIII_Invit()) {
                         player.setRoleInGame(RoleInGame.DECLARER_PARTNER);
                     } else if (player.getRoleInGame() != RoleInGame.DECLARER) {
@@ -174,7 +171,7 @@ public class Game {
 
     public String getMessageWithTarokksInOpponentSkart() {
         StringBuilder stringBuilder = new StringBuilder();
-        for (Player player : players) {
+        for (Player player : getPlayers()) {
             if (player.getRoleInGame() != RoleInGame.DECLARER) {
                 if (player.getTarokksInSkart() == 1) {
                     stringBuilder.append(player.getName()).append(" placed ").append(player.getTarokksInSkart()).append(" tarokk in skart!");
@@ -187,7 +184,7 @@ public class Game {
     }
 
     public void markPlayersAsOpponent() {
-        for (Player player : players) {
+        for (Player player : getPlayers()) {
             if (player.getRoleInGame().equals(RoleInGame.NOT_CLEAR_YET)) {
                 player.setRoleInGame(RoleInGame.OPPONENT);
             }
@@ -196,7 +193,7 @@ public class Game {
 
     public int getNumberOfOpponents() {
         int opponents = 0;
-        for (Player player : players) {
+        for (Player player : getPlayers()) {
             if (player.getRoleInGame().equals(RoleInGame.OPPONENT)) {
                 opponents++;
             }
@@ -205,7 +202,7 @@ public class Game {
     }
 
     public void setLastPlayerAsDeclarer() {
-        for (Player player : players) {
+        for (Player player : getPlayers()) {
             if (player.getRoleInGame().equals(RoleInGame.NOT_CLEAR_YET)) {
                 player.setRoleInGame(RoleInGame.DECLARER_PARTNER);
             }
@@ -382,5 +379,12 @@ public class Game {
             }
         }
         return new TarokkNumberAnnouncers(announcers);
+    }
+
+    public List<Player> getPlayers() {
+        if (this.players != null) {
+            this.players.sort(Comparator.comparing(Player::getPlace));
+        }
+        return this.players;
     }
 }
