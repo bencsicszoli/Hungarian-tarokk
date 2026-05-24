@@ -5,14 +5,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.NativeQuery;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface OpponentSkartRepository extends JpaRepository<OpponentSkart, Long> {
 
-    /*
-    @NativeQuery(value = "SELECT COUNT(id) FROM opponent_skart WHERE game_id = ?1")
-    int countByGameId(Long gameId);
-
-     */
+    List<OpponentSkart> findAllByGameId(long gameId);
 
     int countAllByGameId(long gameId);
 }

@@ -9,6 +9,7 @@ import com.codecool.tarokkgame.model.dto.messagedto.response.PublicSkartDTO;
 import com.codecool.tarokkgame.model.entity.*;
 import com.codecool.tarokkgame.repository.*;
 import org.springframework.stereotype.Service;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -18,17 +19,15 @@ import java.util.NoSuchElementException;
 public class TalonService {
     private final TalonCardRepository talonCardRepository;
     private final SkartRepository skartRepository;
-    private final PlayerCardRepository playerCardRepository;
     private final CardRepository cardRepository;
     private final MapperService mapperService;
     private final DeclarerSkartRepository declarerSkartRepository;
     private final OpponentSkartRepository opponentSkartRepository;
     private final PlayerRepository playerRepository;
 
-    public TalonService(TalonCardRepository talonCardRepository, SkartRepository skartRepository, PlayerCardRepository playerCardRepository, CardRepository cardRepository, MapperService mapperService, DeclarerSkartRepository declarerSkartRepository, OpponentSkartRepository opponentSkartRepository, PlayerRepository playerRepository) {
+    public TalonService(TalonCardRepository talonCardRepository, SkartRepository skartRepository, CardRepository cardRepository, MapperService mapperService, DeclarerSkartRepository declarerSkartRepository, OpponentSkartRepository opponentSkartRepository, PlayerRepository playerRepository) {
         this.talonCardRepository = talonCardRepository;
         this.skartRepository = skartRepository;
-        this.playerCardRepository = playerCardRepository;
         this.cardRepository = cardRepository;
         this.mapperService = mapperService;
         this.declarerSkartRepository = declarerSkartRepository;
@@ -41,7 +40,7 @@ public class TalonService {
         if (idFrom <= idTo) {
             addTalonCardsToPlayerHand(idFrom, idTo, player, game);
         }
-        List<PlayerCard> playerCards = playerCardRepository.findAllByPlayerId(player.getId());
+        List<PlayerCard> playerCards = player.getPlayerCards();
         setPlayerCardsClickable(playerCards, player, game, DTOs);
 
         List<PlayerCardDTO> sortedDTO = DTOs.stream().sorted(Comparator.comparingInt(PlayerCardDTO::cardId)).toList();
@@ -56,7 +55,6 @@ public class TalonService {
             placeCardsToOpponentSkart(cardDTOS, game, cardsToSkart, player);
         }
         skartRepository.saveAll(cardsToSkart);
-        playerRepository.save(player);
         return getSortedPlayerHandFromPlayerCardList(player);
     }
 
@@ -107,7 +105,7 @@ public class TalonService {
             playerCard.setClickable(false);
             cardsToHand.add(playerCard);
         }
-        playerCardRepository.saveAll(cardsToHand);
+        player.getPlayerCards().addAll(cardsToHand);
     }
 
     private void setPlayerCardsClickable(List<PlayerCard> playerCards, Player player, Game game, List<PlayerCardDTO> DTOs) {
@@ -144,11 +142,17 @@ public class TalonService {
         skartCard.setCard(card);
         skartCard.setGame(game);
         cardsToSkart.add(skartCard);
-        playerCardRepository.deleteByPlayerIdAndCardId(player.getId(), card.getId());
+        for (PlayerCard playerCard : player.getPlayerCards()) {
+            if (playerCard.getCard().getId() == card.getId()) {
+                player.getPlayerCards().remove(playerCard);
+                break;
+            }
+        }
+        //player.getPlayerCards().removeIf(playerCard -> playerCard.getCard().getId() == card.getId());
     }
 
     private PlayerCardListDTO getSortedPlayerHandFromPlayerCardList(Player player) {
-        List<PlayerCard> playerCards = playerCardRepository.findAllByPlayerId(player.getId());
+        List<PlayerCard> playerCards = player.getPlayerCards();
         List<PlayerCardDTO> playerCardDTOS = mapperService.mapToPlayerCardListDTO(playerCards);
         List<PlayerCardDTO> sortedCards = playerCardDTOS.stream().sorted(Comparator.comparingInt(PlayerCardDTO::cardId)).toList();
         return new PlayerCardListDTO(sortedCards, "game.playerCards");

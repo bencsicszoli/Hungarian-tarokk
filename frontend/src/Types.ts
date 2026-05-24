@@ -31,3 +31,7 @@ export interface TrickCard extends Card {
   y: number;
   rotation: number;
 }
+
+export interface CardImage {
+  frontImagePath: string;
+}

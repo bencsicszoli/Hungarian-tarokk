@@ -11,20 +11,17 @@ import com.codecool.tarokkgame.model.dto.messagedto.response.PrivateInfoDTO;
 import com.codecool.tarokkgame.model.dto.messagedto.response.PublicBonusDTO;
 import com.codecool.tarokkgame.model.entity.Game;
 import com.codecool.tarokkgame.model.entity.Player;
-import com.codecool.tarokkgame.repository.GameRepository;
-import com.codecool.tarokkgame.repository.PlayerRepository;
 import org.springframework.stereotype.Service;
-import java.util.*;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 public class BonusService {
-    private final GameRepository gameRepository;
-    private final PlayerRepository playerRepository;
 
-    public BonusService(GameRepository gameRepository, PlayerRepository playerRepository) {
-        this.gameRepository = gameRepository;
-        this.playerRepository = playerRepository;
+    public BonusService() {
     }
 
     public FirstPotentialBonusesDTO getFirstPotentialDeclarerBonuses(Game game, Player player) {
@@ -35,8 +32,6 @@ public class BonusService {
         TarokkNumberHolder tarokkNumberHolder = getTarokkNumber(player);
         String playerInfo = createPlayerInfo(tarokkNumberHolder);
         game.getOptionalBonuses().addAll(bonuses);
-        gameRepository.save(game);
-        playerRepository.save(player);
         return new FirstPotentialBonusesDTO(tarokkNumberHolder.isEightTarokk(), tarokkNumberHolder.isNineTarokk(), bonusNames, callableTarokks, playerInfo, "game.firstPotentialBonuses");
     }
 
@@ -49,8 +44,6 @@ public class BonusService {
 
         List<Bonus> sortedBonuses = Bonus.sortBonuses(bonuses);
         List<String> bonusNames = sortedBonuses.stream().map(Bonus::getBonusName).toList();
-        gameRepository.save(game);
-        playerRepository.save(player);
         return new PotentialBonusesDTO(tarokkNumberHolder.isEightTarokk(), tarokkNumberHolder.isNineTarokk(), bonusNames, playerInfo, "game.firstTurnPlayerBonuses");
     }
 
@@ -64,8 +57,6 @@ public class BonusService {
 
         List<Bonus> sortedBonuses = Bonus.sortBonuses(bonuses);
         List<String> bonusNames = sortedBonuses.stream().map(Bonus::getBonusName).toList();
-        gameRepository.save(game);
-        playerRepository.save(player);
         return new PotentialBonusesDTO(tarokkNumberHolder.isEightTarokk(), tarokkNumberHolder.isNineTarokk(), bonusNames, playerInfo, "game.turnPlayerBonuses" );
     }
 
@@ -83,7 +74,6 @@ public class BonusService {
         String announceTarokkNumber = announceTarokkNumber(selectedTarokkNumber, upperCaseName);
         String bonusNamesToString = String.join(", ", bonusNames);
         String info = createInfoAboutDeclarerAnnouncement(announceTarokkNumber, upperCaseName, calledTarokk, bonusNamesToString);
-        gameRepository.save(game);
         return new PublicBonusDTO(info, Bonus.getBonusNames(game.getDeclarerBonuses()), Bonus.getBonusNames(game.getOpponentBonuses()), turnPlayer, "game.publicBonusInfo");
     }
 

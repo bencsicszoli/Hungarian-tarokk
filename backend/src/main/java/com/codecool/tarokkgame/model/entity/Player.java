@@ -277,11 +277,14 @@ public class Player {
         }
     }
 
+    /*
     public List<PlayerCard> getPlayerCards() {
         if (this.playerCards != null) {
             this.playerCards.sort(Comparator.comparing(pc -> pc.getCard().getId()));
         }
         return this.playerCards;
     }
+
+     */
 }
 

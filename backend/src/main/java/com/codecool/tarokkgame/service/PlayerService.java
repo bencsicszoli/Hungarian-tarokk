@@ -10,10 +10,7 @@ import com.codecool.tarokkgame.repository.PlayerRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -59,16 +56,14 @@ public class PlayerService {
         gameWithEmptySeat.setInformation(String.format("%s has joined the game", username.toUpperCase()));
         findEmptySeatAtCardTable(gameWithEmptySeat, newPlayer, username);
         List<Player> players = gameWithEmptySeat.getPlayers();
-        System.out.println("Players: " + players.size());
         players.add(newPlayer);
-        System.out.println("Players: " + players.size());
         List<Player> sortedPlayers = players.stream().sorted(Comparator.comparing(Player::getPlace)).toList();
         if (players.size() == NUMBER_OF_NECESSARY_PLAYERS) {
             setRolesAtCardTable(sortedPlayers, gameWithEmptySeat);
         }
         newPlayer.setGame(gameWithEmptySeat);
-        playerRepository.save(newPlayer);
-        gameRepository.save(gameWithEmptySeat);
+        //playerRepository.save(newPlayer);
+        //gameRepository.save(gameWithEmptySeat);
         return mapper.mapToJoinMessageDTO(gameWithEmptySeat, sortedPlayers);
     }
 
@@ -90,24 +85,26 @@ public class PlayerService {
 
     private void setRolesAtCardTable(List<Player> players, Game gameWithEmptySeat) {;
         Player player1 = players.getFirst();
-        System.out.println("First player is " + player1.getName());
         gameWithEmptySeat.setDealer(player1.getName());
         Player player2 = players.get(1);
-        System.out.println("Second player is " + player2.getName());
         gameWithEmptySeat.setStartPlayer(player2.getName());
         gameWithEmptySeat.setTurnPlayer(player2.getName());
     }
 
     private JoinMessageDTO createMessageWhenNoGameWithMissingPlayer(AppUser user, String username) {
         Game newGame = new Game();
+        gameRepository.save(newGame);
         newGame.setPlayer1(username);
         Player newPlayer = new Player();
         newPlayer.setUser(user);
         newGame.setInformation(String.format("%s has joined the game", username.toUpperCase()));
         newPlayer.setPlace(1);
-        Game savedGame = gameRepository.save(newGame);
-        newPlayer.setGame(savedGame);
-        playerRepository.save(newPlayer);
-        return mapper.mapToJoinMessageDTO(savedGame, List.of(newPlayer));
+        List<Player> players = new ArrayList<>(4);
+        players.add(newPlayer);
+        newGame.setPlayers(players);
+        //Game savedGame = gameRepository.save(newGame);
+        newPlayer.setGame(newGame);
+        //playerRepository.save(newPlayer);
+        return mapper.mapToJoinMessageDTO(newGame, List.of(newPlayer));
     }
 }

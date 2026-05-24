@@ -10,10 +10,6 @@ import java.util.List;
 @Repository
 public interface DeclarerSkartRepository extends JpaRepository<DeclarerSkart, Long> {
 
-    /*
-    @NativeQuery(value = "SELECT COUNT(id) FROM declarer_skart WHERE game_id = ?1")
-    int countByGameId(Long gameId);
-*/
     List<DeclarerSkart> findAllByGameId(Long gameId);
     int countAllByGameId(Long gameId);
 }

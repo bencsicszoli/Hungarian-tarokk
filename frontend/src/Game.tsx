@@ -8,6 +8,7 @@ import Skart from "./Skart";
 import type { SeatAttributes, Card, TrickCard } from "./Types";
 import Bonuses from "./Bonuses";
 import PublicHand from "./PublicHand";
+import { createPrivateInfo } from "./Utils.ts";
 
 const INITIAL_ROTATION = [
   0, 0, -7.5, -15, -22.5, -30, -37.5, -45, -52.5, -60, -67.5, -75, -82.5,
@@ -90,11 +91,15 @@ function Game() {
   );
   const [potentialBids, setPotentialBids] = useState<string[]>([]);
   const [declarerSkartLength, setDeclarerSkartLength] = useState<number>(0);
+  const [publicDeclarerSkart, setPublicDeclarerSkart] = useState<string[]>([]);
+  const [publicDeclarerTricks, setPublicDeclarerTricks] = useState<string[]>([]);
   const [opponentSkartLength, setOpponentSkartLength] = useState<number>(0);
+  const [publicOpponentSkart, setPublicOpponentSkart] = useState<string[]>([]);
+  const [publicOpponentTricks, setPublicOpponentTricks] = useState<string[]>([]);
   const [publicInformation, setPublicInformation] = useState<string>(
     game?.information || "",
   );
-  const [privateInformation, setPrivateInformation] = useState<string>("");
+  const [privateInformation, setPrivateInformation] = useState<string>(game?.privateInformation || "");
   const [discardInformation, setDiscardInformation] = useState<string | null>(
     null,
   );
@@ -160,10 +165,6 @@ function Game() {
         setOpponentSkartLength(0);
         setDiscardInformation(null);
         setPublicHand([]);
-        //setPotentialBonuses([]);
-        //setSelectedTarokkNumber(0);
-        //setHasEightTarokks(false);
-        //setHasNineTarokks(false);
         setDeclarerBonuses(null);
         setOpponentBonuses(null);
         setPlayer1TrickCards(0);
@@ -297,6 +298,18 @@ function Game() {
         setDealButtonClicked(false);
         console.log("Balances updated:", message);
         break;
+        case "game.declarerSkartImages":
+          setPublicDeclarerSkart(message.images);
+          break;
+        case "game.opponentSkartImages":
+          setPublicOpponentSkart(message.images);
+          break;
+          case "game.declarerTrickImages":
+            setPublicDeclarerTricks(message.images);
+            break;
+          case "game.opponentTrickImages":
+            setPublicOpponentTricks(message.images);
+            break;
       default:
         console.log("Unhandled message type:", message.type);
         break;
@@ -395,6 +408,7 @@ function Game() {
   }, [game.gameId, subscribe]);
 
   useEffect(setSeatModifier, []);
+
 
   function getFirstPotentialBids() {
     send("/app/game.firstPotentialBids", {
@@ -578,7 +592,9 @@ function Game() {
         <div className="h-1/8 flex justify-center items-center font-bold text-xl">
           <div className="w-1/8 flex justify-center items-center">
             {seatAttribute.playerTrickCards > 0 && (
-              <p>{seatAttribute.playerSeat}'s tricks</p>
+              <p>
+                {seatAttribute.playerSeat}'s tricks
+              </p>
             )}
           </div>
           <div className="w-3/4 flex justify-center items-center mt-1">
@@ -609,7 +625,7 @@ function Game() {
             <div className="flex justify-center items-center h-3/4">
               {displayOwnCards()}
             </div>
-            <div className="flex justify-center items-center font-bold text-xl w-full h-1/8 mt-1">
+            <div className="flex justify-center items-center font-bold text-xl w-full h-1/8 mt-1 gap-1">
               {renderBidButtons()}
             </div>
           </div>
@@ -673,11 +689,12 @@ function Game() {
     );
   }
 
+
   function renderBidButtons() {
     return potentialBids.map((bid) => (
       <button
         key={bid}
-        className="border-black border-2 w-1/8 h-13 rounded-lg font-semibold"
+        className="border-green-300 text-green-100 border-2 w-32 h-12 hover:scale-105 hover:bg-green-700 cursor-pointer rounded-md font-semibold mt-0.5"
         onClick={() => {
           send("/app/game.bid", {
             username: user?.username,
@@ -693,6 +710,7 @@ function Game() {
     ));
   }
 
+  /*
   function createPrivateInfo() {
     let privateInfo = "";
     if (selectedTarokkNumber > 0) {
@@ -706,10 +724,11 @@ function Game() {
     }
     return privateInfo;
   }
+*/
 
   useEffect(() => {
     if (gameState === "BONUS_ANNOUNCEMENT" && turnPlayer === user?.username) {
-      setPrivateInformation(createPrivateInfo());
+      setPrivateInformation(createPrivateInfo(selectedTarokkNumber, calledTarokk, selectedBonuses));
     }
   }, [
     selectedTarokkNumber,
@@ -724,7 +743,7 @@ function Game() {
     if (hasEightTarokks) {
       return (
         <button
-          className="border-green-300 border-2 w-32 h-10 hover:scale-105 cursor-pointer transition-transform duration-200 ml-5 mr-5 font-semibold rounded-md"
+          className="border-green-300 border-2 w-32 h-10 hover:scale-105 hover:bg-green-700 cursor-pointer transition-transform duration-200 ml-5 mr-5 font-semibold rounded-md"
           onClick={() => {
             setSelectedTarokkNumber(8);
             console.log("Tarokk number selected: 8");
@@ -736,7 +755,7 @@ function Game() {
     } else if (hasNineTarokks) {
       return (
         <button
-          className="border-black border-2 w-32 h-10 hover:scale-105 cursor-pointer transition-transform duration-200 ml-5 mr-5 font-semibold rounded-md"
+          className="border-green-300 border-2 w-32 h-10 hover:scale-105 hover:bg-green-700 cursor-pointer transition-transform duration-200 ml-5 mr-5 font-semibold rounded-md"
           onClick={() => {
             setSelectedTarokkNumber(9);
             console.log("Tarokk number selected: 9");
@@ -883,7 +902,9 @@ function Game() {
         <div className="w-1/3 flex flex-col">
           <div className="h-1/6 flex justify-center items-center font-bold text-xl">
             {seatAttribute.playerTrickCards > 0 && (
-              <p>{seatAttribute.playerSeat}'s tricks</p>
+              <p>
+                {seatAttribute.playerSeat}'s tricks
+              </p>
             )}
           </div>
           <div className="h-5/6 flex justify-center items-start">
@@ -941,7 +962,9 @@ function Game() {
         <div className="w-1/3 flex flex-col">
           <div className="h-1/6 flex justify-center items-center font-bold text-xl">
             {seatAttribute.playerTrickCards > 0 && (
-              <p>{seatAttribute.playerSeat}'s tricks</p>
+              <p>
+                {seatAttribute.playerSeat}'s tricks
+              </p>
             )}
           </div>
           <div className="h-5/6 flex justify-center items-start">
@@ -958,7 +981,9 @@ function Game() {
         <div className="w-1/4 flex flex-col">
           <div className="h-1/6 flex justify-center items-center font-bold text-xl">
             {seatAttribute.playerTrickCards > 0 && (
-              <p>{seatAttribute.playerSeat}'s tricks</p>
+              <p>
+                {seatAttribute.playerSeat}'s tricks
+              </p>
             )}
           </div>
           <div className="h-5/6 flex justify-center items-start">
@@ -1122,6 +1147,17 @@ function Game() {
         cardId: card.cardId,
       });
     }
+  }
+
+  function displayPublicCards(cards: string[]) {
+    return cards.map((frontImagePath, index) => (
+      <img
+        key={index}
+        src={frontImagePath}
+        alt={`Public card ${index + 1}`}
+        className="w-20 mx-1"
+      />
+    ));
   }
 
   function displayTemporarySelectedCards() {

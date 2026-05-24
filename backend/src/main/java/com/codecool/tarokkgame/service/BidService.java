@@ -72,8 +72,6 @@ public class BidService {
     }
 
     private PotentialBidsDTO getPotentialBidsWithDifferentOptionsAtFurtherCases(String option1, String option2, String option3, String option4, Set<String> options, Game game, Player player) {
-        gameRepository.save(game);
-        playerRepository.save(player);
         options.add(option1);
         if (option2 != null) {
             options.add(option2);
@@ -110,7 +108,6 @@ public class BidService {
     private PotentialBidsDTO handleBidIfNotPass(Game game, Player sender, BidLevel bidLevel, Set<String> bids) {
         game.setDeclarer(sender.getName());
         game.setInformation(bidLevel.getDescription());
-        //sender.setBidLevel(bidLevel); // később !!!
 
         handleInvitAcceptance(game, sender);
 
@@ -133,8 +130,6 @@ public class BidService {
 
         // Player has no honour
         if (!nextPlayer.hasAnyHonours()) {
-            gameRepository.save(game);
-            playerRepository.save(nextPlayer);
             return new PotentialBidsDTO(Set.of(BidLevel.PASS.getDescription()), "game.potentialBids");
 
         // Player has at least one honour
@@ -149,15 +144,10 @@ public class BidService {
         Player declarer = game.getPlayerByName(game.getDeclarer());
         declarer.setRoleInGame(RoleInGame.DECLARER);
         game.setPlayerRolesInCaseYieldedGameOrInvit(declarer);
-        gameRepository.save(game);
-        playerRepository.save(declarer);
-        playerRepository.save(sender);
         return null;
     }
 
     private PotentialBidsDTO createBidCases(Player sender, Game game, Set<String> bids) {
-        // Find the next bidding player
-        playerRepository.save(sender);
         Player nextPlayer = game.getNextBiddingPlayer(sender);
         if (nextPlayer != null) {
             game.setTurnPlayer(nextPlayer.getName());

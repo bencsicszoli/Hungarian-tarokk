@@ -24,15 +24,6 @@ function MenuPage() {
   useEffect(() => {
     if (!user) navigate(`/`);
   }, [user, navigate]);
-  /*
-  useEffect(() => {
-    if (!connected) return;
-
-    const subscription = subscribe({ destination: '/user/queue/private', callback: setGameStateFirst });
-
-    return () => subscription?.unsubscribe?.();
-  }, [connected, setGameStateFirst, subscribe]);
-*/
 
   const setGameStateFirst = useCallback(
     (payload: unknown) => {

@@ -17,12 +17,13 @@ public class Trick {
     int y = 0;
     int rotation = 0;
 
-    @ManyToOne
+    @OneToOne
     private Player player;
 
     @ManyToOne
     private Card card;
 
     @ManyToOne
+    @JoinColumn(name="game_id")
     private Game game;
 }

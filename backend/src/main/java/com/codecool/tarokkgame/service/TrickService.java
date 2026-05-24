@@ -9,28 +9,23 @@ import com.codecool.tarokkgame.model.dto.messagedto.response.TrickCardListDTO;
 import com.codecool.tarokkgame.model.entity.*;
 import com.codecool.tarokkgame.repository.*;
 import org.springframework.stereotype.Service;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
 @Service
 public class TrickService {
-    private final GameRepository gameRepository;
-    private final PlayerCardRepository playerCardRepository;
     private final MapperService mapperService;
     private final TrickRepository trickRepository;
     private final OwnTrickRepository ownTrickRepository;
 
-    public TrickService(GameRepository gameRepository, PlayerCardRepository playerCardRepository, MapperService mapperService, TrickRepository trickRepository, OwnTrickRepository ownTrickRepository) {
-        this.gameRepository = gameRepository;
-        this.playerCardRepository = playerCardRepository;
+    public TrickService(MapperService mapperService, TrickRepository trickRepository, OwnTrickRepository ownTrickRepository) {
         this.mapperService = mapperService;
         this.trickRepository = trickRepository;
         this.ownTrickRepository = ownTrickRepository;
     }
 
     public PlayerCardListDTO getFirstPlayerCards(Player player, Game game, int calledTarokk) {
-        List<PlayerCard> playerCards = playerCardRepository.findAllByPlayerId(player.getId());  // player.getPlayerCards() ?
+        List<PlayerCard> playerCards = player.getPlayerCards();
 
         setPlayerCardsClickableAndHandleCaseUltimo(player, game, playerCards, calledTarokk);
 
@@ -41,7 +36,12 @@ public class TrickService {
 
     //Handle calledTarokk in play
     public TrickCardListDTO getTrickCards(Game game, Player player, Card card) {
-        playerCardRepository.deleteByPlayerIdAndCardId(player.getId(), card.getId());
+        for (PlayerCard playerCard : player.getPlayerCards()) {
+            if (playerCard.getCard().getId() == card.getId()) {
+                player.getPlayerCards().remove(playerCard);
+                break;
+            }
+        }
         if (card.getStrength() == game.getInvitedTarokk()) {
             player.setRoleInGame(RoleInGame.DECLARER_PARTNER);
             game.markPlayersAsOpponent();
@@ -60,10 +60,10 @@ public class TrickService {
         List<Trick> tricks = game.getTricks();
         tricks.add(trick);
         List<Trick> sortedTricks = tricks.stream().sorted(Comparator.comparingLong(Trick::getId)).toList();
-        game.setTricks(sortedTricks);
-        int cardsInHand = playerCardRepository.countAllByPlayerId(player.getId());
-        gameRepository.save(game); // ?
-        //List<Trick> sortedTricks = savedGame.getTricks().stream().sorted(Comparator.comparingLong(Trick::getId)).toList();
+        for (Trick trick1 : sortedTricks) {
+            System.out.println("Trick id: " + trick1.getId());
+        }
+        int cardsInHand = player.getPlayerCards().size();
         List<TrickCardDTO> trickCardDTOList = mapperService.mapToTrickCardListDTO(sortedTricks);
         return new TrickCardListDTO(trickCardDTOList, player.getName(), cardsInHand, "game.trickCards");
     }
@@ -75,7 +75,6 @@ public class TrickService {
         List<PlayerCard> playerCards = setNextPlayerCardsClickable(nextPlayer, suit, game);
 
         game.setTurnPlayer(nextPlayer.getName());
-        gameRepository.save(game);
         List<PlayerCardDTO> playerCardList = mapperService.mapToPlayerCardListDTO(playerCards);
         List<PlayerCardDTO> sortedcardList = playerCardList.stream().sorted(Comparator.comparingInt(PlayerCardDTO::cardId)).toList();
         return new PlayerCardListDTO(sortedcardList, "game.playerCards");
@@ -102,18 +101,15 @@ public class TrickService {
         }
 
         List<OwnTrick> wonCards = mapperService.mapToOwnTrickList(tricks, trickWinner);
-
         ownTrickRepository.saveAll(wonCards);
-        game.getTricks().removeAll(tricks);
-        game.setTricks(new ArrayList<>(4));
+        game.getTricks().removeAll(tricks); // ?
+        trickRepository.deleteAllByGameId(game.getId());
         game.setTurnPlayer(trickWinner.getName());
         game.setTrickRound(game.getTrickRound() + 1);
         if (game.getTrickRound() == 10) {
             game.setState(GameState.FINISHED);
-            gameRepository.save(game);
             return null;
         }
-        gameRepository.save(game);
         return getFirstPlayerCards(trickWinner, game, game.getInvitedTarokk());
     }
 
@@ -180,18 +176,18 @@ public class TrickService {
     }
 
     private List<PlayerCard> setNextPlayerCardsClickable(Player nextPlayer, String suit, Game game) {
-        List<PlayerCard> playerCards = playerCardRepository.findAllByPlayerId(nextPlayer.getId());
+        List<PlayerCard> playerCards = nextPlayer.getPlayerCards();
         if (!suit.equals("tarokk") && nextPlayer.hasTheGivenSuit(suit)) {
             nextPlayer.markPlayerCardsClickableBySuit(suit);
         } else if (!suit.equals("tarokk") && !nextPlayer.hasTheGivenSuit(suit)) {
             if (!nextPlayer.hasAnyTarokks()) {
                 nextPlayer.markAllPlayerCardsClickable();
             } else {
-                setTarokksClickable(nextPlayer, game, playerCards); // pagat?
+                setTarokksClickable(nextPlayer, game, playerCards);
             }
         } else {
             if (nextPlayer.hasAnyTarokks()) {
-                setTarokksClickable(nextPlayer, game, playerCards); //pagat?
+                setTarokksClickable(nextPlayer, game, playerCards);
             } else {
                 nextPlayer.markAllPlayerCardsClickable();
             }

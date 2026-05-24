@@ -16,6 +16,7 @@ public class JoinMessageDTO {
     private String startPlayer;
     private String turnPlayer;
     private String information;
+    private String privateInformation;
     private String type;
     private int player1Balance;
     private int player2Balance;

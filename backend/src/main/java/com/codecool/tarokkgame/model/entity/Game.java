@@ -52,7 +52,7 @@ public class Game {
     @OneToMany(mappedBy = "game", cascade = CascadeType.ALL)
     private List<Player> players;
 
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL)
     private List<Trick> tricks;
 
     @Enumerated(EnumType.STRING)

@@ -27,7 +27,10 @@ function Skart({
       </div>
       <div className="h-1/6 flex justify-center items-center font-bold text-xl">
         {cardsToDiscard.current === temporarySelectedCards.length && (
-          <button className="h-full w-1/3 border-2" onClick={sendSkartCards}>
+          <button
+            className="border-black border-2 w-30 h-10 hover:scale-105 hover:bg-green-400 cursor-pointer bg-green-300 text-[#2f4b3a] rounded-md font-semibold mb-2"
+            onClick={sendSkartCards}
+          >
             Submit
           </button>
         )}

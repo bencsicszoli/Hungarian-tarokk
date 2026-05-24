@@ -88,8 +88,6 @@ public class ResultService {
             player.getResult().setInfo(resultInfo);
             player.setBalance(player.getBalance() + player.getResult().getSum());
         }
-        playerRepository.saveAll(players);
-        gameRepository.save(game); // ?
     }
 
     private void handleTrull(Game game, int honours, Player player, RoundResult roundResult) {
@@ -898,7 +896,7 @@ public class ResultService {
         } else if (result.getPartyDoubled() != 0) {
             stringBuilder.append("Party doubled: ").append(result.getPartyDoubled()).append("!");
         } else if (result.getPartyRedoubled() != 0) {
-            stringBuilder.append("Party redoubled").append(result.getPartyRedoubled()).append("!");
+            stringBuilder.append("Party redoubled: ").append(result.getPartyRedoubled()).append("!");
         }
         if (result.getSilentTrull() != 0) {
             stringBuilder.append("Silent trull: ").append(result.getSilentTrull()).append("!");

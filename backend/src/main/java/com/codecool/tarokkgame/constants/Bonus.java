@@ -85,7 +85,11 @@ public enum Bonus {
         List<Bonus> sortedBonuses = bonuses.stream().sorted(Comparator.comparingInt(b -> b.bonusIndex)).toList();
         List<String> bonusNames = new ArrayList<>();
         for (Bonus bonus : sortedBonuses) {
-            bonusNames.add(bonus.bonusName);
+            if (bonus.bonusName.equals("Pass")) {
+                bonusNames.add("Party");
+            } else {
+                bonusNames.add(bonus.bonusName);
+            }
         }
         return bonusNames;
     }

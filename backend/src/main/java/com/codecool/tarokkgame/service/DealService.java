@@ -16,14 +16,10 @@ import java.util.*;
 public class DealService {
     private final DeckCardRepository deckRepository;
     private final TalonCardRepository talonRepository;
-    private final PlayerCardRepository playerCardRepository;
-    private final PlayerRepository playerRepository;
 
-    public DealService(DeckCardRepository deckRepository, TalonCardRepository talonRepository, PlayerCardRepository playerCardRepository, PlayerRepository playerRepository) {
+    public DealService(DeckCardRepository deckRepository, TalonCardRepository talonRepository) {
         this.deckRepository = deckRepository;
         this.talonRepository = talonRepository;
-        this.playerCardRepository = playerCardRepository;
-        this.playerRepository = playerRepository;
     }
 
     public void setTalonCards(Game game) {
@@ -44,7 +40,6 @@ public class DealService {
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
         }
-        //List<PlayerCard> playerCards = new ArrayList<>();
         List<PlayerCard> playerCards = player.getPlayerCards();
         return createPlayerCardsFromDeck(player, from, to, playerCards);
     }
@@ -55,11 +50,9 @@ public class DealService {
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
         }
-       // List<PlayerCard> playerCards = playerCardRepository.findAllByPlayerId(player.getId());
         List<PlayerCard> playerCards = player.getPlayerCards();
 
         return createPlayerCardsFromDeck(player, from, to, playerCards);
-        //return playerCardDTOs.stream().sorted(Comparator.comparingInt(PlayerCardDTO::cardId)).toList();
     }
 
     private List<PlayerCardDTO> createPlayerCardsFromDeck(Player player, int from, int to, List<PlayerCard> playerCards) {
@@ -74,8 +67,9 @@ public class DealService {
             playerCards.add(playerCard);
         }
         List<PlayerCardDTO> playerCardDTOs = new ArrayList<>();
-        List<PlayerCard> orderedCards = player.getPlayerCards();
-        for (PlayerCard playerCard : orderedCards) {
+        //List<PlayerCard> orderedCards = player.getPlayerCards();
+        playerCards.sort(Comparator.comparing(pc -> pc.getCard().getId()));
+        for (PlayerCard playerCard : playerCards) {
             PlayerCardDTO dto = new PlayerCardDTO(
                     playerCard.getCard().getId(),
                     playerCard.getPlayer().getId(),
@@ -83,8 +77,6 @@ public class DealService {
                     playerCard.isClickable());
             playerCardDTOs.add(dto);
         }
-        //playerCardRepository.saveAll(playerCards);
-       // playerRepository.save(player);
         return playerCardDTOs;
     }
 }
