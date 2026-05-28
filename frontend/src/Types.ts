@@ -35,3 +35,9 @@ export interface TrickCard extends Card {
 export interface CardImage {
   frontImagePath: string;
 }
+
+export interface PlayerData {
+  playerCardsNumber: number;
+  playerTrickCards: number;
+  playerBalance: number;
+}

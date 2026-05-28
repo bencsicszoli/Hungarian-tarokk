@@ -11,6 +11,8 @@ import com.codecool.tarokkgame.repository.*;
 import org.springframework.stereotype.Service;
 import java.util.Comparator;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 
 @Service
 public class TrickService {
@@ -60,19 +62,21 @@ public class TrickService {
         List<Trick> tricks = game.getTricks();
         tricks.add(trick);
         List<Trick> sortedTricks = tricks.stream().sorted(Comparator.comparingLong(Trick::getId)).toList();
-        for (Trick trick1 : sortedTricks) {
-            System.out.println("Trick id: " + trick1.getId());
-        }
         int cardsInHand = player.getPlayerCards().size();
         List<TrickCardDTO> trickCardDTOList = mapperService.mapToTrickCardListDTO(sortedTricks);
         return new TrickCardListDTO(trickCardDTOList, player.getName(), cardsInHand, "game.trickCards");
     }
 
-    public PlayerCardListDTO getTurnPlayerCards(Game game, Player player, Card firstCardInTrick) {  //First trick
+    public PlayerCardListDTO getTurnPlayerCards(Game game, Player player) {
         Player nextPlayer = game.getNextPlayer(player);
-        String suit = firstCardInTrick.getSuit();
-
-        List<PlayerCard> playerCards = setNextPlayerCardsClickable(nextPlayer, suit, game);
+        String firstCardSuit;
+        Optional<Trick> firstCardSuitOpt = game.getTricks().stream().min(Comparator.comparingLong(Trick::getId));
+        if (firstCardSuitOpt.isPresent()) {
+            firstCardSuit = firstCardSuitOpt.get().getCard().getSuit();
+        } else {
+            throw new NoSuchElementException("First card suit not found");
+        }
+        List<PlayerCard> playerCards = setNextPlayerCardsClickable(nextPlayer, firstCardSuit, game);
 
         game.setTurnPlayer(nextPlayer.getName());
         List<PlayerCardDTO> playerCardList = mapperService.mapToPlayerCardListDTO(playerCards);
@@ -135,7 +139,6 @@ public class TrickService {
                 } else {
                     nextPlayer.markAllTarokksClickable();
                 }
-
             } else {
                 nextPlayer.markAllTarokksClickable();
             }

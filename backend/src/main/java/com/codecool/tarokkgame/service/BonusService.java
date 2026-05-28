@@ -161,6 +161,20 @@ public class BonusService {
         }
     }
 
+    public PrivateInfoDTO informPlayerOfSelectedOptions(int selectedTarokkNumber, String calledTarokk, List<String> selectedBonuses) {
+        StringBuilder builder = new StringBuilder();
+        if (selectedTarokkNumber > 0) {
+            builder.append("You announced ").append(selectedTarokkNumber).append(" tarokks!");
+        }
+        if (calledTarokk != null) {
+            builder.append(" ").append(calledTarokk).append("!");
+        }
+        if (!selectedBonuses.isEmpty()) {
+            builder.append(" Selected bonuses: ").append(String.join(", ", selectedBonuses)).append("!");
+        }
+        return new PrivateInfoDTO(builder.toString(), "game.privateInfo");
+    }
+
     private void setCallableTarokks(Game game, Player player, Set<String> callableTarokks) {
         if (game.getInvitedTarokk() == 20) {
             callableTarokks.add("I call the XX");

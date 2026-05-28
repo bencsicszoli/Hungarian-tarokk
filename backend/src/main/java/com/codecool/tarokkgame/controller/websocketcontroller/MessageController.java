@@ -342,6 +342,18 @@ public class MessageController {
         }
     }
 
+    @MessageMapping("/game.bonusInfo")
+    public void handleBonusInfo(BonusInfoRequestDTO request, Principal principal) {
+        String playerName = principal.getName();
+        if (request.turnPlayer().equals(playerName)) {
+            PrivateInfoDTO dto = bonusService.informPlayerOfSelectedOptions(request.selectedTarokkNumber(), request.calledTarokk(), request.bonuses());
+            messagingTemplate.convertAndSendToUser(playerName, "/queue/private", dto);
+        } else {
+            throw new NotAllowedOperationException("Invalid username");
+        }
+    }
+
+
     @Transactional
     @MessageMapping("/game.playCard")
     public void handleTrick(TrickRequestDTO request, Principal principal) {
@@ -377,7 +389,7 @@ public class MessageController {
 
             } else {
                 // Other player's playerCards
-                PlayerCardListDTO playerCards = trickService.getTurnPlayerCards(game, player, game.getTricks().getFirst().getCard());
+                PlayerCardListDTO playerCards = trickService.getTurnPlayerCards(game, player);
                 messagingTemplate.convertAndSendToUser(game.getTurnPlayer(), "/queue/private", playerCards);
                 TurnPlayerDTO turnPlayerDTO = new TurnPlayerDTO(game.getTurnPlayer(), "game.turnPlayer");
                 messagingTemplate.convertAndSend("/topic/game." + request.gameId(), turnPlayerDTO);

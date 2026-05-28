@@ -29,4 +29,23 @@
   .bg-table-background {
     background-color: #2a2a2a; /* light oak / tan */
   }
+
+  .animate-trick-change {
+    animation: trick-change 0.35s ease-in-out;
+  }
+
+  @keyframes trick-change {
+    0% {
+      transform: translateY(0);
+    }
+    25% {
+      transform: translateY(-8px);
+    }
+    50% {
+      transform: translateY(0);
+    }
+    100% {
+      transform: translateY(0);
+    }
+  }
 }

@@ -5,10 +5,13 @@ import { useWebSocket } from "./context/WebSocketContext";
 import InfoTable from "./pageComponents/InfoTable";
 import Talon from "./pageComponents/Talon";
 import Skart from "./Skart";
-import type { SeatAttributes, Card, TrickCard } from "./Types";
+import type { Card, TrickCard, PlayerData } from "./Types";
 import Bonuses from "./Bonuses";
 import PublicHand from "./PublicHand";
-import { createPrivateInfo } from "./Utils.ts";
+import {
+  setPlayerProperties,
+  setPlayerPropertiesInTrickPhase,
+} from "./Utils.ts";
 
 const INITIAL_ROTATION = [
   0, 0, -7.5, -15, -22.5, -30, -37.5, -45, -52.5, -60, -67.5, -75, -82.5,
@@ -48,26 +51,38 @@ function Game() {
     game?.declarer || null,
   );
   const [bid, setBid] = useState<"-" | "3" | "2" | "1" | "solo">("-");
-  const [player1Balance, setPlayer1Balance] = useState<number>(
-    game?.player1Balance || 0,
-  );
-  const [player2Balance, setPlayer2Balance] = useState<number>(
-    game?.player2Balance || 0,
-  );
-  const [player3Balance, setPlayer3Balance] = useState<number>(
-    game?.player3Balance || 0,
-  );
-  const [player4Balance, setPlayer4Balance] = useState<number>(
-    game?.player4Balance || 0,
-  );
-  const initialCards = {
-    [game?.player1 || ""]: game?.player1CardsNumber || 0,
-    [game?.player2 || ""]: game?.player2CardsNumber || 0,
-    [game?.player3 || ""]: game?.player3CardsNumber || 0,
-    [game?.player4 || ""]: game?.player4CardsNumber || 0,
-  };
-  const [playerCards, setPlayerCards] =
-    useState<Record<string, number>>(initialCards);
+
+  const initialPlayerData: Record<string, PlayerData> = {};
+  if (game?.player1) {
+    initialPlayerData[game.player1] = {
+      playerCardsNumber: game.player1CardsNumber || 0,
+      playerTrickCards: 0,
+      playerBalance: game.player1Balance || 0,
+    };
+  }
+  if (game?.player2) {
+    initialPlayerData[game.player2] = {
+      playerCardsNumber: game.player2CardsNumber || 0,
+      playerTrickCards: 0,
+      playerBalance: game.player2Balance || 0,
+    };
+  }
+  if (game?.player3) {
+    initialPlayerData[game.player3] = {
+      playerCardsNumber: game.player3CardsNumber || 0,
+      playerTrickCards: 0,
+      playerBalance: game.player3Balance || 0,
+    };
+  }
+  if (game?.player4) {
+    initialPlayerData[game.player4] = {
+      playerCardsNumber: game.player4CardsNumber || 0,
+      playerTrickCards: 0,
+      playerBalance: game.player4Balance || 0,
+    };
+  }
+  const [playerData, setPlayerData] =
+    useState<Record<string, PlayerData>>(initialPlayerData);
   const [ownCards, setOwnCards] = useState<Card[]>([]);
   const [publicHand, setPublicHand] = useState<Card[]>([]);
   const [temporarySelectedCards, setTemporarySelectedCards] = useState<Card[]>(
@@ -92,14 +107,20 @@ function Game() {
   const [potentialBids, setPotentialBids] = useState<string[]>([]);
   const [declarerSkartLength, setDeclarerSkartLength] = useState<number>(0);
   const [publicDeclarerSkart, setPublicDeclarerSkart] = useState<string[]>([]);
-  const [publicDeclarerTricks, setPublicDeclarerTricks] = useState<string[]>([]);
+  const [publicDeclarerTricks, setPublicDeclarerTricks] = useState<string[]>(
+    [],
+  );
   const [opponentSkartLength, setOpponentSkartLength] = useState<number>(0);
   const [publicOpponentSkart, setPublicOpponentSkart] = useState<string[]>([]);
-  const [publicOpponentTricks, setPublicOpponentTricks] = useState<string[]>([]);
+  const [publicOpponentTricks, setPublicOpponentTricks] = useState<string[]>(
+    [],
+  );
   const [publicInformation, setPublicInformation] = useState<string>(
     game?.information || "",
   );
-  const [privateInformation, setPrivateInformation] = useState<string>(game?.privateInformation || "");
+  const [privateInformation, setPrivateInformation] = useState<string>(
+    game?.privateInformation || "",
+  );
   const [discardInformation, setDiscardInformation] = useState<string | null>(
     null,
   );
@@ -115,206 +136,353 @@ function Game() {
   const [opponentBonuses, setOpponentBonuses] = useState<string | null>(null);
   const [trickCard, setTrickCard] = useState<Card | null>(null);
   const [trickCards, setTrickCards] = useState<TrickCard[]>([]);
-  const [player1TrickCards, setPlayer1TrickCards] = useState<number>(0);
-  const [player2TrickCards, setPlayer2TrickCards] = useState<number>(0);
-  const [player3TrickCards, setPlayer3TrickCards] = useState<number>(0);
-  const [player4TrickCards, setPlayer4TrickCards] = useState<number>(0);
   const [dealButtonClicked, setDealButtonClicked] = useState<boolean>(false);
-  const seatModifier = useRef(0);
   const cardsToDiscard = useRef<number>(0);
 
-  const handlePublicMessage = useCallback((payload: unknown) => {
-    const message = JSON.parse(
-      (payload as Record<string, unknown>).body as string,
-    );
-    console.log("Public message received:", message);
-    switch (message.type) {
-      case "game.joined":
-        setPlayer1(message.player1);
-        setPlayer2(message.player2);
-        setPlayer3(message.player3);
-        setPlayer4(message.player4);
-        setDealer(message.dealer);
-        setStartPlayer(message.startPlayer);
-        setTurnPlayer(message.turnPlayer);
-        setPlayer1Balance(message.player1Balance);
-        setPlayer2Balance(message.player2Balance);
-        setPlayer3Balance(message.player3Balance);
-        setPlayer4Balance(message.player4Balance);
-        setGameState(message.gameState);
-        setPublicInformation(message.information);
+  const handlePublicMessage = useCallback(
+    (payload: unknown) => {
+      const message = JSON.parse(
+        (payload as Record<string, unknown>).body as string,
+      );
+      console.log("Public message received:", message);
+      switch (message.type) {
+        case "game.joined":
+          setPlayer1(message.player1);
+          setPlayer2(message.player2);
+          setPlayer3(message.player3);
+          setPlayer4(message.player4);
+          setDealer(message.dealer);
+          setStartPlayer(message.startPlayer);
+          setTurnPlayer(message.turnPlayer);
 
-        setPlayerCards({
-          [message.player1]: message.player1CardsNumber || 0,
-          [message.player2]: message.player2CardsNumber || 0,
-          [message.player3]: message.player3CardsNumber || 0,
-          [message.player4]: message.player4CardsNumber || 0,
-        });
+          setGameState(message.gameState);
+          setPublicInformation(message.information);
 
-        break;
-      case "game.turnTable":
-        setTableTurned(true);
-        console.log("Table turned, updating state accordingly");
-        break;
-      case "game.newRound":
-        setFirstBonusRound(true);
-        setBidPlayer(null);
-        setDeclarer(null);
-        setBid("-");
-        setDeclarerSkartLength(0);
-        setOpponentSkartLength(0);
-        setDiscardInformation(null);
-        setPublicHand([]);
-        setDeclarerBonuses(null);
-        setOpponentBonuses(null);
-        setPlayer1TrickCards(0);
-        setPlayer2TrickCards(0);
-        setPlayer3TrickCards(0);
-        setPlayer4TrickCards(0);
-        setPublicInformation(message.dealerInfo);
-        setPrivateInformation("");
-        break;
-      case "game.talon":
-        setFirstBonusRound(true);
-        setGameState(message.gameState);
-        setTalonCardsNumber(message.talonCards);
-        console.log("Talon cards number updated:", message.talonCards);
-        break;
-      case "game.cardNumber":
-        console.log("Card number update received for", message.username);
-        setPlayerCards((prev) => ({
-          ...prev,
-          [message.username]: message.cardsNumber,
-        }));
-        break;
-      case "game.lastDeal":
-        setGameState("BIDDING");
-        setPublicInformation("Bidding phase has started!");
-        setPlayerCards((prev) => ({
-          ...prev,
-          [message.username]: message.cardsNumber,
-        }));
-        console.log("Game state updated to BIDDING");
-        break;
-      case "game.publicBidInfo":
-        setBid(message.bid);
-        setDeclarer(message.declarer);
-        setTurnPlayer(message.turnPlayer);
-        setPublicInformation(message.info);
-        setBidPlayer(message.bidPlayer);
-        console.log("Public bid info updated:", message);
-        break;
-      case "game.gameState":
-        setGameState(message.gameState);
-        console.log("Game state updated:", message.gameState);
-        break;
-      case "game.gameStateInfo":
-        setGameState(message.gameState);
-        setPublicInformation(message.info);
-        console.log(
-          "Game state and info updated:",
-          message.gameState,
-          message.info,
-        );
-        break;
-      case "game.publicSkartInfo":
-        setDeclarerSkartLength(message.declarerSkartLength);
-        setOpponentSkartLength(message.opponentSkartLength);
-        setPlayerCards((prev) => ({
-          ...prev,
-          [message.username]: message.playerHandLength,
-        }));
-        setTurnPlayer(message.turnPlayer);
-        setPublicInformation(message.discardedCardsInfo);
-        console.log("Public skart info updated:", message);
-        break;
-      case "game.publicInfo":
-        setPublicInformation(message.info);
-        console.log("Public information updated:", message.info);
-        break;
-      case "game.discardHand":
-        setPublicInformation(message.info);
-        setBidPlayer(null);
-        setDeclarer(null);
-        setBid("-");
-        setPublicHand(message.cards);
-        setPublicInformation(
-          message.playerName.toUpperCase() + " " + message.info,
-        );
-        setDeclarerSkartLength(0);
-        setOpponentSkartLength(0);
-        setGameState("NEW");
-        setPlayerCards(initialCards);
-        setDealButtonClicked(false);
-        setOwnCards([]);
-        setPrivateInformation("");
-        console.log("Public discard hand info updated:", message.info);
-        break;
-      case "game.tarokkInSkart":
-        setDeclarerSkart(message.cards);
-        setPublicInformation(message.info);
-        console.log("Declarer's skart with tarokk updated:", message.cards);
-        break;
-      case "game.turnPlayer":
-        setTurnPlayer(message.turnPlayer);
-        console.log("Turn player updated:", message.turnPlayer);
-        break;
-      case "game.publicBonusInfo":
-        setPublicInformation(message.info);
-        setDeclarerBonuses(message.declarerBonuses.join(", "));
-        setOpponentBonuses(message.opponentBonuses.join(", "));
-        setTurnPlayer(message.turnPlayer);
-        setFirstBonusRound(false);
-        console.log("Public bonus info updated:", message.info);
-        break;
-      case "game.trickCards":
-        setTrickCards(message.cards);
-        setPlayerCards((prev) => ({
-          ...prev,
-          [message.turnName]: message.cardsInHand,
-        }));
-        console.log("Trick cards updated:", message);
-        break;
-      case "game.newTrickRound":
-        setTrickCards([]);
-        setTrickCard(null);
-        setPlayer1TrickCards(message.playerTricks[0]);
-        setPlayer2TrickCards(message.playerTricks[1]);
-        setPlayer3TrickCards(message.playerTricks[2]);
-        setPlayer4TrickCards(message.playerTricks[3]);
-        console.log("Trick reset message:", message);
-        break;
-      case "game.newBalances":
-        setPlayer1Balance(message.player1Balance);
-        setPlayer2Balance(message.player2Balance);
-        setPlayer3Balance(message.player3Balance);
-        setPlayer4Balance(message.player4Balance);
-        setDealer(message.newDealer);
-        setStartPlayer(message.newStartPlayer);
-        setTurnPlayer(message.newStartPlayer);
-        setPublicInformation(
-          `New dealer is ${message.newDealer.toUpperCase()}`,
-        );
-        setDealButtonClicked(false);
-        console.log("Balances updated:", message);
-        break;
+          setPlayerData({
+            ...(message.player1
+              ? {
+                  [message.player1]: {
+                    playerCardsNumber: message.player1CardsNumber || 0,
+                    playerTrickCards: 0,
+                    playerBalance: message.player1Balance || 0,
+                  },
+                }
+              : {}),
+            ...(message.player2
+              ? {
+                  [message.player2]: {
+                    playerCardsNumber: message.player2CardsNumber || 0,
+                    playerTrickCards: 0,
+                    playerBalance: message.player2Balance || 0,
+                  },
+                }
+              : {}),
+            ...(message.player3
+              ? {
+                  [message.player3]: {
+                    playerCardsNumber: message.player3CardsNumber || 0,
+                    playerTrickCards: 0,
+                    playerBalance: message.player3Balance || 0,
+                  },
+                }
+              : {}),
+            ...(message.player4
+              ? {
+                  [message.player4]: {
+                    playerCardsNumber: message.player4CardsNumber || 0,
+                    playerTrickCards: 0,
+                    playerBalance: message.player4Balance || 0,
+                  },
+                }
+              : {}),
+          });
+
+          break;
+        case "game.turnTable":
+          setTableTurned(true);
+          console.log("Table turned, updating state accordingly");
+          break;
+        case "game.newRound":
+          setFirstBonusRound(true);
+          setBidPlayer(null);
+          setDeclarer(null);
+          setBid("-");
+          setDeclarerSkartLength(0);
+          setOpponentSkartLength(0);
+          setDiscardInformation(null);
+          setPublicHand([]);
+          setDeclarerBonuses(null);
+          setOpponentBonuses(null);
+          setPublicInformation(message.dealerInfo);
+
+          setPlayerData((prev) => ({
+            ...prev,
+            ...(player1
+              ? {
+                  [player1]: { ...prev[player1], playerTrickCards: 0 },
+                }
+              : {}),
+            ...(player2
+              ? {
+                  [player2]: { ...prev[player2], playerTrickCards: 0 },
+                }
+              : {}),
+            ...(player3
+              ? {
+                  [player3]: { ...prev[player3], playerTrickCards: 0 },
+                }
+              : {}),
+            ...(player4
+              ? {
+                  [player4]: { ...prev[player4], playerTrickCards: 0 },
+                }
+              : {}),
+          }));
+          break;
+        case "game.talon":
+          setFirstBonusRound(true);
+          setGameState(message.gameState);
+          setTalonCardsNumber(message.talonCards);
+          console.log("Talon cards number updated:", message.talonCards);
+          break;
+        case "game.cardNumber":
+          console.log("Card number update received for", message.username);
+          setPlayerData((prev) => ({
+            ...prev,
+            ...(message.username
+              ? {
+                  [message.username]: {
+                    ...prev[message.username],
+                    playerCardsNumber: message.cardsNumber || 0,
+                  },
+                }
+              : {}),
+          }));
+          break;
+        case "game.lastDeal":
+          setGameState("BIDDING");
+          setPublicInformation("Bidding phase has started!");
+          setPlayerData((prev) => ({
+            ...prev,
+            ...(message.username
+              ? {
+                  [message.username]: {
+                    ...prev[message.username],
+                    playerCardsNumber: message.cardsNumber || 0,
+                  },
+                }
+              : {}),
+          }));
+          console.log("Game state updated to BIDDING");
+          break;
+        case "game.publicBidInfo":
+          setBid(message.bid);
+          setDeclarer(message.declarer);
+          setTurnPlayer(message.turnPlayer);
+          setPublicInformation(message.info);
+          setBidPlayer(message.bidPlayer);
+          console.log("Public bid info updated:", message);
+          break;
+        case "game.gameState":
+          setGameState(message.gameState);
+          console.log("Game state updated:", message.gameState);
+          break;
+        case "game.gameStateInfo":
+          setGameState(message.gameState);
+          setPublicInformation(message.info);
+          console.log(
+            "Game state and info updated:",
+            message.gameState,
+            message.info,
+          );
+          break;
+        case "game.publicSkartInfo":
+          setDeclarerSkartLength(message.declarerSkartLength);
+          setOpponentSkartLength(message.opponentSkartLength);
+          setPlayerData((prev) => ({
+            ...prev,
+            ...(message.username
+              ? {
+                  [message.username]: {
+                    ...prev[message.username],
+                    playerCardsNumber: message.playerHandLength || 0,
+                  },
+                }
+              : {}),
+          }));
+          setTurnPlayer(message.turnPlayer);
+          setPublicInformation(message.discardedCardsInfo);
+          console.log("Public skart info updated:", message);
+          break;
+        case "game.publicInfo":
+          setPublicInformation(message.info);
+          console.log("Public information updated:", message.info);
+          break;
+        case "game.discardHand":
+          setPublicInformation(message.info);
+          setBidPlayer(null);
+          setDeclarer(null);
+          setBid("-");
+          setPublicHand(message.cards);
+          setPublicInformation(
+            message.playerName.toUpperCase() + " " + message.info,
+          );
+          setDeclarerSkartLength(0);
+          setOpponentSkartLength(0);
+          setGameState("NEW");
+          setPlayerData((prev) => ({
+            ...prev,
+            ...(message.playerName
+              ? {
+                  [message.playerName]: {
+                    ...prev[message.playerName],
+                    playerCardsNumber: 0,
+                  },
+                }
+              : {}),
+          }));
+          setDealButtonClicked(false);
+          setOwnCards([]);
+          setPrivateInformation("");
+          console.log("Public discard hand info updated:", message.info);
+          break;
+        case "game.tarokkInSkart":
+          setDeclarerSkart(message.cards);
+          setPublicInformation(message.info);
+          console.log("Declarer's skart with tarokk updated:", message.cards);
+          break;
+        case "game.turnPlayer":
+          setTurnPlayer(message.turnPlayer);
+          console.log("Turn player updated:", message.turnPlayer);
+          break;
+        case "game.publicBonusInfo":
+          setPublicInformation(message.info);
+          setDeclarerBonuses(message.declarerBonuses.join(", "));
+          setOpponentBonuses(message.opponentBonuses.join(", "));
+          setTurnPlayer(message.turnPlayer);
+          setFirstBonusRound(false);
+          console.log("Public bonus info updated:", message.info);
+          break;
+        case "game.trickCards":
+          setTrickCards(message.cards);
+          setPlayerData((prev) => ({
+            ...prev,
+            ...(message.turnName
+              ? {
+                  [message.turnName]: {
+                    ...prev[message.turnName],
+                    playerCardsNumber: message.cardsInHand || 0,
+                  },
+                }
+              : {}),
+          }));
+          console.log("Trick cards updated:", message);
+          break;
+        case "game.newTrickRound":
+          setTrickCards([]);
+          setTrickCard(null);
+          setPlayerData((prev) => ({
+            ...prev,
+            ...(player1
+              ? {
+                  [player1]: {
+                    ...prev[player1],
+                    playerTrickCards: message.playerTricks[0],
+                  },
+                }
+              : {}),
+            ...(player2
+              ? {
+                  [player2]: {
+                    ...prev[player2],
+                    playerTrickCards: message.playerTricks[1],
+                  },
+                }
+              : {}),
+            ...(player3
+              ? {
+                  [player3]: {
+                    ...prev[player3],
+                    playerTrickCards: message.playerTricks[2],
+                  },
+                }
+              : {}),
+            ...(player4
+              ? {
+                  [player4]: {
+                    ...prev[player4],
+                    playerTrickCards: message.playerTricks[3],
+                  },
+                }
+              : {}),
+          }));
+
+          console.log("Trick reset message:", message);
+          break;
+        case "game.newBalances":
+          setPlayerData((prev) => ({
+            ...prev,
+            ...(player1
+              ? {
+                  [player1]: {
+                    ...prev[player1],
+                    playerBalance: message.player1Balance,
+                  },
+                }
+              : {}),
+            ...(player2
+              ? {
+                  [player2]: {
+                    ...prev[player2],
+                    playerBalance: message.player2Balance,
+                  },
+                }
+              : {}),
+            ...(player3
+              ? {
+                  [player3]: {
+                    ...prev[player3],
+                    playerBalance: message.player3Balance,
+                  },
+                }
+              : {}),
+            ...(player4
+              ? {
+                  [player4]: {
+                    ...prev[player4],
+                    playerBalance: message.player4Balance,
+                  },
+                }
+              : {}),
+          }));
+          setDealer(message.newDealer);
+          setStartPlayer(message.newStartPlayer);
+          setTurnPlayer(message.newStartPlayer);
+          setPublicInformation(
+            `New dealer is ${message.newDealer.toUpperCase()}`,
+          );
+          setDealButtonClicked(false);
+          console.log("Balances updated:", message);
+          break;
         case "game.declarerSkartImages":
           setPublicDeclarerSkart(message.images);
           break;
         case "game.opponentSkartImages":
           setPublicOpponentSkart(message.images);
           break;
-          case "game.declarerTrickImages":
-            setPublicDeclarerTricks(message.images);
-            break;
-          case "game.opponentTrickImages":
-            setPublicOpponentTricks(message.images);
-            break;
-      default:
-        console.log("Unhandled message type:", message.type);
-        break;
-    }
-  }, []);
+        case "game.declarerTrickImages":
+          setPublicDeclarerTricks(message.images);
+          break;
+        case "game.opponentTrickImages":
+          setPublicOpponentTricks(message.images);
+          break;
+        default:
+          console.log("Unhandled message type:", message.type);
+          break;
+      }
+    },
+    [player1, player2, player3, player4],
+  );
 
   useEffect(() => {
     if (!user || !connected) navigate(`/`);
@@ -397,18 +565,19 @@ function Game() {
   }, []);
 
   useEffect(() => {
-    subscribe({
+    const publicSub = subscribe({
       destination: `/topic/game.${game.gameId}`,
       callback: handlePublicMessage,
     });
-    subscribe({
+    const privateSub = subscribe({
       destination: `/user/queue/private`,
       callback: handlePrivateMessage,
     });
-  }, [game.gameId, subscribe]);
-
-  useEffect(setSeatModifier, []);
-
+    return () => {
+      publicSub?.unsubscribe();
+      privateSub?.unsubscribe();
+    };
+  }, [game.gameId, subscribe, handlePublicMessage, handlePrivateMessage]);
 
   function getFirstPotentialBids() {
     send("/app/game.firstPotentialBids", {
@@ -492,118 +661,53 @@ function Game() {
     }
   }, [gameState, declarer]);
 
-  const playerSeats = [
-    player1,
-    player2,
-    player3,
-    player4,
-    player1,
-    player2,
-    player3,
-  ];
-
-  const playerBalances = [
-    player1Balance,
-    player2Balance,
-    player3Balance,
-    player4Balance,
-    player1Balance,
-    player2Balance,
-    player3Balance,
-  ];
-
-  const playerTrickCards = [
-    player1TrickCards,
-    player2TrickCards,
-    player3TrickCards,
-    player4TrickCards,
-    player1TrickCards,
-    player2TrickCards,
-    player3TrickCards,
-  ];
-
-  const playerCardsNumbers = [
-    playerCards[player1 || ""] || 0,
-    playerCards[player2 || ""] || 0,
-    playerCards[player3 || ""] || 0,
-    playerCards[player4 || ""] || 0,
-    playerCards[player1 || ""] || 0,
-    playerCards[player2 || ""] || 0,
-    playerCards[player3 || ""] || 0,
-  ];
-
-  function getSeatAttributes(seatModifier: number) {
-    //console.log("getSeatAttributes called with seatModifier:", seatModifier);
-    return [
-      {
-        playerSeat: playerSeats[0 + seatModifier],
-        playerBalance: playerBalances[0 + seatModifier],
-        playerCardsNumber: playerCardsNumbers[0 + seatModifier],
-        playerTrickCards: playerTrickCards[0 + seatModifier],
-      },
-      {
-        playerSeat: playerSeats[1 + seatModifier],
-        playerBalance: playerBalances[1 + seatModifier],
-        playerCardsNumber: playerCardsNumbers[1 + seatModifier],
-        playerTrickCards: playerTrickCards[1 + seatModifier],
-      },
-      {
-        playerSeat: playerSeats[2 + seatModifier],
-        playerBalance: playerBalances[2 + seatModifier],
-        playerCardsNumber: playerCardsNumbers[2 + seatModifier],
-        playerTrickCards: playerTrickCards[2 + seatModifier],
-      },
-      {
-        playerSeat: playerSeats[3 + seatModifier],
-        playerBalance: playerBalances[3 + seatModifier],
-        playerCardsNumber: playerCardsNumbers[3 + seatModifier],
-        playerTrickCards: playerTrickCards[3 + seatModifier],
-      },
-    ];
-  }
-
-  function setSeatModifier() {
-    //console.log("Setting seat modifier for user:", user?.username);
+  function renderOwnHand() {
+    let playerName;
+    let playerTrickCards = 0;
+    let playerBalance = 0;
     switch (user?.username) {
       case player1:
-        seatModifier.current = 0;
-        console.log("Seat modifier set to 0 for player1");
+        playerName = player1;
+        playerTrickCards = player1
+          ? playerData[player1]?.playerTrickCards || 0
+          : 0;
+        playerBalance = player1 ? playerData[player1]?.playerBalance || 0 : 0;
         break;
       case player2:
-        seatModifier.current = 1;
-        //console.log("Seat modifier set to 1 for player2");
+        playerName = player2;
+        playerTrickCards = player2
+          ? playerData[player2]?.playerTrickCards || 0
+          : 0;
+        playerBalance = player2 ? playerData[player2]?.playerBalance || 0 : 0;
         break;
       case player3:
-        seatModifier.current = 2;
-        //console.log("Seat modifier set to 2 for player3");
+        playerName = player3;
+        playerTrickCards = player3
+          ? playerData[player3]?.playerTrickCards || 0
+          : 0;
+        playerBalance = player3 ? playerData[player3]?.playerBalance || 0 : 0;
         break;
       case player4:
-        seatModifier.current = 3;
-        console.log("Seat modifier set to 3 for player4");
+        playerName = player4;
+        playerTrickCards = player4
+          ? playerData[player4]?.playerTrickCards || 0
+          : 0;
+        playerBalance = player4 ? playerData[player4]?.playerBalance || 0 : 0;
         break;
-      default:
-        seatModifier.current = 0;
     }
-  }
-
-  function renderOwnHand(seatAttribute: SeatAttributes) {
     return (
       <div className="flex flex-col h-full">
         <div className="h-1/8 flex justify-center items-center font-bold text-xl">
           <div className="w-1/8 flex justify-center items-center">
-            {seatAttribute.playerTrickCards > 0 && (
-              <p>
-                {seatAttribute.playerSeat}'s tricks
-              </p>
-            )}
+            {playerTrickCards > 0 && <p>{playerName}'s tricks</p>}
           </div>
           <div className="w-3/4 flex justify-center items-center mt-1">
-            {seatAttribute.playerSeat === turnPlayer ? (
+            {playerName === turnPlayer ? (
               <p className="bg-green-300 text-[#2f4b3a] text-2xl rounded-md w-auto pt-0.5 pb-0.5 pl-3 pr-3">
-                {seatAttribute.playerSeat}
+                {playerName}
               </p>
             ) : (
-              <p>{seatAttribute.playerSeat}</p>
+              <p>{playerName}</p>
             )}
           </div>
           <div className="w-1/8"></div>
@@ -616,7 +720,7 @@ function Game() {
               {displayOwnCards()}
             </div>
             <div className="h-1/6 flex justify-center items-center font-bold text-xl w-full">
-              <p>Balance: {seatAttribute.playerBalance}</p>
+              <p>Balance: {playerBalance}</p>
             </div>
           </div>
         )}
@@ -636,7 +740,7 @@ function Game() {
               {displayOwnCardsWithTalon()}
             </div>
             <div className="h-1/6 flex justify-center items-center font-bold text-xl w-full">
-              <p>Balance: {seatAttribute.playerBalance}</p>
+              <p>Balance: {playerBalance}</p>
             </div>
           </div>
         )}
@@ -646,7 +750,7 @@ function Game() {
               {displayOwnCards()}
             </div>
             <div className="h-1/6 flex justify-center items-center font-bold text-xl w-full">
-              <p>Balance: {seatAttribute.playerBalance}</p>
+              <p>Balance: {playerBalance}</p>
             </div>
           </div>
         )}
@@ -654,14 +758,14 @@ function Game() {
           turnPlayer === user?.username && (
             <div className="flex h-7/8">
               <div className="w-1/8 flex justify-center items-start mt-3">
-                {displayTricksBack(seatAttribute.playerTrickCards)}
+                {displayTricksBack(playerTrickCards)}
               </div>
               <div className="w-3/4 h-full flex flex-col justify-center items-center">
                 <div className="h-5/6 flex justify-center items-center">
                   {displayOwnPlayableCards()}
                 </div>
                 <div className="h-1/6 flex justify-center items-center font-bold text-xl w-full">
-                  <p>Balance: {seatAttribute.playerBalance}</p>
+                  <p>Balance: {playerBalance}</p>
                 </div>
               </div>
 
@@ -672,14 +776,14 @@ function Game() {
           turnPlayer !== user?.username && (
             <div className="flex h-7/8">
               <div className="w-1/8 flex justify-center items-start mt-3">
-                {displayTricksBack(seatAttribute.playerTrickCards)}
+                {displayTricksBack(playerTrickCards)}
               </div>
               <div className="w-3/4 h-full flex flex-col justify-center items-center">
                 <div className="h-5/6 flex justify-center items-center">
                   {displayOwnCards()}
                 </div>
                 <div className="h-1/6 flex justify-center items-center font-bold text-xl w-full">
-                  <p>Balance: {seatAttribute.playerBalance}</p>
+                  <p>Balance: {playerBalance}</p>
                 </div>
               </div>
               <div className="w-1/8 h-2/3"></div>
@@ -688,7 +792,6 @@ function Game() {
       </div>
     );
   }
-
 
   function renderBidButtons() {
     return potentialBids.map((bid) => (
@@ -725,10 +828,12 @@ function Game() {
     return privateInfo;
   }
 */
-
+  /*
   useEffect(() => {
     if (gameState === "BONUS_ANNOUNCEMENT" && turnPlayer === user?.username) {
-      setPrivateInformation(createPrivateInfo(selectedTarokkNumber, calledTarokk, selectedBonuses));
+      setPrivateInformation(
+        createPrivateInfo(selectedTarokkNumber, calledTarokk, selectedBonuses),
+      );
     }
   }, [
     selectedTarokkNumber,
@@ -738,6 +843,7 @@ function Game() {
     user,
     gameState,
   ]);
+*/
 
   function renderTarokkNumberButton() {
     if (hasEightTarokks) {
@@ -746,6 +852,13 @@ function Game() {
           className="border-green-300 border-2 w-32 h-10 hover:scale-105 hover:bg-green-700 cursor-pointer transition-transform duration-200 ml-5 mr-5 font-semibold rounded-md"
           onClick={() => {
             setSelectedTarokkNumber(8);
+            send("/app/game.bonusInfo", {
+              turnPlayer: turnPlayer,
+              gameId: game.gameId,
+              selectedTarokkNumber: 8,
+              calledTarokk: calledTarokk,
+              bonuses: selectedBonuses,
+            });
             console.log("Tarokk number selected: 8");
           }}
         >
@@ -758,6 +871,13 @@ function Game() {
           className="border-green-300 border-2 w-32 h-10 hover:scale-105 hover:bg-green-700 cursor-pointer transition-transform duration-200 ml-5 mr-5 font-semibold rounded-md"
           onClick={() => {
             setSelectedTarokkNumber(9);
+            send("/app/game.bonusInfo", {
+              turnPlayer: turnPlayer,
+              gameId: game.gameId,
+              selectedTarokkNumber: 9,
+              calledTarokk: calledTarokk,
+              bonuses: selectedBonuses,
+            });
             console.log("Tarokk number selected: 9");
           }}
         >
@@ -775,6 +895,13 @@ function Game() {
         className="border-green-300 border-2 w-32 h-10 hover:scale-105 hover:bg-green-700 cursor-pointer transition-transform duration-200 ml-5 mr-5 font-semibold rounded-md"
         onClick={() => {
           setCalledTarokk(tarokk);
+          send("/app/game.bonusInfo", {
+            turnPlayer: turnPlayer,
+            gameId: game.gameId,
+            selectedTarokkNumber: selectedTarokkNumber,
+            calledTarokk: tarokk,
+            bonuses: selectedBonuses,
+          });
           console.log("Tarokk called:", tarokk);
         }}
       >
@@ -789,11 +916,20 @@ function Game() {
         key={bonus}
         className="border-green-300 border-2 w-40 h-14 hover:scale-105 hover:bg-green-700 cursor-pointer rounded-md font-semibold mt-0.5"
         onClick={() => {
-          setSelectedBonuses((prev) =>
-            prev.includes(bonus)
-              ? prev.filter((b) => b !== bonus)
-              : [...prev, bonus],
-          );
+          let selectedBonusesToSend = [];
+          if (selectedBonuses.includes(bonus)) {
+            selectedBonusesToSend = selectedBonuses.filter((b) => b !== bonus);
+          } else {
+            selectedBonusesToSend = [...selectedBonuses, bonus];
+          }
+          send("/app/game.bonusInfo", {
+            turnPlayer: turnPlayer,
+            gameId: game.gameId,
+            selectedTarokkNumber: selectedTarokkNumber,
+            calledTarokk: calledTarokk,
+            bonuses: selectedBonusesToSend,
+          });
+          setSelectedBonuses(selectedBonusesToSend);
         }}
       >
         {bonus}
@@ -822,6 +958,7 @@ function Game() {
               calledTarokk,
               selectedTarokkNumber,
             );
+            setPrivateInformation("");
           } else if (
             turnPlayer === user?.username &&
             selectedBonuses.length > 0 &&
@@ -839,6 +976,7 @@ function Game() {
               calledTarokk,
               selectedTarokkNumber,
             );
+            setPrivateInformation("");
           } else {
             if (
               firstBonusRound &&
@@ -873,62 +1011,83 @@ function Game() {
     return [...buttons, confirmButton];
   }
 
-  function renderPlayerHand(seatAttribute: SeatAttributes) {
+  function renderPlayerHand(place: "NORTH" | "EAST" | "WEST") {
+    const { playerName, playerCardsNumber, playerBalance } =
+      setPlayerProperties(
+        place,
+        user,
+        player1,
+        player2,
+        player3,
+        player4,
+        playerData,
+      );
+
     return (
       <div className="flex flex-col h-full">
         <div className="h-1/6 flex justify-center items-center font-bold text-xl">
-          {seatAttribute.playerSeat === turnPlayer && turnPlayer !== null ? (
+          {playerName === turnPlayer && turnPlayer !== null ? (
             <p className="bg-green-300 text-[#2f4b3a] text-2xl rounded-md w-auto pt-0.5 pb-0.5 pl-3 pr-3">
-              {seatAttribute.playerSeat}
+              {playerName}
             </p>
           ) : (
-            <p>{seatAttribute.playerSeat}</p>
+            <p>{playerName}</p>
           )}
         </div>
 
         <div className="flex justify-center items-center h-2/3 relative -top-5">
-          {displayHandBack(seatAttribute.playerCardsNumber)}
+          {displayHandBack(playerCardsNumber)}
         </div>
         <div className="h-1/6 flex justify-center items-center font-bold text-xl">
-          <p>Balance: {seatAttribute.playerBalance}</p>
+          <p>Balance: {playerBalance}</p>
         </div>
       </div>
     );
   }
 
-  function renderPlayerHandInTrickPhase(seatAttribute: SeatAttributes) {
+  function renderWesternPlayerHandInTrickPhase() {
+    const { playerName, playerCardsNumber, playerTrickCards, playerBalance } =
+      setPlayerPropertiesInTrickPhase(
+        player1,
+        player2,
+        player3,
+        player4,
+        player4,
+        player1,
+        player2,
+        player3,
+        user,
+        playerData,
+      );
     return (
       <div className="flex justify-around h-full">
         <div className="w-1/3 flex flex-col">
           <div className="h-1/6 flex justify-center items-center font-bold text-xl">
-            {seatAttribute.playerTrickCards > 0 && (
-              <p>
-                {seatAttribute.playerSeat}'s tricks
-              </p>
-            )}
+            {playerTrickCards > 0 && <p>{playerName}'s tricks</p>}
           </div>
+
           <div className="h-5/6 flex justify-center items-start">
-            {displayTricksBack(seatAttribute.playerTrickCards)}
+            {displayTricksBack(playerTrickCards)}
           </div>
         </div>
 
         <div className="w-2/3 flex justify-center items-center">
           <div className="flex flex-col h-full">
             <div className="h-1/6 flex justify-center items-center font-bold text-xl">
-              {seatAttribute.playerSeat === turnPlayer ? (
+              {playerName === turnPlayer ? (
                 <p className="bg-green-300 text-[#2f4b3a] text-2xl rounded-md w-auto pt-0.5 pb-0.5 pl-3 pr-3">
-                  {seatAttribute.playerSeat}
+                  {playerName}
                 </p>
               ) : (
-                <p>{seatAttribute.playerSeat}</p>
+                <p>{playerName}</p>
               )}
             </div>
 
             <div className="flex justify-center items-center h-2/3 relative -top-5">
-              {displayHandBack(seatAttribute.playerCardsNumber)}
+              {displayHandBack(playerCardsNumber)}
             </div>
             <div className="h-1/6 flex justify-center items-center font-bold text-xl">
-              <p>Balance: {seatAttribute.playerBalance}</p>
+              <p>Balance: {playerBalance}</p>
             </div>
           </div>
         </div>
@@ -936,77 +1095,84 @@ function Game() {
     );
   }
 
-  function renderEasternPlayerHandInTrickPhase(seatAttribute: SeatAttributes) {
+  function renderEasternPlayerHandInTrickPhase() {
+    const {playerName, playerCardsNumber, playerTrickCards, playerBalance} = setPlayerPropertiesInTrickPhase(player1, player2, player3, player4, player2, player3, player4, player1, user, playerData);
+
     return (
       <div className="flex justify-around h-full">
         <div className="w-2/3 flex justify-center items-center">
           <div className="flex flex-col h-full">
             <div className="h-1/6 flex justify-center items-center font-bold text-xl">
-              {seatAttribute.playerSeat === turnPlayer ? (
+              {playerName === turnPlayer ? (
                 <p className="bg-green-300 text-[#2f4b3a] text-2xl rounded-md w-auto pt-0.5 pb-0.5 pl-3 pr-3">
-                  {seatAttribute.playerSeat}
+                  {playerName}
                 </p>
               ) : (
-                <p>{seatAttribute.playerSeat}</p>
+                <p>{playerName}</p>
               )}
             </div>
 
             <div className="flex justify-center items-center h-2/3 relative -top-5">
-              {displayHandBack(seatAttribute.playerCardsNumber)}
+              {displayHandBack(playerCardsNumber)}
             </div>
             <div className="h-1/6 flex justify-center items-center font-bold text-xl">
-              <p>Balance: {seatAttribute.playerBalance}</p>
+              <p>Balance: {playerBalance}</p>
             </div>
           </div>
         </div>
         <div className="w-1/3 flex flex-col">
           <div className="h-1/6 flex justify-center items-center font-bold text-xl">
-            {seatAttribute.playerTrickCards > 0 && (
-              <p>
-                {seatAttribute.playerSeat}'s tricks
-              </p>
-            )}
+            {playerTrickCards > 0 && <p>{playerName}'s tricks</p>}
           </div>
           <div className="h-5/6 flex justify-center items-start">
-            {displayTricksBack(seatAttribute.playerTrickCards)}
+            {displayTricksBack(playerTrickCards)}
           </div>
         </div>
       </div>
     );
   }
 
-  function renderNorthernPlayerHandInTrickPhase(seatAttribute: SeatAttributes) {
+  function renderNorthernPlayerHandInTrickPhase() {
+    const { playerName, playerCardsNumber, playerTrickCards, playerBalance } =
+      setPlayerPropertiesInTrickPhase(
+        player1,
+        player2,
+        player3,
+        player4,
+        player3,
+        player4,
+        player1,
+        player2,
+        user,
+        playerData,
+      );
     return (
       <div className="flex justify-around h-full">
         <div className="w-1/4 flex flex-col">
           <div className="h-1/6 flex justify-center items-center font-bold text-xl">
-            {seatAttribute.playerTrickCards > 0 && (
-              <p>
-                {seatAttribute.playerSeat}'s tricks
-              </p>
-            )}
+            {playerTrickCards > 0 && <p>{playerName}'s tricks</p>}
           </div>
           <div className="h-5/6 flex justify-center items-start">
-            {displayTricksBack(seatAttribute.playerTrickCards)}
+            {displayTricksBack(playerTrickCards)}
           </div>
         </div>
         <div className="w-1/2 flex justify-center items-center">
           <div className="flex flex-col h-full">
             <div className="h-1/6 flex justify-center items-center font-bold text-xl">
-              {seatAttribute.playerSeat === turnPlayer ? (
+              {playerName === turnPlayer ? (
                 <p className="bg-green-300 text-[#2f4b3a] text-2xl rounded-md w-auto pt-0.5 pb-0.5 pl-3 pr-3">
-                  {seatAttribute.playerSeat}
+                  {playerName}
                 </p>
               ) : (
-                <p>{seatAttribute.playerSeat}</p>
+                <p>{playerName}</p>
               )}
             </div>
 
             <div className="flex justify-center items-center h-2/3 relative -top-5">
-              {displayHandBack(seatAttribute.playerCardsNumber)}
+              {displayHandBack(playerCardsNumber)}
             </div>
             <div className="h-1/6 flex justify-center items-center font-bold text-xl">
-              <p>Balance: {seatAttribute.playerBalance}</p>
+              <p>Balance: {playerBalance}</p>
             </div>
           </div>
         </div>
@@ -1276,14 +1442,10 @@ function Game() {
 
               {/* Player 3's area */}
               {gameState !== "TRICK_PHASE" && gameState !== "FINISHED" ? (
-                <div className="w-1/2">
-                  {renderPlayerHand(getSeatAttributes(seatModifier.current)[2])}
-                </div>
+                <div className="w-1/2">{renderPlayerHand("NORTH")}</div>
               ) : (
                 <div className="w-1/2">
-                  {renderNorthernPlayerHandInTrickPhase(
-                    getSeatAttributes(seatModifier.current)[2],
-                  )}
+                  {renderNorthernPlayerHandInTrickPhase()}
                 </div>
               )}
 
@@ -1302,14 +1464,10 @@ function Game() {
             <div className="w-full h-1/3 flex">
               {/* Player 4's area */}
               {gameState !== "TRICK_PHASE" && gameState !== "FINISHED" ? (
-                <div className="w-1/4">
-                  {renderPlayerHand(getSeatAttributes(seatModifier.current)[3])}
-                </div>
+                <div className="w-1/4">{renderPlayerHand("WEST")}</div>
               ) : (
                 <div className="w-[35%]">
-                  {renderPlayerHandInTrickPhase(
-                    getSeatAttributes(seatModifier.current)[3],
-                  )}
+                  {renderWesternPlayerHandInTrickPhase()}
                 </div>
               )}
 
@@ -1390,22 +1548,16 @@ function Game() {
 
               {/* Player 2's area */}
               {gameState !== "TRICK_PHASE" && gameState !== "FINISHED" ? (
-                <div className="w-1/4">
-                  {renderPlayerHand(getSeatAttributes(seatModifier.current)[1])}
-                </div>
+                <div className="w-1/4">{renderPlayerHand("EAST")}</div>
               ) : (
                 <div className="w-[35%]">
-                  {renderEasternPlayerHandInTrickPhase(
-                    getSeatAttributes(seatModifier.current)[1],
-                  )}
+                  {renderEasternPlayerHandInTrickPhase()}
                 </div>
               )}
             </div>
 
             {/* Bottom row */}
-            <div className="w-full h-1/3">
-              {renderOwnHand(getSeatAttributes(seatModifier.current)[0])}
-            </div>
+            <div className="w-full h-1/3">{renderOwnHand()}</div>
           </div>
         </div>
 
@@ -1414,15 +1566,10 @@ function Game() {
           bid={bid}
           declarer={declarer}
           dealer={dealer}
-          bidPlayer={bidPlayer}
           turnPlayer={turnPlayer}
           publicInfo={publicInformation}
           privateInfo={privateInformation}
-          selectedTarokkNumber={selectedTarokkNumber}
           gameState={gameState}
-          user={user}
-          calledTarokk={calledTarokk}
-          selectedBonuses={selectedBonuses}
           declarerBonuses={declarerBonuses}
           opponentBonuses={opponentBonuses}
           startPlayer={startPlayer}
