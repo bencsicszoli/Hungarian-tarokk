@@ -76,8 +76,8 @@ public class MessageController {
                 Objects.requireNonNull(headerAccessor.getSessionAttributes()).put("gameId", joinMessage.getGameId());
                 headerAccessor.getSessionAttributes().put("player", playerName);
                 joinMessage.setType("game.joined");
-                if (joinMessage.getPlayer4() != null) {
-                    joinMessage.setPrivateInformation("You are the fourth player.! Let the game start!");
+                if (joinMessage.getPlayer1() != null && joinMessage.getPlayer2() != null && joinMessage.getPlayer3() != null && joinMessage.getPlayer4() != null) {
+                    joinMessage.setPrivateInformation("You are the fourth player.@ Let the game start!");
                 }
                 messagingTemplate.convertAndSendToUser(playerName, "/queue/private", joinMessage);
                 messagingTemplate.convertAndSend("/topic/game." + joinMessage.getGameId(), joinMessage);
@@ -178,8 +178,6 @@ public class MessageController {
                 int playerCards = player.getPlayerCards().size();
                 if (i == 3) {
                     game.setState(GameState.SKART_LAY_DOWN);
-                    PublicInfoDTO publicInfoDTO = new PublicInfoDTO("Discard skart phase has started!", "game.publicInfo");
-                    messagingTemplate.convertAndSend("/topic/game." + request.gameId(), publicInfoDTO);
                 }
                 idTo = idFrom + talonCardsToDeal[i] - 1;
                 try {
@@ -205,6 +203,8 @@ public class MessageController {
                 playerToDeal = player.getName();
                 idFrom = idTo + 1;
             }
+            PublicInfoDTO publicInfoDTO = new PublicInfoDTO("Discard skart phase has started!", "game.publicInfo");
+            messagingTemplate.convertAndSend("/topic/game." + request.gameId(), publicInfoDTO);
             if (game.getBidLevel().getBidValue() == 4) {
                 Player declarer = playerRepository.findByUserUsernameAndGameId(request.declarer(), request.gameId()).orElseThrow(() -> new NoSuchElementException("Declarer not found"));
                 Player turnPlayer = game.getNextPlayer(declarer);
@@ -423,13 +423,29 @@ public class MessageController {
                     "game.newBalances");
             messagingTemplate.convertAndSend("/topic/game." + request.gameId(), playerBalances);
             CardImageListDTO declarerSkartImages = revealCardsService.getDeclarerSkart(request.gameId());
-            messagingTemplate.convertAndSend("/topic/game." + request.gameId(), declarerSkartImages);
+            if (declarerSkartImages != null) {
+                messagingTemplate.convertAndSend("/topic/game." + request.gameId(), declarerSkartImages);
+            }
             CardImageListDTO opponentSkartImages = revealCardsService.getOpponentSkart(request.gameId());
             messagingTemplate.convertAndSend("/topic/game." + request.gameId(), opponentSkartImages);
             CardImageListDTO declarerTricks = revealCardsService.getDeclarerTricks(game);
-            messagingTemplate.convertAndSend("/topic/game." + request.gameId(), declarerTricks);
+            if (declarerTricks != null) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                }
+                messagingTemplate.convertAndSend("/topic/game." + request.gameId(), declarerTricks);
+            }
             CardImageListDTO opponentTricks = revealCardsService.getOpponentTricks(game);
-            messagingTemplate.convertAndSend("/topic/game." + request.gameId(), opponentTricks);
+            if (opponentTricks != null) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                }
+                messagingTemplate.convertAndSend("/topic/game." + request.gameId(), opponentTricks);
+            }
             game.setDealer(newDealer);
             game.setStartPlayer(newStartPlayer);
             game.setTurnPlayer(newStartPlayer);
@@ -442,6 +458,11 @@ public class MessageController {
         //shuffleService.addShuffledDeck(game);
         shuffleService.useFakeDeck(game);
         dealService.setTalonCards(game);
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+        }
         PublicTalonDTO publicTalonDTO = new PublicTalonDTO(6, "game.talon", "NEW");
         messagingTemplate.convertAndSend("/topic/game." + request.gameId(), publicTalonDTO);
     }
@@ -469,10 +490,19 @@ public class MessageController {
         if (game.getState() == GameState.BONUS_ANNOUNCEMENT) {
             DeclarerSkartWithTarokkDTO skartWithTarokkDTO = talonService.createPublicSkartDTO(game);
             if (skartWithTarokkDTO != null) {
-                messagingTemplate.convertAndSend("/topic/game." + request.gameId(), skartWithTarokkDTO);
+                PlayerCardListDTO playerCardListDTO = new PlayerCardListDTO(skartWithTarokkDTO.cards(), skartWithTarokkDTO.type());
+                messagingTemplate.convertAndSend("/topic/game." + request.gameId(), playerCardListDTO);
             }
             GameStateDTO gameStateDTO = new GameStateDTO(game.getState().toString(), "game.gameState");
             messagingTemplate.convertAndSend("/topic/game." + request.gameId(), gameStateDTO);
+            String bonusPhaseInfo;
+            if (skartWithTarokkDTO != null) {
+                bonusPhaseInfo = skartWithTarokkDTO.info() + "@Bonus announcement phase has started!";
+            } else {
+                bonusPhaseInfo = "@Bonus announcement phase has started!";
+            }
+            PublicInfoDTO infoDTO = new PublicInfoDTO(bonusPhaseInfo, "game.publicSkartPhaseFinishInfo");
+            messagingTemplate.convertAndSend("/topic/game." + request.gameId(), infoDTO);
         }
     }
 

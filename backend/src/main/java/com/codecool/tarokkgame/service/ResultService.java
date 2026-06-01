@@ -29,26 +29,16 @@ public class ResultService {
 
     public void setResult(long gameId) {
         Game game = gameRepository.findById(gameId).orElseThrow(() -> new NoSuchElementException("Game not found"));
-        List<OwnTrick> declarerTricks = ownTrickRepository.findAllByPlayerGameAndPlayerRoleInGame(game, RoleInGame.DECLARER);
-        List<OwnTrick> partnerTricks = ownTrickRepository.findAllByPlayerGameAndPlayerRoleInGame(game, RoleInGame.DECLARER_PARTNER);
+        List<OwnTrick> declarerTricks = ownTrickRepository.findAllByRoles(List.of(RoleInGame.DECLARER, RoleInGame.DECLARER_PARTNER));
+        //List<OwnTrick> partnerTricks = ownTrickRepository.findAllByPlayerGameAndPlayerRoleInGame(game, RoleInGame.DECLARER_PARTNER);
         List<DeclarerSkart> declarerSkartCards = declarerSkartRepository.findAllByGameId(gameId);
         int bidMultiplier = game.getBidLevel().getBidValue();
         String bidLevel = game.getBidLevel().getBidLevelByBidValue(bidMultiplier).getDescription();
-        int cardCount = declarerTricks.size() + partnerTricks.size();
+        int cardCount = declarerTricks.size();
         int cardValues = 0;
         int honours = 0;
         int kings = 0;
         for (OwnTrick trick : declarerTricks) {
-            cardValues += trick.getCardValue();
-            if (trick.getCardValue() == 5) {
-                if (trick.getCard().getSuit().equals("tarokk")) {
-                    honours++;
-                } else {
-                    kings++;
-                }
-            }
-        }
-        for (OwnTrick trick : partnerTricks) {
             cardValues += trick.getCardValue();
             if (trick.getCardValue() == 5) {
                 if (trick.getCard().getSuit().equals("tarokk")) {
@@ -889,85 +879,96 @@ public class ResultService {
 
     private String createResultInfo(RoundResult result, String bidLevel) {
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("Bid: ").append(bidLevel).append("!");
-        stringBuilder.append("Game score: ").append(result.getCardValue()).append("!");
+        stringBuilder.append("Bid: ").append(bidLevel).append("@");
+        stringBuilder.append("Game score: ").append(result.getCardValue()).append("@");
+        char[] separationLineArray = new char[10];
+        for (int i = 0; i < 10; i++) {
+            separationLineArray[i] = '⎻';
+        }
+        String separationLine = new String(separationLineArray);
+        stringBuilder.append(separationLine).append("@");
         if (result.getParty() != 0) {
-            stringBuilder.append("Party: ").append(result.getParty()).append("!");
+            stringBuilder.append("Party: ").append(result.getParty()).append("@");
         } else if (result.getPartyDoubled() != 0) {
-            stringBuilder.append("Party doubled: ").append(result.getPartyDoubled()).append("!");
+            stringBuilder.append("Party doubled: ").append(result.getPartyDoubled()).append("@");
         } else if (result.getPartyRedoubled() != 0) {
-            stringBuilder.append("Party redoubled: ").append(result.getPartyRedoubled()).append("!");
+            stringBuilder.append("Party redoubled: ").append(result.getPartyRedoubled()).append("@");
         }
         if (result.getSilentTrull() != 0) {
-            stringBuilder.append("Silent trull: ").append(result.getSilentTrull()).append("!");
+            stringBuilder.append("Silent trull: ").append(result.getSilentTrull()).append("@");
         }
         if (result.getTrull() != 0) {
-            stringBuilder.append("Trull: ").append(result.getTrull()).append("!");
+            stringBuilder.append("Trull: ").append(result.getTrull()).append("@");
         } else if (result.getTrullDoubled() != 0) {
-            stringBuilder.append("Trull doubled: ").append(result.getTrullDoubled()).append("!");
+            stringBuilder.append("Trull doubled: ").append(result.getTrullDoubled()).append("@");
         } else if (result.getTrullRedoubled() != 0) {
-            stringBuilder.append("Trull redoubled: ").append(result.getTrullRedoubled()).append("!");
+            stringBuilder.append("Trull redoubled: ").append(result.getTrullRedoubled()).append("@");
         }
         if (result.getSilentFourKings() != 0) {
-            stringBuilder.append("Silent four kings: ").append(result.getSilentFourKings()).append("!");
+            stringBuilder.append("Silent four kings: ").append(result.getSilentFourKings()).append("@");
         }
         if (result.getFourKings() != 0) {
-            stringBuilder.append("Four kings: ").append(result.getFourKings()).append("!");
+            stringBuilder.append("Four kings: ").append(result.getFourKings()).append("@");
         } else if (result.getFourKingsDoubled() != 0) {
-            stringBuilder.append("Four kings doubled: ").append(result.getFourKingsDoubled()).append("!");
+            stringBuilder.append("Four kings doubled: ").append(result.getFourKingsDoubled()).append("@");
         } else if (result.getFourKingsRedoubled() != 0) {
-            stringBuilder.append("Four kings redoubled: ").append(result.getFourKingsRedoubled()).append("!");
+            stringBuilder.append("Four kings redoubled: ").append(result.getFourKingsRedoubled()).append("@");
         }
         if (result.getSilentDoubleGame() != 0) {
-            stringBuilder.append("Silent double game: ").append(result.getSilentDoubleGame()).append("!");
+            stringBuilder.append("Silent double game: ").append(result.getSilentDoubleGame()).append("@");
         }
         if (result.getDoubleGame() != 0) {
-            stringBuilder.append("Double game: ").append(result.getDoubleGame()).append("!");
+            stringBuilder.append("Double game: ").append(result.getDoubleGame()).append("@");
         } else if (result.getDoubleGameDoubled() != 0) {
-            stringBuilder.append("Double game doubled: ").append(result.getDoubleGameDoubled()).append("!");
+            stringBuilder.append("Double game doubled: ").append(result.getDoubleGameDoubled()).append("@");
         } else if (result.getDoubleGameRedoubled() != 0) {
-            stringBuilder.append("Double game redoubled: ").append(result.getDoubleGameRedoubled()).append("!");
+            stringBuilder.append("Double game redoubled: ").append(result.getDoubleGameRedoubled()).append("@");
         }
         if (result.getSilentUltimo() != 0) {
-            stringBuilder.append("Silent pagat ultimo: ").append(result.getSilentUltimo()).append("!");
+            stringBuilder.append("Silent pagat ultimo: ").append(result.getSilentUltimo()).append("@");
         }
         if (result.getUltimo() != 0) {
-            stringBuilder.append("Pagat ultimo: ").append(result.getUltimo()).append("!");
+            stringBuilder.append("Pagat ultimo: ").append(result.getUltimo()).append("@");
         } else if (result.getUltimoDoubled() != 0) {
-            stringBuilder.append("Pagat ultimo doubled: ").append(result.getUltimoDoubled()).append("!");
+            stringBuilder.append("Pagat ultimo doubled: ").append(result.getUltimoDoubled()).append("@");
         } else if (result.getUltimoRedoubled() != 0) {
-            stringBuilder.append("Pagat ultimo redoubled: ").append(result.getUltimoRedoubled()).append("!");
+            stringBuilder.append("Pagat ultimo redoubled: ").append(result.getUltimoRedoubled()).append("@");
         }
         if (result.getSilentXXICatch() != 0) {
-            stringBuilder.append("Silent XXI-catch: ").append(result.getSilentXXICatch()).append("!");
+            stringBuilder.append("Silent XXI-catch: ").append(result.getSilentXXICatch()).append("@");
         }
         if (result.getXXICatch() != 0) {
-            stringBuilder.append("XXI-catch: ").append(result.getXXICatch()).append("!");
+            stringBuilder.append("XXI-catch: ").append(result.getXXICatch()).append("@");
         } else if (result.getXXICatchDoubled() != 0) {
-            stringBuilder.append("XXI-catch doubled: ").append(result.getXXICatchDoubled()).append("!");
+            stringBuilder.append("XXI-catch doubled: ").append(result.getXXICatchDoubled()).append("@");
         } else if (result.getXXICatchRedoubled() != 0) {
-            stringBuilder.append("XXI-catch redoubled: ").append(result.getXXICatchRedoubled()).append("!");
+            stringBuilder.append("XXI-catch redoubled: ").append(result.getXXICatchRedoubled()).append("@");
         }
         if (result.getSilentVolat() != 0) {
-            stringBuilder.append("Silent volat: ").append(result.getSilentVolat()).append("!");
+            stringBuilder.append("Silent volat: ").append(result.getSilentVolat()).append("@");
         }
         if (result.getVolat() != 0) {
-            stringBuilder.append("Volat: ").append(result.getVolat()).append("!");
+            stringBuilder.append("Volat: ").append(result.getVolat()).append("@");
         } else if (result.getVolatDoubled() != 0) {
-            stringBuilder.append("Volat doubled: ").append(result.getVolatDoubled()).append("!");
+            stringBuilder.append("Volat doubled: ").append(result.getVolatDoubled()).append("@");
         } else if (result.getVolatRedoubled() != 0) {
-            stringBuilder.append("Volat redoubled: ").append(result.getVolatRedoubled()).append("!");
+            stringBuilder.append("Volat redoubled: ").append(result.getVolatRedoubled()).append("@");
         }
         if (result.getEightTarokksInAdvance() != 0) {
-            stringBuilder.append("Eight tarokks in advance: ").append(result.getEightTarokksInAdvance()).append("!");
+            stringBuilder.append("Eight tarokks in advance: ").append(result.getEightTarokksInAdvance()).append("@");
         } else if (result.getNineTarokksInAdvance() != 0) {
-            stringBuilder.append("Nine tarokks in advance: ").append(result.getNineTarokksInAdvance()).append("!");
+            stringBuilder.append("Nine tarokks in advance: ").append(result.getNineTarokksInAdvance()).append("@");
         } else if (result.getEightTarokksAfterwards() != 0) {
-            stringBuilder.append("Eight tarokks afterwards: ").append(result.getEightTarokksAfterwards()).append("!");
+            stringBuilder.append("Eight tarokks afterwards: ").append(result.getEightTarokksAfterwards()).append("@");
         } else if (result.getNineTarokksAfterwards() != 0) {
-            stringBuilder.append("Nine tarokks afterwards: ").append(result.getNineTarokksAfterwards()).append("!");
+            stringBuilder.append("Nine tarokks afterwards: ").append(result.getNineTarokksAfterwards()).append("@");
         }
-        stringBuilder.append("TOTAL: ").append(result.getSum()).append(" units!");
+        stringBuilder.append("TOTAL: ").append(result.getSum());
+        if (result.getSum() == 1 || result.getSum() == -1) {
+            stringBuilder.append(" unit@");
+        } else {
+            stringBuilder.append(" units@");
+        }
         return stringBuilder.toString();
     }
 

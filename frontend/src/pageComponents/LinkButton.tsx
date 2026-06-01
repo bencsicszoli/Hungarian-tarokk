@@ -18,7 +18,7 @@ function LinkButton({
   const button = (
     <button
       onClick={onHandleClick}
-      className={`w-full text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 ${fontStyle} rounded-lg px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 ${fontStyle}`}
+      className={`w-full text-[#2f4b3a] bg-green-300 hover:bg-green-500 focus:ring-4 focus:outline-none focus:ring-green-400 ${fontStyle} rounded-lg px-5 py-2.5 text-center ${fontStyle}`}
     >
       {buttonText}
     </button>

@@ -11,21 +11,26 @@ function Skart({
   onDisplayTemporarySelectedCards,
   cardsToDiscard,
   sendSkartCards,
+  turnPlayer,
+  user,
 }: {
   temporarySelectedCards: Card[];
   onDisplayTemporarySelectedCards: () => JSX.Element;
   cardsToDiscard: React.RefObject<number>;
   sendSkartCards: () => void;
+  turnPlayer: string | null;
+  user: { username: string } | null;
 }) {
   return (
-    <>
-      <div className="h-1/6 flex justify-center items-end font-bold text-xl">
-        <p>Skart</p>
+    <div className="flex h-full justify-center gap-4">
+      <div className="w-auto flex justify-center items-center font-bold text-xl">
+      {turnPlayer === user?.username && (<p className="border-green-300 border-2 rounded-md text-green-300 px-4 py-1">Skart here:</p>)}
+        
       </div>
-      <div className="flex justify-center items-center h-2/3">
+      <div className="flex justify-center items-center w-auto">
         {onDisplayTemporarySelectedCards()}
       </div>
-      <div className="h-1/6 flex justify-center items-center font-bold text-xl">
+      <div className="w-auto flex justify-center items-center font-bold text-xl">
         {cardsToDiscard.current === temporarySelectedCards.length && (
           <button
             className="border-black border-2 w-30 h-10 hover:scale-105 hover:bg-green-400 cursor-pointer bg-green-300 text-[#2f4b3a] rounded-md font-semibold mb-2"
@@ -35,7 +40,7 @@ function Skart({
           </button>
         )}
       </div>
-    </>
+    </div>
   );
 }
 

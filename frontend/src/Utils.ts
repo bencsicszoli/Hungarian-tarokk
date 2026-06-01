@@ -165,7 +165,9 @@ export function setPlayerPropertiesInTrickPhase(
       playerTrickCards = firstPlayer
         ? playerData[firstPlayer]?.playerTrickCards || 0
         : 0;
-      playerBalance = firstPlayer ? playerData[firstPlayer]?.playerBalance || 0 : 0;
+      playerBalance = firstPlayer
+        ? playerData[firstPlayer]?.playerBalance || 0
+        : 0;
       break;
     case player2:
       playerName = secondPlayer;
@@ -175,7 +177,9 @@ export function setPlayerPropertiesInTrickPhase(
       playerTrickCards = secondPlayer
         ? playerData[secondPlayer]?.playerTrickCards || 0
         : 0;
-      playerBalance = secondPlayer ? playerData[secondPlayer]?.playerBalance || 0 : 0;
+      playerBalance = secondPlayer
+        ? playerData[secondPlayer]?.playerBalance || 0
+        : 0;
       break;
     case player3:
       playerName = thirdPlayer;
@@ -185,7 +189,9 @@ export function setPlayerPropertiesInTrickPhase(
       playerTrickCards = thirdPlayer
         ? playerData[thirdPlayer]?.playerTrickCards || 0
         : 0;
-      playerBalance = thirdPlayer ? playerData[thirdPlayer]?.playerBalance || 0 : 0;
+      playerBalance = thirdPlayer
+        ? playerData[thirdPlayer]?.playerBalance || 0
+        : 0;
       break;
     case player4:
       playerName = fourthPlayer;
@@ -195,8 +201,54 @@ export function setPlayerPropertiesInTrickPhase(
       playerTrickCards = fourthPlayer
         ? playerData[fourthPlayer]?.playerTrickCards || 0
         : 0;
-      playerBalance = fourthPlayer ? playerData[fourthPlayer]?.playerBalance || 0 : 0;
+      playerBalance = fourthPlayer
+        ? playerData[fourthPlayer]?.playerBalance || 0
+        : 0;
       break;
   }
   return { playerName, playerCardsNumber, playerTrickCards, playerBalance };
+}
+
+export function setOwnProperties(
+  player1: string | null,
+  player2: string | null,
+  player3: string | null,
+  player4: string | null,
+  user: User | null,
+  playerData: Record<string, PlayerData>,
+) {
+  let playerName;
+  let playerTrickCards = 0;
+  let playerBalance = 0;
+  switch (user?.username) {
+    case player1:
+      playerName = player1;
+      playerTrickCards = player1
+        ? playerData[player1]?.playerTrickCards || 0
+        : 0;
+      playerBalance = player1 ? playerData[player1]?.playerBalance || 0 : 0;
+      break;
+    case player2:
+      playerName = player2;
+      playerTrickCards = player2
+        ? playerData[player2]?.playerTrickCards || 0
+        : 0;
+      playerBalance = player2 ? playerData[player2]?.playerBalance || 0 : 0;
+      break;
+    case player3:
+      playerName = player3;
+      playerTrickCards = player3
+        ? playerData[player3]?.playerTrickCards || 0
+        : 0;
+      playerBalance = player3 ? playerData[player3]?.playerBalance || 0 : 0;
+      break;
+    case player4:
+      playerName = player4;
+      playerTrickCards = player4
+        ? playerData[player4]?.playerTrickCards || 0
+        : 0;
+      playerBalance = player4 ? playerData[player4]?.playerBalance || 0 : 0;
+      break;
+  }
+  return { playerName, playerTrickCards, playerBalance };
 }

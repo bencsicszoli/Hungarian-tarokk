@@ -17,7 +17,7 @@ import java.util.List;
 
 @Service
 public class ResetService {
-    private GameRepository gameRepository;
+    private final GameRepository gameRepository;
     private final PlayerRepository playerRepository;
 
     public ResetService(GameRepository gameRepository, PlayerRepository playerRepository) {

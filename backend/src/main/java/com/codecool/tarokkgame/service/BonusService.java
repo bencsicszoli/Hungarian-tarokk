@@ -72,7 +72,7 @@ public class BonusService {
         }
         String upperCaseName = player.getName().toUpperCase();
         String announceTarokkNumber = announceTarokkNumber(selectedTarokkNumber, upperCaseName);
-        String bonusNamesToString = String.join(", ", bonusNames);
+        String bonusNamesToString = String.join("@", bonusNames);
         String info = createInfoAboutDeclarerAnnouncement(announceTarokkNumber, upperCaseName, calledTarokk, bonusNamesToString);
         return new PublicBonusDTO(info, Bonus.getBonusNames(game.getDeclarerBonuses()), Bonus.getBonusNames(game.getOpponentBonuses()), turnPlayer, "game.publicBonusInfo");
     }
@@ -118,9 +118,9 @@ public class BonusService {
     public PrivateInfoDTO checkDeclarerUltimoAndTarokkNumber(Player player, Set<String> bonusNames, int selectedTarokkNumber) {
         if (bonusNames.contains("Pagat ultimo") && selectedTarokkNumber == 0) {
             if (player.isHasEightTarokks()) {
-                return new PrivateInfoDTO("If you announce Pagat ultimo you MUST announce 8 tarokks too!", "game.privateInfo");
+                return new PrivateInfoDTO("If you announce Pagat ultimo@ you MUST announce 8 tarokks too!", "game.privateInfo");
             } else if (player.isHasNineTarokks()) {
-                return new PrivateInfoDTO("If you announce Pagat ultimo you MUST announce 9 tarokks too!", "game.privateInfo");
+                return new PrivateInfoDTO("If you announce Pagat ultimo@ you MUST announce 9 tarokks too!", "game.privateInfo");
             } else {
                 return null;
             }
@@ -134,9 +134,9 @@ public class BonusService {
                 return null;
             }
             if (player.isHasEightTarokks()) {
-                return new PrivateInfoDTO("If you announce or double Pagat ultimo you MUST announce 8 tarokks too!", "game.privateInfo");
+                return new PrivateInfoDTO("If you announce or double Pagat ultimo@ you MUST announce 8 tarokks too!", "game.privateInfo");
             } else if (player.isHasNineTarokks()) {
-                return new PrivateInfoDTO("If you announce or double Pagat ultimo you MUST announce 9 taroks too!", "game.privateInfo");
+                return new PrivateInfoDTO("If you announce or double Pagat ultimo@ you MUST announce 9 taroks too!", "game.privateInfo");
             } else {
                 return null;
             }
@@ -146,7 +146,7 @@ public class BonusService {
 
     public PrivateInfoDTO checkDoubleGameAndVolat(Set<String> bonusNames) {
         if (bonusNames.contains("Double game") && bonusNames.contains("Volat")) {
-            return new PrivateInfoDTO("You cannot announce Double game and Volat at the same time! Click on the bonus again to remove it!", "game.privateInfo");
+            return new PrivateInfoDTO("You cannot announce Double game and Volat at the same time!@ Click on the bonus again to remove it!", "game.privateInfo");
         }
         return null;
     }
@@ -155,7 +155,7 @@ public class BonusService {
         String side = identifyPlayerSide(player, game.getInvitedTarokk());
         boolean announcedVolat = game.announcedVolat(side);
         if (announcedVolat && (bonusNames.contains("Trull") || bonusNames.contains("Four kings") || bonusNames.contains("Double game"))) {
-            return new PrivateInfoDTO("You cannot announce Trull, Four kings or Double game after Volat! Click on the bonus again to remove it!", "game.privateInfo");
+            return new PrivateInfoDTO("You cannot announce Trull, Four kings or Double game after Volat!@ Click on the bonus again to remove it!", "game.privateInfo");
         } else {
             return null;
         }
@@ -164,13 +164,19 @@ public class BonusService {
     public PrivateInfoDTO informPlayerOfSelectedOptions(int selectedTarokkNumber, String calledTarokk, List<String> selectedBonuses) {
         StringBuilder builder = new StringBuilder();
         if (selectedTarokkNumber > 0) {
-            builder.append("You announced ").append(selectedTarokkNumber).append(" tarokks!");
+            builder.append("You selected ").append(selectedTarokkNumber).append(" tarokks@");
         }
         if (calledTarokk != null) {
-            builder.append(" ").append(calledTarokk).append("!");
+            builder.append(" ").append(calledTarokk).append("@");
         }
         if (!selectedBonuses.isEmpty()) {
-            builder.append(" Selected bonuses: ").append(String.join(", ", selectedBonuses)).append("!");
+            String replacementString;
+            if (selectedBonuses.size() == 1) {
+                replacementString = " Selected bonus:@";
+            } else {
+                replacementString = " Selected bonuses:@";
+            }
+            builder.append(replacementString).append(String.join("@", selectedBonuses)).append("@");
         }
         return new PrivateInfoDTO(builder.toString(), "game.privateInfo");
     }
@@ -212,21 +218,21 @@ public class BonusService {
     }
 
     private String createPlayerInfo(TarokkNumberHolder tarokkNumberHolder, Player player, Game game, Set<Bonus> bonuses) {
-        String playerInfo = "";
+        StringBuilder playerInfo = new StringBuilder();
         if (tarokkNumberHolder.isEightTarokk() || tarokkNumberHolder.isNineTarokk()) {
-            playerInfo += "Announce tarokknumber (optional, except for Pagat ultimo or doubling it)! !";
+            playerInfo.append("Announce tarokknumber (optional, except for Pagat ultimo or doubling it)!@");
         }
         if (player.getRoleInGame().equals(RoleInGame.DECLARER_PARTNER) || player.hasTheGivenTarokk(game.getInvitedTarokk())) {
-            playerInfo += "Choose at least one bonus or pass! !";
+            playerInfo.append("Choose at least one bonus or pass!@");
         } else {
             if (player.getRoleInGame().equals(RoleInGame.OPPONENT)) {
-                playerInfo += "Choose at least one bonus or pass! !";
+                playerInfo.append("Choose at least one bonus or pass!@");
             } else {
-                playerInfo += "Pass or choose at least one bonus after doubling something! !";
+                playerInfo.append("Pass or choose at least one bonus after doubling something!@");
             }
             addDoubledBonusesToBonuses(game, bonuses);
         }
-        return playerInfo;
+        return playerInfo.toString();
     }
 
     private void addDoubledBonusesToBonuses(Game game, Set<Bonus> bonuses) {
@@ -246,12 +252,12 @@ public class BonusService {
     }
 
     private String createPlayerInfo(TarokkNumberHolder tarokkNumberHolder) {
-        String playerInfo = "";
+        StringBuilder playerInfo = new StringBuilder();
         if (tarokkNumberHolder.isEightTarokk() || tarokkNumberHolder.isNineTarokk()) {
-            playerInfo += "Announce tarokknumber (optional)! !";
+            playerInfo.append("Announce tarokknumber (optional, except for Pagat ultimo or doubling it)!@");
         }
-        playerInfo += "Choose at least one bonus or pass! !";
-        return playerInfo;
+        playerInfo.append("Choose at least one bonus or pass!@");
+        return playerInfo.toString();
     }
 
     private void setPotentialBonusesForDeclarerTeam(Game game, Set<Bonus> bonuses) {
@@ -328,24 +334,27 @@ public class BonusService {
     }
 
     private String announceTarokkNumber(int selectedTarokkNumber, String upperCaseName) {
-        String announceTarokkNumber = "";
+        StringBuilder announceTarokkNumber = new StringBuilder();
         if (selectedTarokkNumber == 8) {
-            announceTarokkNumber = upperCaseName + " has 8 tarokks! ";
+            announceTarokkNumber.append(upperCaseName).append(" has 8 tarokks!@");
         } else if (selectedTarokkNumber == 9) {
-            announceTarokkNumber = upperCaseName + " has 9 tarokks! ";
+            announceTarokkNumber.append(upperCaseName).append(" has 9 tarokks!@");
         }
-        return announceTarokkNumber;
+        return announceTarokkNumber.toString();
     }
 
     private String createInfoAboutDeclarerAnnouncement(String announceTarokkNumber, String upperCaseName, String calledTarokk, String bonusNamesToString) {
-        return announceTarokkNumber +
-                upperCaseName +
-                " called the " +
-                calledTarokk +
-                "! " +
-                upperCaseName +
-                " announced " +
-                bonusNamesToString + "!";
+        return new StringBuilder()
+                .append(announceTarokkNumber)
+                .append("@")
+                .append(upperCaseName)
+                .append(" called the ")
+                .append(calledTarokk)
+                .append("@")
+                .append(upperCaseName)
+                .append(" announced:@")
+                .append(bonusNamesToString)
+                .append("@").toString();
     }
 
     private void handleBaseLevelBonus(Game game, Bonus bonus, Player player) {
@@ -400,18 +409,17 @@ public class BonusService {
     }
 
     private String createInfoAboutTurnPlayerAnnouncement(int selectedTarokkNumber, String upperCaseName, Set<String> bonusNames) {
-        String announceTarokkNumber = "";
+        StringBuilder announceTarokkNumber = new StringBuilder();
         if (selectedTarokkNumber == 8) {
-            announceTarokkNumber = upperCaseName + " has 8 tarokks! ";
+            announceTarokkNumber.append(upperCaseName).append(" has 8 tarokks!@");
         } else if (selectedTarokkNumber == 9) {
-            announceTarokkNumber = upperCaseName + " has 9 tarokks! ";
+            announceTarokkNumber.append(upperCaseName).append(" has 9 tarokks!@");
         }
-        String bonusNamesToString = String.join(", ", bonusNames);
-        String infoToSend = announceTarokkNumber +
-                upperCaseName +
-                " announced " +
-                bonusNamesToString + "!";
-        return infoToSend;
+        String bonusNamesToString = String.join("@", bonusNames);
+        return announceTarokkNumber
+                .append(upperCaseName)
+                .append(" announced:@")
+                .append(bonusNamesToString).toString();
     }
 
     private void handlePlayerBonus(Game game, String bonusName, Player player) {
@@ -445,7 +453,7 @@ public class BonusService {
                 game.markPlayersAsOpponent();
                 return null;
             } else {
-                return new PrivateInfoDTO("You MUST double or redouble something otherwise it is not clear that you belong to the declarer", "game.privateInfo");
+                return new PrivateInfoDTO("You MUST double or redouble something@ otherwise it is not clear that@ you belong to the declarer", "game.privateInfo");
             }
         }
     }
@@ -461,7 +469,7 @@ public class BonusService {
                 player.setRoleInGame(RoleInGame.OPPONENT);
                 return null;
             } else {
-                return new PrivateInfoDTO("You MUST double something otherwise it is not clear that you are an opponent", "game.privateInfo");
+                return new PrivateInfoDTO("You MUST double something@ otherwise it is not clear that@ you are an opponent", "game.privateInfo");
             }
         }
     }

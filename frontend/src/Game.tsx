@@ -5,12 +5,13 @@ import { useWebSocket } from "./context/WebSocketContext";
 import InfoTable from "./pageComponents/InfoTable";
 import Talon from "./pageComponents/Talon";
 import Skart from "./Skart";
-import type { Card, TrickCard, PlayerData } from "./Types";
+import type { Card, TrickCard, PlayerData, CardImage } from "./Types";
 import Bonuses from "./Bonuses";
 import PublicHand from "./PublicHand";
 import {
   setPlayerProperties,
   setPlayerPropertiesInTrickPhase,
+  setOwnProperties,
 } from "./Utils.ts";
 
 const INITIAL_ROTATION = [
@@ -99,20 +100,23 @@ function Game() {
     | "TRICK_PHASE"
     | "FINISHED"
   >(game?.gameState || "NEW");
-  const [tableTurned, setTableTurned] = useState(false);
   const [talonCardsNumber, setTalonCardsNumber] = useState<number>(0);
   const [levelDiscription, setLevelDescription] = useState<string>(
     game?.levelDescription || "None",
   );
   const [potentialBids, setPotentialBids] = useState<string[]>([]);
   const [declarerSkartLength, setDeclarerSkartLength] = useState<number>(0);
-  const [publicDeclarerSkart, setPublicDeclarerSkart] = useState<string[]>([]);
-  const [publicDeclarerTricks, setPublicDeclarerTricks] = useState<string[]>(
+  const [publicDeclarerSkart, setPublicDeclarerSkart] = useState<CardImage[]>(
+    [],
+  );
+  const [publicDeclarerTricks, setPublicDeclarerTricks] = useState<CardImage[]>(
     [],
   );
   const [opponentSkartLength, setOpponentSkartLength] = useState<number>(0);
-  const [publicOpponentSkart, setPublicOpponentSkart] = useState<string[]>([]);
-  const [publicOpponentTricks, setPublicOpponentTricks] = useState<string[]>(
+  const [publicOpponentSkart, setPublicOpponentSkart] = useState<CardImage[]>(
+    [],
+  );
+  const [publicOpponentTricks, setPublicOpponentTricks] = useState<CardImage[]>(
     [],
   );
   const [publicInformation, setPublicInformation] = useState<string>(
@@ -137,6 +141,8 @@ function Game() {
   const [trickCard, setTrickCard] = useState<Card | null>(null);
   const [trickCards, setTrickCards] = useState<TrickCard[]>([]);
   const [dealButtonClicked, setDealButtonClicked] = useState<boolean>(false);
+  const [tarokkNumberSent, setTarokkNumberSent] = useState<boolean>(false);
+  const [isGameNew, setIsGameNew] = useState<boolean>(true);
   const cardsToDiscard = useRef<number>(0);
 
   const handlePublicMessage = useCallback(
@@ -154,10 +160,8 @@ function Game() {
           setDealer(message.dealer);
           setStartPlayer(message.startPlayer);
           setTurnPlayer(message.turnPlayer);
-
           setGameState(message.gameState);
           setPublicInformation(message.information);
-
           setPlayerData({
             ...(message.player1
               ? {
@@ -198,10 +202,6 @@ function Game() {
           });
 
           break;
-        case "game.turnTable":
-          setTableTurned(true);
-          console.log("Table turned, updating state accordingly");
-          break;
         case "game.newRound":
           setFirstBonusRound(true);
           setBidPlayer(null);
@@ -214,7 +214,7 @@ function Game() {
           setDeclarerBonuses(null);
           setOpponentBonuses(null);
           setPublicInformation(message.dealerInfo);
-
+          setIsGameNew(false);
           setPlayerData((prev) => ({
             ...prev,
             ...(player1
@@ -262,6 +262,7 @@ function Game() {
         case "game.lastDeal":
           setGameState("BIDDING");
           setPublicInformation("Bidding phase has started!");
+          setPrivateInformation("");
           setPlayerData((prev) => ({
             ...prev,
             ...(message.username
@@ -348,8 +349,13 @@ function Game() {
           break;
         case "game.tarokkInSkart":
           setDeclarerSkart(message.cards);
-          setPublicInformation(message.info);
+          //setPublicInformation(message.info);
+          //setPublicInformation((prev) => `${prev}@ ${message.info}`);
           console.log("Declarer's skart with tarokk updated:", message.cards);
+          break;
+        case "game.publicSkartPhaseFinishInfo":
+          setPublicInformation((prev) => `${prev}@ ${message.info}`);
+          console.log("Public skart phase finish info updated:", message.info);
           break;
         case "game.turnPlayer":
           setTurnPlayer(message.turnPlayer);
@@ -662,43 +668,18 @@ function Game() {
   }, [gameState, declarer]);
 
   function renderOwnHand() {
-    let playerName;
-    let playerTrickCards = 0;
-    let playerBalance = 0;
-    switch (user?.username) {
-      case player1:
-        playerName = player1;
-        playerTrickCards = player1
-          ? playerData[player1]?.playerTrickCards || 0
-          : 0;
-        playerBalance = player1 ? playerData[player1]?.playerBalance || 0 : 0;
-        break;
-      case player2:
-        playerName = player2;
-        playerTrickCards = player2
-          ? playerData[player2]?.playerTrickCards || 0
-          : 0;
-        playerBalance = player2 ? playerData[player2]?.playerBalance || 0 : 0;
-        break;
-      case player3:
-        playerName = player3;
-        playerTrickCards = player3
-          ? playerData[player3]?.playerTrickCards || 0
-          : 0;
-        playerBalance = player3 ? playerData[player3]?.playerBalance || 0 : 0;
-        break;
-      case player4:
-        playerName = player4;
-        playerTrickCards = player4
-          ? playerData[player4]?.playerTrickCards || 0
-          : 0;
-        playerBalance = player4 ? playerData[player4]?.playerBalance || 0 : 0;
-        break;
-    }
+    const { playerName, playerTrickCards, playerBalance } = setOwnProperties(
+      player1,
+      player2,
+      player3,
+      player4,
+      user,
+      playerData,
+    );
     return (
       <div className="flex flex-col h-full">
         <div className="h-1/8 flex justify-center items-center font-bold text-xl">
-          <div className="w-1/8 flex justify-center items-center">
+          <div className="w-1/8 flex justify-center items-center text-green-100">
             {playerTrickCards > 0 && <p>{playerName}'s tricks</p>}
           </div>
           <div className="w-3/4 flex justify-center items-center mt-1">
@@ -707,7 +688,7 @@ function Game() {
                 {playerName}
               </p>
             ) : (
-              <p>{playerName}</p>
+              <p className="text-green-100">{playerName}</p>
             )}
           </div>
           <div className="w-1/8"></div>
@@ -716,20 +697,20 @@ function Game() {
           gameState === "TALON_PICK_UP" ||
           gameState === "BONUS_ANNOUNCEMENT") && (
           <div className="flex flex-col justify-center items-center h-full">
-            <div className="flex justify-center items-center h-3/4">
+            <div className="flex justify-center items-center h-5/6">
               {displayOwnCards()}
             </div>
-            <div className="h-1/6 flex justify-center items-center font-bold text-xl w-full">
+            <div className="h-1/6 flex justify-center items-center font-bold text-xl w-full text-green-100">
               <p>Balance: {playerBalance}</p>
             </div>
           </div>
         )}
         {gameState === "BIDDING" && (
           <div className="flex flex-col justify-center items-center h-full">
-            <div className="flex justify-center items-center h-3/4">
+            <div className="flex justify-center items-center h-5/6">
               {displayOwnCards()}
             </div>
-            <div className="flex justify-center items-center font-bold text-xl w-full h-1/8 mt-1 gap-1">
+            <div className="flex justify-center items-center font-bold text-xl w-full h-1/6 -mt-3 gap-1">
               {renderBidButtons()}
             </div>
           </div>
@@ -739,7 +720,7 @@ function Game() {
             <div className="h-5/6 flex justify-center items-center">
               {displayOwnCardsWithTalon()}
             </div>
-            <div className="h-1/6 flex justify-center items-center font-bold text-xl w-full">
+            <div className="h-1/6 flex justify-center items-center font-bold text-xl w-full text-green-100">
               <p>Balance: {playerBalance}</p>
             </div>
           </div>
@@ -749,7 +730,7 @@ function Game() {
             <div className="h-5/6 flex justify-center items-center">
               {displayOwnCards()}
             </div>
-            <div className="h-1/6 flex justify-center items-center font-bold text-xl w-full">
+            <div className="h-1/6 flex justify-center items-center font-bold text-xl w-full text-green-100">
               <p>Balance: {playerBalance}</p>
             </div>
           </div>
@@ -764,7 +745,7 @@ function Game() {
                 <div className="h-5/6 flex justify-center items-center">
                   {displayOwnPlayableCards()}
                 </div>
-                <div className="h-1/6 flex justify-center items-center font-bold text-xl w-full">
+                <div className="h-1/6 flex justify-center items-center font-bold text-xl w-full text-green-100">
                   <p>Balance: {playerBalance}</p>
                 </div>
               </div>
@@ -782,7 +763,7 @@ function Game() {
                 <div className="h-5/6 flex justify-center items-center">
                   {displayOwnCards()}
                 </div>
-                <div className="h-1/6 flex justify-center items-center font-bold text-xl w-full">
+                <div className="h-1/6 flex justify-center items-center font-bold text-xl w-full text-green-100">
                   <p>Balance: {playerBalance}</p>
                 </div>
               </div>
@@ -813,52 +794,22 @@ function Game() {
     ));
   }
 
-  /*
-  function createPrivateInfo() {
-    let privateInfo = "";
-    if (selectedTarokkNumber > 0) {
-      privateInfo += `You announced ${selectedTarokkNumber} tarokks!`;
-    }
-    if (calledTarokk) {
-      privateInfo += ` ${calledTarokk}!`;
-    }
-    if (selectedBonuses.length > 0) {
-      privateInfo += ` Selected bonuses: ${selectedBonuses.join(", ")}!`;
-    }
-    return privateInfo;
-  }
-*/
-  /*
-  useEffect(() => {
-    if (gameState === "BONUS_ANNOUNCEMENT" && turnPlayer === user?.username) {
-      setPrivateInformation(
-        createPrivateInfo(selectedTarokkNumber, calledTarokk, selectedBonuses),
-      );
-    }
-  }, [
-    selectedTarokkNumber,
-    calledTarokk,
-    selectedBonuses,
-    turnPlayer,
-    user,
-    gameState,
-  ]);
-*/
-
   function renderTarokkNumberButton() {
     if (hasEightTarokks) {
       return (
         <button
-          className="border-green-300 border-2 w-32 h-10 hover:scale-105 hover:bg-green-700 cursor-pointer transition-transform duration-200 ml-5 mr-5 font-semibold rounded-md"
+          className={`border-green-300 border-2 w-32 h-10 hover:scale-105 hover:bg-green-700 cursor-pointer transition-transform duration-200 ml-5 mr-5 font-semibold rounded-md
+            ${selectedTarokkNumber === 8 ? "bg-green-500" : ""}`}
           onClick={() => {
-            setSelectedTarokkNumber(8);
+            setSelectedTarokkNumber(selectedTarokkNumber === 8 ? 0 : 8);
             send("/app/game.bonusInfo", {
               turnPlayer: turnPlayer,
               gameId: game.gameId,
-              selectedTarokkNumber: 8,
+              selectedTarokkNumber: tarokkNumberSent ? 0 : 8,
               calledTarokk: calledTarokk,
               bonuses: selectedBonuses,
             });
+            setTarokkNumberSent((prev) => !prev);
             console.log("Tarokk number selected: 8");
           }}
         >
@@ -868,16 +819,18 @@ function Game() {
     } else if (hasNineTarokks) {
       return (
         <button
-          className="border-green-300 border-2 w-32 h-10 hover:scale-105 hover:bg-green-700 cursor-pointer transition-transform duration-200 ml-5 mr-5 font-semibold rounded-md"
+          className={`border-green-300 border-2 w-32 h-10 hover:scale-105 hover:bg-green-700 cursor-pointer transition-transform duration-200 ml-5 mr-5 font-semibold rounded-md
+            ${selectedTarokkNumber === 9 ? "bg-green-600" : ""}`}
           onClick={() => {
-            setSelectedTarokkNumber(9);
+            setSelectedTarokkNumber(selectedTarokkNumber === 9 ? 0 : 9);
             send("/app/game.bonusInfo", {
               turnPlayer: turnPlayer,
               gameId: game.gameId,
-              selectedTarokkNumber: 9,
+              selectedTarokkNumber: tarokkNumberSent ? 0 : 9,
               calledTarokk: calledTarokk,
               bonuses: selectedBonuses,
             });
+            setTarokkNumberSent((prev) => !prev);
             console.log("Tarokk number selected: 9");
           }}
         >
@@ -892,7 +845,8 @@ function Game() {
     return callableTarokks.map((tarokk) => (
       <button
         key={tarokk}
-        className="border-green-300 border-2 w-32 h-10 hover:scale-105 hover:bg-green-700 cursor-pointer transition-transform duration-200 ml-5 mr-5 font-semibold rounded-md"
+        className={`border-green-300 border-2 w-32 h-10 hover:scale-105 hover:bg-green-700 cursor-pointer transition-transform duration-200 ml-5 mr-5 font-semibold rounded-md
+          ${calledTarokk === tarokk ? "bg-green-600" : ""}`}
         onClick={() => {
           setCalledTarokk(tarokk);
           send("/app/game.bonusInfo", {
@@ -914,7 +868,9 @@ function Game() {
     const buttons = potentialBonuses.map((bonus) => (
       <button
         key={bonus}
-        className="border-green-300 border-2 w-40 h-14 hover:scale-105 hover:bg-green-700 cursor-pointer rounded-md font-semibold mt-0.5"
+        className={`border-green-300 border-2 w-40 h-14 hover:scale-105 hover:bg-green-700 cursor-pointer rounded-md font-semibold mt-0.5 ${
+          selectedBonuses.includes(bonus) ? "bg-green-600" : ""
+        }`}
         onClick={() => {
           let selectedBonusesToSend = [];
           if (selectedBonuses.includes(bonus)) {
@@ -985,22 +941,22 @@ function Game() {
               selectedBonuses.length === 0
             ) {
               setPrivateInformation(
-                "Még nem hívtál meg tarokkot és nem választottál bonust",
+                "You haven't selected a tarokk and a bonus!",
               );
             } else if (
               firstBonusRound &&
               declarer === user?.username &&
               !calledTarokk
             ) {
-              setPrivateInformation("Még nem hívtál meg tarokkot");
+              setPrivateInformation("You haven't called a tarokk!");
             } else if (
               firstBonusRound &&
               declarer === user?.username &&
               selectedBonuses.length === 0
             ) {
-              setPrivateInformation("Nem választottál bonust");
+              setPrivateInformation("You haven't selected a bonus!");
             } else {
-              setPrivateInformation("Nem választottál bonust");
+              setPrivateInformation("You haven't selected a bonus!");
             }
           }
         }}
@@ -1031,7 +987,7 @@ function Game() {
               {playerName}
             </p>
           ) : (
-            <p>{playerName}</p>
+            <p className="text-green-100">{playerName}</p>
           )}
         </div>
 
@@ -1039,7 +995,9 @@ function Game() {
           {displayHandBack(playerCardsNumber)}
         </div>
         <div className="h-1/6 flex justify-center items-center font-bold text-xl">
-          <p>Balance: {playerBalance}</p>
+          {playerName && (
+            <p className="text-green-100">Balance: {playerBalance}</p>
+          )}
         </div>
       </div>
     );
@@ -1063,7 +1021,9 @@ function Game() {
       <div className="flex justify-around h-full">
         <div className="w-1/3 flex flex-col">
           <div className="h-1/6 flex justify-center items-center font-bold text-xl">
-            {playerTrickCards > 0 && <p>{playerName}'s tricks</p>}
+            {playerTrickCards > 0 && (
+              <p className="text-green-100">{playerName}'s tricks</p>
+            )}
           </div>
 
           <div className="h-5/6 flex justify-center items-start">
@@ -1079,7 +1039,7 @@ function Game() {
                   {playerName}
                 </p>
               ) : (
-                <p>{playerName}</p>
+                <p className="text-green-100">{playerName}</p>
               )}
             </div>
 
@@ -1087,7 +1047,7 @@ function Game() {
               {displayHandBack(playerCardsNumber)}
             </div>
             <div className="h-1/6 flex justify-center items-center font-bold text-xl">
-              <p>Balance: {playerBalance}</p>
+              <p className="text-green-100">Balance: {playerBalance}</p>
             </div>
           </div>
         </div>
@@ -1096,7 +1056,19 @@ function Game() {
   }
 
   function renderEasternPlayerHandInTrickPhase() {
-    const {playerName, playerCardsNumber, playerTrickCards, playerBalance} = setPlayerPropertiesInTrickPhase(player1, player2, player3, player4, player2, player3, player4, player1, user, playerData);
+    const { playerName, playerCardsNumber, playerTrickCards, playerBalance } =
+      setPlayerPropertiesInTrickPhase(
+        player1,
+        player2,
+        player3,
+        player4,
+        player2,
+        player3,
+        player4,
+        player1,
+        user,
+        playerData,
+      );
 
     return (
       <div className="flex justify-around h-full">
@@ -1108,7 +1080,7 @@ function Game() {
                   {playerName}
                 </p>
               ) : (
-                <p>{playerName}</p>
+                <p className="text-green-100">{playerName}</p>
               )}
             </div>
 
@@ -1116,13 +1088,15 @@ function Game() {
               {displayHandBack(playerCardsNumber)}
             </div>
             <div className="h-1/6 flex justify-center items-center font-bold text-xl">
-              <p>Balance: {playerBalance}</p>
+              <p className="text-green-100">Balance: {playerBalance}</p>
             </div>
           </div>
         </div>
         <div className="w-1/3 flex flex-col">
           <div className="h-1/6 flex justify-center items-center font-bold text-xl">
-            {playerTrickCards > 0 && <p>{playerName}'s tricks</p>}
+            {playerTrickCards > 0 && (
+              <p className="text-green-100">{playerName}'s tricks</p>
+            )}
           </div>
           <div className="h-5/6 flex justify-center items-start">
             {displayTricksBack(playerTrickCards)}
@@ -1150,7 +1124,9 @@ function Game() {
       <div className="flex justify-around h-full">
         <div className="w-1/4 flex flex-col">
           <div className="h-1/6 flex justify-center items-center font-bold text-xl">
-            {playerTrickCards > 0 && <p>{playerName}'s tricks</p>}
+            {playerTrickCards > 0 && (
+              <p className="text-green-100">{playerName}'s tricks</p>
+            )}
           </div>
           <div className="h-5/6 flex justify-center items-start">
             {displayTricksBack(playerTrickCards)}
@@ -1164,7 +1140,7 @@ function Game() {
                   {playerName}
                 </p>
               ) : (
-                <p>{playerName}</p>
+                <p className="text-green-100">{playerName}</p>
               )}
             </div>
 
@@ -1172,7 +1148,7 @@ function Game() {
               {displayHandBack(playerCardsNumber)}
             </div>
             <div className="h-1/6 flex justify-center items-center font-bold text-xl">
-              <p>Balance: {playerBalance}</p>
+              <p className="text-green-100">Balance: {playerBalance}</p>
             </div>
           </div>
         </div>
@@ -1315,15 +1291,19 @@ function Game() {
     }
   }
 
-  function displayPublicCards(cards: string[]) {
-    return cards.map((frontImagePath, index) => (
-      <img
-        key={index}
-        src={frontImagePath}
-        alt={`Public card ${index + 1}`}
-        className="w-20 mx-1"
-      />
-    ));
+  function displayPublicCards(cards: CardImage[]) {
+    return (
+      <div className="flex flex-wrap justify-center items-center">
+        {cards.map((card, index) => (
+          <img
+            key={index}
+            src={card.frontImagePath}
+            alt={`Public card ${index + 1}`}
+            className="w-16 mx-1"
+          />
+        ))}
+      </div>
+    );
   }
 
   function displayTemporarySelectedCards() {
@@ -1396,6 +1376,19 @@ function Game() {
     setDiscardInformation(null);
   }
 
+  function formatDiscardInformation() {
+    if (!discardInformation) return null;
+    return discardInformation
+      .split("@")
+      .filter(Boolean)
+      .map((sentence, index) => (
+        <span key={index}>
+          {sentence.trim()}
+          <br />
+        </span>
+      ));
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-table-background px-4 py-8">
       <div className="p-4 sm:p-6 bg-[#4B2E1F] rounded-[90px] shadow-inner w-full flex gap-4 justify-around">
@@ -1404,19 +1397,19 @@ function Game() {
           {/* Menu buttons */}
           <div className="w-full h-1/12 flex justify-around items-center">
             <button
-              className="border-black border-2 w-1/8 h-2/3 bg-green-300 text-[#2f4b3a] text-2xl font-bold rounded-lg"
+              className="border-black border-2 w-1/8 h-2/3 bg-green-300 hover:scale-105 hover:bg-green-400 cursor-pointer text-[#2f4b3a] text-2xl font-bold rounded-lg"
               onClick={handleLogout}
             >
               Logout
             </button>
-            <button className="border-black border-2 w-1/8 h-2/3 bg-green-300 text-[#2f4b3a] text-2xl font-bold rounded-lg">
+            <button className="border-black border-2 w-1/8 h-2/3 bg-green-300 hover:scale-105 hover:bg-green-400 cursor-pointer text-[#2f4b3a] text-2xl font-bold rounded-lg">
               Back
             </button>
             {user?.username === dealer &&
               (gameState === "NEW" || gameState === "FINISHED") &&
               !dealButtonClicked && (
                 <button
-                  className="border-black border-2 w-1/8 h-2/3 bg-green-300 text-[#2f4b3a] text-2xl font-bold rounded-lg"
+                  className="border-black border-2 w-1/8 h-2/3 bg-green-300 hover:scale-105 hover:bg-green-400 cursor-pointer text-[#2f4b3a] text-2xl font-bold rounded-lg"
                   onClick={handleDeal}
                 >
                   DEAL
@@ -1427,137 +1420,171 @@ function Game() {
           {/* Game area */}
           <div className="w-full h-11/12 flex flex-col">
             {/* Top row */}
-            <div className="w-full h-1/3 flex">
+            <div className="w-full flex flex-auto">
               {/* Declarer's skart area */}
-              <div className="w-1/4">
-                <div className="h-1/6 flex justify-center items-end font-bold text-xl">
+              <div className="w-1/4 grow">
+                <div className="h-1/6 flex justify-center items-end font-bold text-xl text-green-100">
                   {declarerSkartLength > 0 && <p>Declarer's skart</p>}
                 </div>
                 <div className="flex justify-center items-start h-5/6 mt-2">
-                  {declarerSkart.length > 0
-                    ? displayDeclarerSkartWithTarokk()
-                    : displaySkart(declarerSkartLength)}
+                  {declarerSkart.length > 0 &&
+                    gameState !== "FINISHED" &&
+                    displayDeclarerSkartWithTarokk()}
+                  {declarerSkart.length === 0 &&
+                    gameState !== "FINISHED" &&
+                    displaySkart(declarerSkartLength)}
+                  {gameState === "FINISHED" &&
+                    displayPublicCards(publicDeclarerSkart)}
                 </div>
               </div>
 
               {/* Player 3's area */}
-              {gameState !== "TRICK_PHASE" && gameState !== "FINISHED" ? (
+              {gameState !== "TRICK_PHASE" && gameState !== "FINISHED" && (
                 <div className="w-1/2">{renderPlayerHand("NORTH")}</div>
-              ) : (
+              )}
+              {gameState === "TRICK_PHASE" && (
                 <div className="w-1/2">
                   {renderNorthernPlayerHandInTrickPhase()}
                 </div>
               )}
+              {gameState === "FINISHED" && <div className="w-1/4"></div>}
 
               {/* Opponent's skart area */}
-              <div className="w-1/4">
-                <div className="h-1/6 flex justify-center items-center font-bold text-xl">
+              <div className="w-1/4 grow">
+                <div className="h-1/6 flex justify-center items-center font-bold text-xl text-green-100">
                   {opponentSkartLength > 0 && <p>Opponent's skart</p>}
                 </div>
                 <div className="flex justify-center items-start h-5/6 mt-2">
-                  {displaySkart(opponentSkartLength)}
+                  {gameState !== "FINISHED"
+                    ? displaySkart(opponentSkartLength)
+                    : displayPublicCards(publicOpponentSkart)}
                 </div>
               </div>
             </div>
 
             {/* Middle row */}
-            <div className="w-full h-1/3 flex">
-              {/* Player 4's area */}
-              {gameState !== "TRICK_PHASE" && gameState !== "FINISHED" ? (
-                <div className="w-1/4">{renderPlayerHand("WEST")}</div>
-              ) : (
-                <div className="w-[35%]">
-                  {renderWesternPlayerHandInTrickPhase()}
-                </div>
-              )}
+            {gameState === "FINISHED" ? (
+              <div className="w-full flex flex-col flex-auto justify-center items-center">
+                <p className="text-center text-xl font-bold text-green-100 mb-4">
+                  Tricks of declarer side:
+                </p>
+                {displayPublicCards(publicDeclarerTricks)}
+              </div>
+            ) : (
+              <div className="w-full h-1/3 flex">
+                {/* Player 4's area */}
+                {gameState !== "TRICK_PHASE" ? (
+                  <div className="w-1/4">{renderPlayerHand("WEST")}</div>
+                ) : (
+                  <div className="w-[35%]">
+                    {renderWesternPlayerHandInTrickPhase()}
+                  </div>
+                )}
 
-              {/* Talon and play area */}
-              {gameState !== "TRICK_PHASE" && gameState !== "FINISHED" ? (
-                <div className="w-1/2">
-                  {talonCardsNumber > 0 && (
-                    <Talon talonCardsNumber={talonCardsNumber} />
-                  )}
-                  {gameState === "SKART_LAY_DOWN" &&
-                    discardInformation === null &&
-                    (ownCards.length > 9 ||
-                      temporarySelectedCards.length > 0) && (
-                      <Skart
-                        temporarySelectedCards={temporarySelectedCards}
-                        onDisplayTemporarySelectedCards={() => (
-                          <>{displayTemporarySelectedCards()}</>
-                        )}
-                        cardsToDiscard={cardsToDiscard}
-                        sendSkartCards={sendSkartCards}
-                      />
+                {/* Talon and play area */}
+                {gameState !== "TRICK_PHASE" ? (
+                  <div className="w-1/2">
+                    {isGameNew && (
+                      <div className="w-full h-full flex justify-center items-center">
+                        <img src="deck.png" alt="Deck" className="h-full" />
+                      </div>
                     )}
-                  {(gameState === "SKART_LAY_DOWN" ||
-                    gameState === "BONUS_ANNOUNCEMENT") &&
-                    discardInformation !== null && (
-                      <>
-                        <div className="w-full h-2/3 flex items-center justify-center">
-                          <p className="text-center text-3xl font-bold">
-                            {discardInformation}
-                          </p>
+                    {talonCardsNumber > 0 && (
+                      <Talon talonCardsNumber={talonCardsNumber} />
+                    )}
+                    {gameState === "SKART_LAY_DOWN" &&
+                      discardInformation === null &&
+                      (ownCards.length > 9 ||
+                        temporarySelectedCards.length > 0) && (
+                        <Skart
+                          temporarySelectedCards={temporarySelectedCards}
+                          onDisplayTemporarySelectedCards={() => (
+                            <>{displayTemporarySelectedCards()}</>
+                          )}
+                          cardsToDiscard={cardsToDiscard}
+                          sendSkartCards={sendSkartCards}
+                          turnPlayer={turnPlayer}
+                          user={user}
+                        />
+                      )}
+                    {(gameState === "SKART_LAY_DOWN" ||
+                      gameState === "BONUS_ANNOUNCEMENT") &&
+                      discardInformation !== null && (
+                        <div className="w-full h-[95%] border-black border-2 bg-green-300 text-[#2f4b3a] rounded-xl">
+                          <div className="w-full h-1/2">
+                            <p className="text-center text-3xl font-bold pt-4 px-2">
+                              {formatDiscardInformation()}
+                            </p>
+                          </div>
+                          <div className="w-full h-1/2 flex items-center justify-around">
+                            <button
+                              className="w-40 h-15 text-2xl bg-[#2f4b3a] hover:bg-green-700 cursor-pointer text-green-300 font-bold py-2 px-4 rounded-lg"
+                              onClick={handleDiscardHand}
+                            >
+                              Yes
+                            </button>
+                            <button
+                              className="w-40 h-15 text-2xl bg-red-600 hover:bg-red-700 cursor-pointer text-red-100 font-bold py-2 px-4 rounded-lg"
+                              onClick={() => setDiscardInformation(null)}
+                            >
+                              No
+                            </button>
+                          </div>
                         </div>
-                        <div className="w-full h-1/3 flex items-center justify-around">
-                          <button
-                            className="w-40 h-15 text-2xl bg-green-500 hover:bg-green-700 cursor-pointer text-white font-bold py-2 px-4 rounded"
-                            onClick={handleDiscardHand}
-                          >
-                            Yes
-                          </button>
-                          <button
-                            className="w-40 h-15 text-2xl bg-red-500 hover:bg-red-700 cursor-pointer text-white font-bold py-2 px-4 rounded"
-                            onClick={() => setDiscardInformation(null)}
-                          >
-                            No
-                          </button>
-                        </div>
-                      </>
+                      )}
+                    {gameState === "NEW" && publicHand.length > 0 && (
+                      <PublicHand publicHand={publicHand} />
                     )}
-                  {gameState === "NEW" && publicHand.length > 0 && (
-                    <PublicHand publicHand={publicHand} />
-                  )}
-                  {gameState === "BONUS_ANNOUNCEMENT" &&
-                    discardInformation === null &&
-                    turnPlayer === user?.username && (
-                      <Bonuses
-                        hasEightTarokks={hasEightTarokks}
-                        hasNineTarokks={hasNineTarokks}
-                        declarer={declarer}
-                        callableTarokks={callableTarokks}
-                        onRenderTarokkNumberButton={() =>
-                          renderTarokkNumberButton()
-                        }
-                        onRenderCallableTarokkButtons={() =>
-                          renderCallableTarokkButtons()
-                        }
-                        onRenderBonusButtons={() => renderBonusButtons()}
-                      />
-                    )}
-                </div>
-              ) : (
-                <div className="w-[30%]">
-                  <div className="h-full flex flex-col justify-center items-center">
-                    <div className="relative w-full h-full">
-                      {renderTrickCards()}
+                    {gameState === "BONUS_ANNOUNCEMENT" &&
+                      discardInformation === null &&
+                      turnPlayer === user?.username && (
+                        <Bonuses
+                          hasEightTarokks={hasEightTarokks}
+                          hasNineTarokks={hasNineTarokks}
+                          declarer={declarer}
+                          callableTarokks={callableTarokks}
+                          onRenderTarokkNumberButton={() =>
+                            renderTarokkNumberButton()
+                          }
+                          onRenderCallableTarokkButtons={() =>
+                            renderCallableTarokkButtons()
+                          }
+                          onRenderBonusButtons={() => renderBonusButtons()}
+                        />
+                      )}
+                  </div>
+                ) : (
+                  <div className="w-[30%]">
+                    <div className="h-full flex flex-col justify-center items-center">
+                      <div className="relative w-full h-full">
+                        {renderTrickCards()}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Player 2's area */}
-              {gameState !== "TRICK_PHASE" && gameState !== "FINISHED" ? (
-                <div className="w-1/4">{renderPlayerHand("EAST")}</div>
-              ) : (
-                <div className="w-[35%]">
-                  {renderEasternPlayerHandInTrickPhase()}
-                </div>
-              )}
-            </div>
+                {/* Player 2's area */}
+                {gameState !== "TRICK_PHASE" ? (
+                  <div className="w-1/4">{renderPlayerHand("EAST")}</div>
+                ) : (
+                  <div className="w-[35%]">
+                    {renderEasternPlayerHandInTrickPhase()}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Bottom row */}
-            <div className="w-full h-1/3">{renderOwnHand()}</div>
+            {gameState !== "FINISHED" ? (
+              <div className="w-full h-1/3">{renderOwnHand()}</div>
+            ) : (
+              <div className="w-full flex flex-col flex-auto justify-center items-center">
+                <p className="text-center text-xl font-bold text-green-100 mb-4">
+                  Tricks of opponent side:
+                </p>
+                {displayPublicCards(publicOpponentTricks)}
+              </div>
+            )}
           </div>
         </div>
 

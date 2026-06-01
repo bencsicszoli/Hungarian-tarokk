@@ -174,9 +174,9 @@ public class Game {
         for (Player player : getPlayers()) {
             if (player.getRoleInGame() != RoleInGame.DECLARER) {
                 if (player.getTarokksInSkart() == 1) {
-                    stringBuilder.append(player.getName()).append(" placed ").append(player.getTarokksInSkart()).append(" tarokk in skart!");
+                    stringBuilder.append(player.getName()).append(" placed ").append(player.getTarokksInSkart()).append(" TAROKK IN SKART!@");
                 } else if (player.getTarokksInSkart() == 2) {
-                    stringBuilder.append(player.getName()).append(" placed ").append(player.getTarokksInSkart()).append(" tarokks in skart!");
+                    stringBuilder.append(player.getName()).append(" placed ").append(player.getTarokksInSkart()).append(" TAROKKS IN SKART!@");
                 }
             }
         }

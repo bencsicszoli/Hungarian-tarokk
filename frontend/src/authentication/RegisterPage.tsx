@@ -36,18 +36,16 @@ function RegistrationPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-table-background px-4 py-8">
-      <div className="p-4 sm:p-6 bg-[#4B2E1F] rounded-[90px] shadow-inner w-full max-w-7xl">
-        <div className="w-full h-168 bg-poker-table rounded-[70px] shadow-2xl flex flex-col items-center justify-center relative text-white px-6 sm:px-8">
+        <div className="w-full h-screen bg-[#2f4b3a] flex flex-col items-center justify-center text-white px-6 sm:px-8">
           <CardTableDecoration />
 
-          <h2 className="text-4xl font-extrabold mb-11 drop-shadow-lg text-center text-white">
-            Welcome to 21 The Card Game!
+          <h2 className="text-4xl font-extrabold mb-11 drop-shadow-lg text-center text-green-100">
+            Welcome to Tarokk game!
           </h2>
 
-          <div className="z-0 w-full bg-white border border-gray-200 rounded-lg shadow dark:border-gray-700 dark:bg-gray-800 md:mt-0 sm:max-w-md xl:p-0">
+          <div className="z-0 w-full bg-[#2f4b3a] border border-green-300 rounded-lg shadow md:mt-0 sm:max-w-md xl:p-0">
             <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
-              <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
+              <h1 className="text-xl font-bold leading-tight tracking-tight text-green-100 md:text-2xl">
                 Create an account
               </h1>
               <form
@@ -89,23 +87,23 @@ function RegistrationPage() {
                 />
 
                 {regError && (
-                  <p className="text-sm font-light text-red-500 dark:text-red-400">
+                  <p className="text-lg font-semibold text-red-200 dark:text-red-400">
                     {regError}
                   </p>
                 )}
                 <button
                   type="submit"
-                  className="w-full text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                  className="w-full text-[#2f4b3a] bg-green-300 hover:bg-green-500 focus:ring-4 focus:outline-none focus:ring-green-400 font-medium rounded-lg text-md px-5 py-2.5 text-center"
                 >
                   Create an account
                 </button>
-                <div className="flex gap-10">
-                  <p className=" text-gray-500 dark:text-gray-300">
+                <div className="flex items-center justify-center gap-4">
+                  <p className=" text-green-100">
                     Already have an account?
                   </p>
                   <button
                     onClick={switchToLogin}
-                    className="font-medium text-blue-600 hover:underline dark:text-blue-400"
+                    className="font-medium text-green-100 hover:underline"
                   >
                     Login here
                   </button>
@@ -114,8 +112,6 @@ function RegistrationPage() {
             </div>
           </div>
         </div>
-      </div>
-    </div>
   );
 }
 

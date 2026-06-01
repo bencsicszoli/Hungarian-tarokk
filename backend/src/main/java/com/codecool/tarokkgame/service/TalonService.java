@@ -148,7 +148,6 @@ public class TalonService {
                 break;
             }
         }
-        //player.getPlayerCards().removeIf(playerCard -> playerCard.getCard().getId() == card.getId());
     }
 
     private PlayerCardListDTO getSortedPlayerHandFromPlayerCardList(Player player) {
@@ -163,9 +162,9 @@ public class TalonService {
         List<DeclarerSkart> skartCards = declarerSkartRepository.findAllByGameId(game.getId());
         int tarokks = changeFrontImageIfTarokk(skartCards, playerCardDTOs, declarer);
         if (tarokks != 1) {
-            builder.append(declarer.getName()).append(" placed ").append(tarokks).append(" tarokks").append(" in skart!");
+            builder.append(declarer.getName()).append(" placed ").append(tarokks).append(" tarokks").append(" in skart!@");
         } else {
-            builder.append(declarer.getName()).append(" placed 1 tarokk in skart!");
+            builder.append(declarer.getName()).append(" placed 1 tarokk in skart!@");
         }
     }
 

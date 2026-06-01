@@ -18,7 +18,7 @@ function Bonuses({
   onRenderBonusButtons: () => JSX.Element[];
 }) {
   return (
-    <div className="h-full flex flex-col justify-center items-center">
+    <div className="h-full flex flex-col justify-center items-center text-green-200">
       {hasEightTarokks || hasNineTarokks ? (
         <div className="w-full flex justify-center items-center mb-1">
           {onRenderTarokkNumberButton()}

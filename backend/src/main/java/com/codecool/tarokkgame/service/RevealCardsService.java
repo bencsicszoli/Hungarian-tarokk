@@ -10,10 +10,10 @@ import com.codecool.tarokkgame.model.entity.OwnTrick;
 import com.codecool.tarokkgame.repository.DeclarerSkartRepository;
 import com.codecool.tarokkgame.repository.OpponentSkartRepository;
 import com.codecool.tarokkgame.repository.OwnTrickRepository;
-import com.codecool.tarokkgame.repository.SkartRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -31,6 +31,10 @@ public class RevealCardsService {
 
     public CardImageListDTO getDeclarerSkart(long gameId) {
         List<DeclarerSkart> cards = declarerSkartRepository.findAllByGameId(gameId);
+        if (cards.isEmpty()) {
+            return null;
+        }
+        cards.sort(Comparator.comparingInt(c -> c.getCard().getId()));
         List<CardImageDTO> DTOs = new ArrayList<>();
         if (!cards.isEmpty()) {
             for (DeclarerSkart card : cards) {
@@ -42,7 +46,13 @@ public class RevealCardsService {
     }
 
     public CardImageListDTO getOpponentSkart(long gameId) {
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+        }
         List<OpponentSkart> cards = opponentSkartRepository.findAllByGameId(gameId);
+        cards.sort(Comparator.comparingInt(o -> o.getCard().getId()));
         List<CardImageDTO> DTOs = new ArrayList<>();
         if (!cards.isEmpty()) {
             for (OpponentSkart card : cards) {
@@ -54,30 +64,29 @@ public class RevealCardsService {
     }
 
     public CardImageListDTO getDeclarerTricks(Game game) {
-        List<OwnTrick> declarerTricks = ownTrickRepository.findAllByPlayerGameAndPlayerRoleInGame(game, RoleInGame.DECLARER);
-        List<OwnTrick> partnerTricks = ownTrickRepository.findAllByPlayerGameAndPlayerRoleInGame(game, RoleInGame.DECLARER_PARTNER);
-        List<CardImageDTO> DTOs = new ArrayList<>();
-        if (!declarerTricks.isEmpty()) {
-            for (OwnTrick declarerTrick : declarerTricks) {
-                DTOs.add(new CardImageDTO(declarerTrick.getCard().getFrontImagePath()));
-            }
-        }
-        if (!partnerTricks.isEmpty()) {
-            for (OwnTrick partnerTrick : partnerTricks) {
-                DTOs.add(new CardImageDTO(partnerTrick.getCard().getFrontImagePath()));
-            }
-        }
-        return new CardImageListDTO(DTOs, "game.declarerTrickImages");
+        //List<OwnTrick> declarerTricks = ownTrickRepository.findAllByPlayerGameAndPlayerRoleInGame(game, RoleInGame.DECLARER);
+        //List<OwnTrick> partnerTricks = ownTrickRepository.findAllByPlayerGameAndPlayerRoleInGame(game, RoleInGame.DECLARER_PARTNER);
+        List<OwnTrick> declarerTricks = ownTrickRepository.findAllByRoles(List.of(RoleInGame.DECLARER, RoleInGame.DECLARER_PARTNER));
+        //declarerTricks.addAll(partnerTricks);
+        return createCardImageDTOList(declarerTricks, "game.declarerTrickImages");
     }
 
     public CardImageListDTO getOpponentTricks(Game game) {
-        List<OwnTrick> opponentTricks = ownTrickRepository.findAllByPlayerGameAndPlayerRoleInGame(game, RoleInGame.OPPONENT);
+        List<OwnTrick> opponentTricks = ownTrickRepository.findAllByRoles(List.of(RoleInGame.OPPONENT));
+        return createCardImageDTOList(opponentTricks, "game.opponentTrickImages");
+    }
+
+    private CardImageListDTO createCardImageDTOList(List<OwnTrick> tricks, String messageType) {
+        if (tricks.isEmpty()) {
+            return null;
+        }
+        tricks.sort(Comparator.comparingLong(OwnTrick::getId));
         List<CardImageDTO> DTOs = new ArrayList<>();
-        if (!opponentTricks.isEmpty()) {
-            for (OwnTrick opponentTrick : opponentTricks) {
-                DTOs.add(new CardImageDTO(opponentTrick.getCard().getFrontImagePath()));
+        if (!tricks.isEmpty()) {
+            for (OwnTrick trick : tricks) {
+                DTOs.add(new CardImageDTO(trick.getCard().getFrontImagePath()));
             }
         }
-        return new CardImageListDTO(DTOs, "game.opponentTrickImages");
+        return new CardImageListDTO(DTOs, messageType);
     }
 }
