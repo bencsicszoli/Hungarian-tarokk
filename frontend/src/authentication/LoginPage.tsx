@@ -1,7 +1,7 @@
 import { useState, useEffect, type SubmitEventHandler } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../context/UserContext.tsx";
-import InputField from "../pageComponents/InputField.tsx";
+import InputField from "./components/InputField.tsx";
 
 function LoginPage() {
   const userContext = useUser();
@@ -115,36 +115,28 @@ function LoginPage() {
                     className="w-4 h-4 border border-green-300 rounded bg-green-300 focus:ring-3 focus:ring-primary-300"
                   />
                 </div>
-                <div className="ml-3 text-sm">
-                  <label
-                    htmlFor="remember"
-                    className="text-green-100"
-                  >
+                <div className="ml-3 text-md">
+                  <label htmlFor="remember" className="text-green-50">
                     Remember me
                   </label>
                 </div>
               </div>
-              <a
-                href="#"
-                className="text-sm font-light text-green-100 hover:underline"
-              >
+              <a href="#" className="text-md text-green-50 hover:underline">
                 Forgot password?
               </a>
             </div>
             <button
               type="submit"
-              className="w-full text-white bg-[#49745a] hover:bg-[#3b5f4a] focus:ring-4 focus:outline-none focus:ring-green-300 cursor-pointer font-medium rounded-lg text-md px-5 py-2.5 text-center"
+              className="w-full text-green-50 bg-[#23392c] hover:bg-[#3b5f4a] focus:ring-4 focus:outline-none focus:ring-green-300 cursor-pointer rounded-lg text-lg px-5 py-2.5 text-center"
             >
               Sign in
             </button>
           </form>
           <div className="flex flex-col items-center justify-center gap-2 mt-4">
-            <p className="text-sm font-light text-green-100">
-              Don’t have an account yet?{" "}
-            </p>
+            <p className="text-md text-green-50">Don’t have an account yet? </p>
             <button
               onClick={switchToRegister}
-              className="w-full text-green-100 bg-[#23392c] hover:bg-[#294132] focus:ring-4 focus:outline-none focus:ring-blue-300 cursor-pointer font-medium rounded-lg text-md px-5 py-2.5 text-center"
+              className="w-full text-green-50 bg-[#49745a] hover:bg-[#294132] focus:ring-4 focus:outline-none focus:ring-blue-300 cursor-pointer rounded-lg text-lg px-5 py-2.5 text-center"
             >
               Sign up
             </button>

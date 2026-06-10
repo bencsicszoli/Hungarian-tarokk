@@ -42,11 +42,9 @@ public class ResetService {
         game.setPlayer3TrickCards(0);
         game.setPlayer4TrickCards(0);
         game.setXXICatcher(null);
-        game.setVolatAnnouncer(null);
         game.setTrullAnnouncer(null);
         game.setFourKingsAnnouncer(null);
         game.setDoubleGameAnnouncer(null);
-        game.setXXICatchAnnouncer(null);
         game.setSuccessfulUltimo(null);
         game.setDeclarer(null);
         game.setLastBonusAnnouncer("declarer");

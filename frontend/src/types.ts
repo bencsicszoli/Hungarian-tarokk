@@ -14,10 +14,10 @@ export interface UserContextType {
 }
 
 export interface SeatAttributes {
-    playerSeat: string | null;
-    playerBalance: number;
-    playerCardsNumber: number;
-    playerTrickCards: number;
+  playerSeat: string | null;
+  playerBalance: number;
+  playerCardsNumber: number;
+  playerTrickCards: number;
 }
 
 export interface Card {
@@ -41,3 +41,13 @@ export interface PlayerData {
   playerTrickCards: number;
   playerBalance: number;
 }
+
+export type GameState =
+  | "NEW"
+  | "IN_PROGRESS"
+  | "BIDDING"
+  | "TALON_PICK_UP"
+  | "SKART_LAY_DOWN"
+  | "BONUS_ANNOUNCEMENT"
+  | "TRICK_PHASE"
+  | "FINISHED";

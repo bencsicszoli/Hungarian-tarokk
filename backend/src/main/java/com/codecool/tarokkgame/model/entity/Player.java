@@ -19,8 +19,8 @@ public class Player {
     private Long id;
 
     int place = 0;
-
     int tarokksInSkart = 0;
+    int penalty = 0;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
@@ -61,7 +61,7 @@ public class Player {
     @CollectionTable(name = "potential_bids", joinColumns = @JoinColumn(name = "player_id"))
     @Enumerated(EnumType.STRING)
     @Column(name = "bid")
-    private Set<BidLevel> bidLevels; // Is it really necessary?
+    private Set<BidLevel> bidLevels;
 
     public String getName() {
         return user.getUsername();

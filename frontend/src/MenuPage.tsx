@@ -2,8 +2,8 @@ import { useNavigate } from "react-router-dom";
 import { useCallback, useEffect } from "react";
 import { useUser } from "./context/UserContext";
 import { useWebSocket } from "./context/WebSocketContext";
-import CardTableDecoration from "./pageComponents/CardTableDecoration";
-import LinkButton from "./pageComponents/LinkButton";
+import CardTableDecoration from "./gamePageComponents/CardTableDecoration";
+import LinkButton from "./menuPageComponents/LinkButton";
 
 function MenuPage() {
   const navigate = useNavigate();
@@ -79,49 +79,48 @@ function MenuPage() {
   };
 
   return (
-        <div className="w-full h-screen bg-[#2f4b3a] flex flex-col items-center justify-center text-white px-6 sm:px-8">
-          <CardTableDecoration />
-          <h2 className="text-3xl font-extrabold mb-11 drop-shadow-lg text-center text-green-100 md:text-4xl">
-            Select an option:
-          </h2>
+    <div className="w-full h-screen bg-[#2f4b3a] flex flex-col items-center justify-center text-white px-6 sm:px-8">
+      <CardTableDecoration />
+      <h2 className="text-3xl font-extrabold mb-11 drop-shadow-lg text-center text-green-100 md:text-4xl">
+        Select an option:
+      </h2>
 
-          <div className="w-full bg-[#2f4b3a] border border-green-300 rounded-lg shadow md:mt-0 sm:max-w-md xl:p-0">
-            <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
-              <LinkButton
-                buttonText="PLAY"
-                fontStyle="font-extrabold text-xl"
-                onHandleClick={joinGame}
-              />
-              <LinkButton
-                whereToLink={`/statistics`}
-                buttonText="Statistics"
-                fontStyle="font-semibold text-lg"
-              />
-              <LinkButton
-                whereToLink={`/editpage`}
-                buttonText="Edit profile"
-                fontStyle="font-semibold text-lg"
-              />
-              <LinkButton
-                whereToLink={`/`}
-                buttonText="Bug report"
-                fontStyle="font-semibold text-lg"
-              />
-              <LinkButton
-                buttonText="Rules"
-                onHandleClick={handleHelpClick}
-                fontStyle="font-semibold text-lg"
-              />
-              <LinkButton
-                whereToLink={`/`}
-                buttonText="Logout"
-                onHandleClick={handleLogout}
-                fontStyle="font-semibold text-lg"
-              />
-            </div>
-          </div>
+      <div className="w-full bg-[#2f4b3a] border border-green-300 rounded-lg shadow md:mt-0 sm:max-w-md xl:p-0">
+        <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
+          <LinkButton
+            buttonText="PLAY"
+            fontStyle="font-extrabold text-xl"
+            onHandleClick={joinGame}
+          />
+          <LinkButton
+            whereToLink={`/statistics`}
+            buttonText="Statistics"
+            fontStyle="font-semibold text-lg"
+          />
+          <LinkButton
+            whereToLink={`/editpage`}
+            buttonText="Edit profile"
+            fontStyle="font-semibold text-lg"
+          />
+          <LinkButton
+            whereToLink={`/`}
+            buttonText="Bug report"
+            fontStyle="font-semibold text-lg"
+          />
+          <LinkButton
+            buttonText="Rules"
+            onHandleClick={handleHelpClick}
+            fontStyle="font-semibold text-lg"
+          />
+          <LinkButton
+            whereToLink={`/`}
+            buttonText="Logout"
+            onHandleClick={handleLogout}
+            fontStyle="font-semibold text-lg"
+          />
         </div>
-      
+      </div>
+    </div>
   );
 }
 

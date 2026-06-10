@@ -29,7 +29,7 @@ public class ResultService {
 
     public void setResult(long gameId) {
         Game game = gameRepository.findById(gameId).orElseThrow(() -> new NoSuchElementException("Game not found"));
-        List<OwnTrick> declarerTricks = ownTrickRepository.findAllByRoles(List.of(RoleInGame.DECLARER, RoleInGame.DECLARER_PARTNER));
+        List<OwnTrick> declarerTricks = ownTrickRepository.findAllByRolesAndPlayerGameId(List.of(RoleInGame.DECLARER, RoleInGame.DECLARER_PARTNER), gameId);
         //List<OwnTrick> partnerTricks = ownTrickRepository.findAllByPlayerGameAndPlayerRoleInGame(game, RoleInGame.DECLARER_PARTNER);
         List<DeclarerSkart> declarerSkartCards = declarerSkartRepository.findAllByGameId(gameId);
         int bidMultiplier = game.getBidLevel().getBidValue();

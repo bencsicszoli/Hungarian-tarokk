@@ -47,7 +47,7 @@ public class RevealCardsService {
 
     public CardImageListDTO getOpponentSkart(long gameId) {
         try {
-            Thread.sleep(500);
+            Thread.sleep(1000);
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
         }
@@ -64,15 +64,12 @@ public class RevealCardsService {
     }
 
     public CardImageListDTO getDeclarerTricks(Game game) {
-        //List<OwnTrick> declarerTricks = ownTrickRepository.findAllByPlayerGameAndPlayerRoleInGame(game, RoleInGame.DECLARER);
-        //List<OwnTrick> partnerTricks = ownTrickRepository.findAllByPlayerGameAndPlayerRoleInGame(game, RoleInGame.DECLARER_PARTNER);
-        List<OwnTrick> declarerTricks = ownTrickRepository.findAllByRoles(List.of(RoleInGame.DECLARER, RoleInGame.DECLARER_PARTNER));
-        //declarerTricks.addAll(partnerTricks);
+        List<OwnTrick> declarerTricks = ownTrickRepository.findAllByRolesAndPlayerGameId(List.of(RoleInGame.DECLARER, RoleInGame.DECLARER_PARTNER), game.getId());
         return createCardImageDTOList(declarerTricks, "game.declarerTrickImages");
     }
 
     public CardImageListDTO getOpponentTricks(Game game) {
-        List<OwnTrick> opponentTricks = ownTrickRepository.findAllByRoles(List.of(RoleInGame.OPPONENT));
+        List<OwnTrick> opponentTricks = ownTrickRepository.findAllByRolesAndPlayerGameId(List.of(RoleInGame.OPPONENT), game.getId());
         return createCardImageDTOList(opponentTricks, "game.opponentTrickImages");
     }
 

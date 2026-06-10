@@ -10,20 +10,25 @@ import com.codecool.tarokkgame.model.entity.Player;
 import com.codecool.tarokkgame.repository.*;
 import com.codecool.tarokkgame.service.*;
 import jakarta.transaction.Transactional;
+import org.springframework.context.event.EventListener;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.socket.messaging.SessionDisconnectEvent;
+
 import java.security.Principal;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
 @Controller
 public class MessageController {
     private final SimpMessagingTemplate messagingTemplate;
-    private final PlayerService playerService;
+    private final JoiningService joiningService;
     private final GameRepository gameRepository;
     private final ShuffleService shuffleService;
     private final DealService dealService;
@@ -39,11 +44,12 @@ public class MessageController {
     private final ResetService resetService;
     private final PlayerCardRepository playerCardRepository;
     private final RevealCardsService revealCardsService;
+    private final LeavingService leavingService;
 
-    public MessageController(SimpMessagingTemplate messagingTemplate, PlayerService playerService, GameRepository gameRepository, ShuffleService shuffleService, DealService dealService, PlayerRepository playerRepository, TalonCardRepository talonCardRepository, BidService bidService, TalonService talonService, BonusService bonusService, TrickService trickService, CardRepository cardRepository, ResultService resultService, MapperService mapperService, ResetService resetService, PlayerCardRepository playerCardRepository, RevealCardsService revealCardsService) {
+    public MessageController(SimpMessagingTemplate messagingTemplate, JoiningService joiningService, GameRepository gameRepository, ShuffleService shuffleService, DealService dealService, PlayerRepository playerRepository, TalonCardRepository talonCardRepository, BidService bidService, TalonService talonService, BonusService bonusService, TrickService trickService, CardRepository cardRepository, ResultService resultService, MapperService mapperService, ResetService resetService, PlayerCardRepository playerCardRepository, RevealCardsService revealCardsService, LeavingService leavingService) {
 
         this.messagingTemplate = messagingTemplate;
-        this.playerService = playerService;
+        this.joiningService = joiningService;
         this.gameRepository = gameRepository;
         this.shuffleService = shuffleService;
         this.dealService = dealService;
@@ -59,13 +65,14 @@ public class MessageController {
         this.resetService = resetService;
         this.playerCardRepository = playerCardRepository;
         this.revealCardsService = revealCardsService;
+        this.leavingService = leavingService;
     }
 
     @MessageMapping("/game.join")
     public void joinGame(@Payload JoinRequestDTO message, SimpMessageHeaderAccessor headerAccessor, Principal principal) {
         String playerName = principal.getName();
         if (playerName.equals(message.username())) {
-            JoinMessageDTO joinMessage = playerService.joinGame(playerName);
+            JoinMessageDTO joinMessage = joiningService.joinGame(playerName);
             if (joinMessage == null) {
                 joinMessage = new JoinMessageDTO();
                 joinMessage.setInformation("Something went wrong. You cannot join the game.");
@@ -87,6 +94,73 @@ public class MessageController {
             throw new NotAllowedOperationException("Invalid username");
         }
     }
+
+    @MessageMapping("/game.logoutRequest")
+    @Transactional
+    public void leaveGame(@Payload GeneralRequestDTO request, Principal principal) {
+        String playerName = principal.getName();
+        if (playerName.equals(request.username())) {
+            Game game = gameRepository.findById(request.gameId()).orElseThrow(() -> new NoSuchElementException("Game not found"));
+            Player player = playerRepository.findByUserUsernameAndGameId(playerName, request.gameId()).orElseThrow(() -> new NoSuchElementException("Player not found"));
+            if (!game.getDeclarerBonuses().isEmpty() && (game.getState().equals(GameState.BONUS_ANNOUNCEMENT) || game.getState().equals(GameState.TRICK_PHASE))) {
+                leavingService.calculatePenalty(player, game);
+                PrivateInfoDTO privateInfoDTO = new PrivateInfoDTO(game.getInformation(), "game.logoutWarning");
+                messagingTemplate.convertAndSendToUser(playerName, "/queue/private", privateInfoDTO);
+            } else {
+                PrivateInfoDTO privateInfoDTO = new PrivateInfoDTO("Are you sure you want to leave the game?", "game.logoutWarning");
+                messagingTemplate.convertAndSendToUser(playerName, "/queue/private", privateInfoDTO);
+            }
+        } else {
+            throw new NotAllowedOperationException("Invalid username");
+        }
+    }
+
+    @MessageMapping("/game.confirmLogout")
+    @Transactional
+    public void confirmLogout(@Payload GeneralRequestDTO request, Principal principal, SimpMessageHeaderAccessor headerAccessor) {
+        String playerName = principal.getName();
+        if (playerName.equals(request.username())) {
+            headerAccessor.getSessionAttributes().put("explicitLogout", true);
+            Game game = gameRepository.findById(request.gameId()).orElseThrow(() -> new NoSuchElementException("Game not found"));
+            Player player = playerRepository.findByUserUsernameAndGameId(playerName, request.gameId()).orElseThrow(() -> new NoSuchElementException("Player not found"));
+            PlayerLeaveDTO playerLeaveDTO = leavingService.leave(player, game);
+            if (playerLeaveDTO != null) {
+                messagingTemplate.convertAndSend("/topic/game." + request.gameId(), playerLeaveDTO);
+            }
+        } else {
+            throw new NotAllowedOperationException("Invalid username");
+        }
+    }
+
+    @Transactional
+    @EventListener
+    public void onSessionDisconnect(SessionDisconnectEvent event) {
+        StompHeaderAccessor headerAccessor = StompHeaderAccessor.wrap(event.getMessage());
+        Map<String, Object> sessionAttributes = headerAccessor.getSessionAttributes();
+        if (sessionAttributes == null) {
+            return;
+        }
+
+        if (Boolean.TRUE.equals(sessionAttributes.get("explicitLogout"))) {
+            System.out.println("Session disconnected after explicit logout – skipping leaveGame");
+            return;
+        }
+        Object gameIdObj = sessionAttributes.get("gameId");
+        Object playerObj = sessionAttributes.get("player");
+        if (gameIdObj == null || playerObj == null) {
+            return;
+        }
+        long gameId = Long.parseLong(gameIdObj.toString());
+        String playerName = playerObj.toString();
+        Game game = gameRepository.findById(gameId).orElseThrow(() -> new NoSuchElementException("Game not found"));
+        Player player = playerRepository.findByUserUsernameAndGameId(playerName, gameId).orElseThrow(() -> new NoSuchElementException("Player not found"));
+        leavingService.calculatePenaltyToEventListener(player, game);
+        PlayerLeaveDTO playerLeaveDTO = leavingService.leave(player, game);
+        if (playerLeaveDTO != null) {
+            messagingTemplate.convertAndSend("/topic/game." + gameId, playerLeaveDTO);
+        }
+    }
+
 
     @MessageMapping("/game.deal")
     @Transactional
@@ -151,6 +225,11 @@ public class MessageController {
                 PublicBidDTO publicBidDTO = bidService.getPublicBidInfo(game, playerName, request.newLevel(), turnPlayer);
                 messagingTemplate.convertAndSend("/topic/game." + request.gameId(), publicBidDTO);
             } else {
+                if (game.getBiddingPasses() == 4) {
+                    FourPassesDTO fourPassesDTO = new FourPassesDTO(String.format("No one bid.@%s, deal again!", game.getDealer().toUpperCase()), game.getStartPlayer(), "game.fourPasses");
+                    messagingTemplate.convertAndSend("/topic/game." + request.gameId(), fourPassesDTO);
+                    return;
+                }
                 PublicBidDTO publicBidDTO = bidService.getPublicBidInfo(game, playerName, request.newLevel(), turnPlayer);
                 messagingTemplate.convertAndSend("/topic/game." + request.gameId(), publicBidDTO);
                 NewGameStateDTO gameStateDTO = new NewGameStateDTO("TALON_PICK_UP", "game.gameState");
@@ -224,10 +303,12 @@ public class MessageController {
         String playerName = principal.getName();
         if (playerName.equals(request.username())) {
             Player player = playerRepository.findByUserUsernameAndGameId(playerName, request.gameId()).orElseThrow(() -> new NoSuchElementException("Player not found"));
+            String turnPlayer = player.getGame().getStartPlayer();
             List<PlayerCardDTO> playerCardList = mapperService.mapToPlayerCardListDTO(player.getPlayerCards());
             DiscardedHandDTO discardedHand = new DiscardedHandDTO(
                     playerCardList,
                     playerName,
+                    turnPlayer,
                     player.getDiscardReason() + ", discards their hand and requires new deal",
                     "game.discardHand");
             player.getPlayerCards().clear();
@@ -366,7 +447,7 @@ public class MessageController {
             messagingTemplate.convertAndSend("/topic/game." + request.gameId(), trickCardListDTO);
             if (trickCardListDTO.cards().size() == 4) {
                 try {
-                    Thread.sleep(2000);
+                    Thread.sleep(1000);
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                 }
@@ -431,7 +512,7 @@ public class MessageController {
             CardImageListDTO declarerTricks = revealCardsService.getDeclarerTricks(game);
             if (declarerTricks != null) {
                 try {
-                    Thread.sleep(500);
+                    Thread.sleep(1000);
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                 }
@@ -440,7 +521,7 @@ public class MessageController {
             CardImageListDTO opponentTricks = revealCardsService.getOpponentTricks(game);
             if (opponentTricks != null) {
                 try {
-                    Thread.sleep(500);
+                    Thread.sleep(1000);
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                 }

@@ -9,6 +9,7 @@ import com.codecool.tarokkgame.model.dto.messagedto.response.PublicBidDTO;
 import com.codecool.tarokkgame.model.entity.Game;
 import com.codecool.tarokkgame.model.entity.Player;
 import com.codecool.tarokkgame.repository.GameRepository;
+import com.codecool.tarokkgame.repository.PlayerCardRepository;
 import com.codecool.tarokkgame.repository.PlayerRepository;
 import org.springframework.stereotype.Service;
 import java.util.LinkedHashSet;
@@ -19,10 +20,12 @@ import java.util.Set;
 public class BidService {
     private final GameRepository gameRepository;
     private final PlayerRepository playerRepository;
+    private final PlayerCardRepository playerCardRepository;
 
-    public BidService(GameRepository gameRepository, PlayerRepository playerRepository) {
+    public BidService(GameRepository gameRepository, PlayerRepository playerRepository, PlayerCardRepository playerCardRepository) {
         this.gameRepository = gameRepository;
         this.playerRepository = playerRepository;
+        this.playerCardRepository = playerCardRepository;
     }
 
     public PotentialBidsDTO getPotentialBidsToStartPlayer(String username, long gameId) {
@@ -100,8 +103,11 @@ public class BidService {
             return finishBidding(game, sender);
 
         // Bidding PASS less than three times
-        } else {
+        } else if (game.getBiddingPasses() <= 3) {
             return createBidCases(sender, game, bids);
+        } else { // game.getBiddingPasses = 4
+            playerCardRepository.deleteAllByPlayerGameId(game.getId());
+            return null;
         }
     }
 

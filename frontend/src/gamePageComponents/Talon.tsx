@@ -1,4 +1,3 @@
-
 function Talon({ talonCardsNumber }: { talonCardsNumber: number }) {
     
   function displayTalon(talonCardsNumber: number) {
@@ -13,7 +12,8 @@ function Talon({ talonCardsNumber }: { talonCardsNumber: number }) {
     ));
   }
 
-  return (
+  if (talonCardsNumber > 0) {
+    return (
     <div>
       <div className="h-1/6 flex justify-center font-bold text-xl mt-8">
         <p className="border-green-300 border-2 rounded-md text-green-300 px-4 py-1">Talon</p>
@@ -23,6 +23,9 @@ function Talon({ talonCardsNumber }: { talonCardsNumber: number }) {
       </div>
     </div>
   );
+  } else {
+    return null;
+  } 
 }
 
 export default Talon;

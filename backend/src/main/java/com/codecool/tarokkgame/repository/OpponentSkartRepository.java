@@ -13,4 +13,6 @@ public interface OpponentSkartRepository extends JpaRepository<OpponentSkart, Lo
     List<OpponentSkart> findAllByGameId(long gameId);
 
     int countAllByGameId(long gameId);
+
+    void deleteAllByGameId(long gameId);
 }

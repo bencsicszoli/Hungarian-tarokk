@@ -6,26 +6,22 @@ import com.codecool.tarokkgame.model.entity.Game;
 import com.codecool.tarokkgame.model.entity.Player;
 import com.codecool.tarokkgame.repository.AppUserRepository;
 import com.codecool.tarokkgame.repository.GameRepository;
-import com.codecool.tarokkgame.repository.PlayerRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
-public class PlayerService {
+public class JoiningService {
 
     public static final int NUMBER_OF_NECESSARY_PLAYERS = 4;
     private final AppUserRepository userRepository;
     private final GameRepository gameRepository;
-    private final PlayerRepository playerRepository;
     private final MapperService mapper;
 
-    public PlayerService(AppUserRepository userRepository, GameRepository gameRepository, PlayerRepository playerRepository, MapperService mapper) {
+    public JoiningService(AppUserRepository userRepository, GameRepository gameRepository, MapperService mapper) {
         this.userRepository = userRepository;
         this.gameRepository = gameRepository;
-        this.playerRepository = playerRepository;
         this.mapper = mapper;
     }
 
@@ -102,9 +98,7 @@ public class PlayerService {
         List<Player> players = new ArrayList<>(4);
         players.add(newPlayer);
         newGame.setPlayers(players);
-        //Game savedGame = gameRepository.save(newGame);
         newPlayer.setGame(newGame);
-        //playerRepository.save(newPlayer);
         return mapper.mapToJoinMessageDTO(newGame, List.of(newPlayer));
     }
 }

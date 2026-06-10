@@ -2,17 +2,35 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useUser } from "./context/UserContext";
 import { useWebSocket } from "./context/WebSocketContext";
-import InfoTable from "./pageComponents/InfoTable";
-import Talon from "./pageComponents/Talon";
-import Skart from "./Skart";
-import type { Card, TrickCard, PlayerData, CardImage } from "./Types";
-import Bonuses from "./Bonuses";
-import PublicHand from "./PublicHand";
+import InfoTable from "./InfoTable.tsx";
+import Talon from "./gamePageComponents/Talon.tsx";
+import Skart from "./gamePageComponents/Skart.tsx";
+import type {
+  Card,
+  TrickCard,
+  PlayerData,
+  CardImage,
+  GameState,
+} from "./types.ts";
+import Bonuses from "./gamePageComponents/Bonuses.tsx";
+import PublicDescardedHand from "./gamePageComponents/PublicDiscardedHand.tsx";
+import MenuButtons from "./gamePageComponents/MenuButtons.tsx";
 import {
   setPlayerProperties,
   setPlayerPropertiesInTrickPhase,
   setOwnProperties,
-} from "./Utils.ts";
+} from "./utils.ts";
+import DeclarerSkart from "./gamePageComponents/DeclarerSkart.tsx";
+import OpponentSkart from "./gamePageComponents/OpponentSkart.tsx";
+import OwnHand from "./gamePageComponents/OwnHand.tsx";
+import DisposableHandInfo from "./gamePageComponents/DisposableHandInfo.tsx";
+import NorthernPlayerHand from "./gamePageComponents/NorthernPlayerhand.tsx";
+import EasternPlayerHand from "./gamePageComponents/EasternPlayerHand.tsx";
+import WesternPlayerHand from "./gamePageComponents/WesternPlayerHand.tsx";
+import DeclarerPublicTricks from "./gamePageComponents/DeclarerPublicTricks.tsx";
+import OpeningImage from "./gamePageComponents/OpeningImage.tsx";
+import TrickPlace from "./gamePageComponents/TrickPlace.tsx";
+import LogoutWarning from "./gamePageComponents/LogoutWarning.tsx";
 
 const INITIAL_ROTATION = [
   0, 0, -7.5, -15, -22.5, -30, -37.5, -45, -52.5, -60, -67.5, -75, -82.5,
@@ -36,23 +54,31 @@ function Game() {
     connected: false,
   };
 
-  const [player1, setPlayer1] = useState<string | null>(game?.player1 || null);
-  const [player2, setPlayer2] = useState<string | null>(game?.player2 || null);
-  const [player3, setPlayer3] = useState<string | null>(game?.player3 || null);
-  const [player4, setPlayer4] = useState<string | null>(game?.player4 || null);
+  const [bid, setBid] = useState<"-" | "3" | "2" | "1" | "solo">("-");
+  const [callableTarokks, setCallableTarokks] = useState<string[]>([]);
+  const [calledTarokk, setCalledTarokk] = useState<string | null>(null);
+  const [dealButtonClicked, setDealButtonClicked] = useState<boolean>(false);
   const [dealer, setDealer] = useState<string | null>(game?.dealer || null);
-  const [startPlayer, setStartPlayer] = useState<string | null>(
-    game?.startPlayer || null,
-  );
-  const [bidPlayer, setBidPlayer] = useState<string | null>(null);
-  const [turnPlayer, setTurnPlayer] = useState<string | null>(
-    game?.turnPlayer || null,
-  );
   const [declarer, setDeclarer] = useState<string | null>(
     game?.declarer || null,
   );
-  const [bid, setBid] = useState<"-" | "3" | "2" | "1" | "solo">("-");
-
+  const [declarerBonuses, setDeclarerBonuses] = useState<string | null>(null);
+  const [declarerSkart, setDeclarerSkart] = useState<Card[]>([]);
+  const [declarerSkartLength, setDeclarerSkartLength] = useState<number>(0);
+  const [discardInformation, setDiscardInformation] = useState<string | null>(
+    null,
+  );
+  const [firstBonusRound, setFirstBonusRound] = useState<boolean>(true);
+  const [gameState, setGameState] = useState<GameState>(
+    game?.gameState || "NEW",
+  );
+  const [hasEightTarokks, setHasEightTarokks] = useState<boolean>(false);
+  const [hasNineTarokks, setHasNineTarokks] = useState<boolean>(false);
+  const [isGameNew, setIsGameNew] = useState<boolean>(true);
+  const [opponentBonuses, setOpponentBonuses] = useState<string | null>(null);
+  const [opponentSkartLength, setOpponentSkartLength] = useState<number>(0);
+  const [ownCards, setOwnCards] = useState<Card[]>([]);
+  const [logoutWarning, setLogoutWarning] = useState<string | null>(null);
   const initialPlayerData: Record<string, PlayerData> = {};
   if (game?.player1) {
     initialPlayerData[game.player1] = {
@@ -84,35 +110,23 @@ function Game() {
   }
   const [playerData, setPlayerData] =
     useState<Record<string, PlayerData>>(initialPlayerData);
-  const [ownCards, setOwnCards] = useState<Card[]>([]);
-  const [publicHand, setPublicHand] = useState<Card[]>([]);
-  const [temporarySelectedCards, setTemporarySelectedCards] = useState<Card[]>(
-    [],
-  );
-  const [declarerSkart, setDeclarerSkart] = useState<Card[]>([]);
-  const [gameState, setGameState] = useState<
-    | "NEW"
-    | "IN_PROGRESS"
-    | "BIDDING"
-    | "TALON_PICK_UP"
-    | "SKART_LAY_DOWN"
-    | "BONUS_ANNOUNCEMENT"
-    | "TRICK_PHASE"
-    | "FINISHED"
-  >(game?.gameState || "NEW");
-  const [talonCardsNumber, setTalonCardsNumber] = useState<number>(0);
-  const [levelDiscription, setLevelDescription] = useState<string>(
-    game?.levelDescription || "None",
-  );
+  const [player1, setPlayer1] = useState<string | null>(game?.player1 || null);
+  const [player2, setPlayer2] = useState<string | null>(game?.player2 || null);
+  const [player3, setPlayer3] = useState<string | null>(game?.player3 || null);
+  const [player4, setPlayer4] = useState<string | null>(game?.player4 || null);
   const [potentialBids, setPotentialBids] = useState<string[]>([]);
-  const [declarerSkartLength, setDeclarerSkartLength] = useState<number>(0);
+  const [potentialBonuses, setPotentialBonuses] = useState<string[]>([]);
+  const [privateInformation, setPrivateInformation] = useState<string>(
+    game?.privateInformation || "",
+  );
   const [publicDeclarerSkart, setPublicDeclarerSkart] = useState<CardImage[]>(
     [],
   );
   const [publicDeclarerTricks, setPublicDeclarerTricks] = useState<CardImage[]>(
     [],
   );
-  const [opponentSkartLength, setOpponentSkartLength] = useState<number>(0);
+  const [publicDiscardedHand, setPublicDiscardedHand] = useState<Card[]>([]);
+
   const [publicOpponentSkart, setPublicOpponentSkart] = useState<CardImage[]>(
     [],
   );
@@ -122,27 +136,22 @@ function Game() {
   const [publicInformation, setPublicInformation] = useState<string>(
     game?.information || "",
   );
-  const [privateInformation, setPrivateInformation] = useState<string>(
-    game?.privateInformation || "",
-  );
-  const [discardInformation, setDiscardInformation] = useState<string | null>(
-    null,
-  );
-  const [potentialBonuses, setPotentialBonuses] = useState<string[]>([]);
-  const [callableTarokks, setCallableTarokks] = useState<string[]>([]);
-  const [calledTarokk, setCalledTarokk] = useState<string | null>(null);
   const [selectedTarokkNumber, setSelectedTarokkNumber] = useState<number>(0);
-  const [hasEightTarokks, setHasEightTarokks] = useState<boolean>(false);
-  const [hasNineTarokks, setHasNineTarokks] = useState<boolean>(false);
   const [selectedBonuses, setSelectedBonuses] = useState<string[]>([]);
-  const [firstBonusRound, setFirstBonusRound] = useState<boolean>(true);
-  const [declarerBonuses, setDeclarerBonuses] = useState<string | null>(null);
-  const [opponentBonuses, setOpponentBonuses] = useState<string | null>(null);
+  const [startPlayer, setStartPlayer] = useState<string | null>(
+    game?.startPlayer || null,
+  );
+  const [talonCardsNumber, setTalonCardsNumber] = useState<number>(0);
+  const [tarokkNumberSent, setTarokkNumberSent] = useState<boolean>(false);
+  const [temporarySelectedCards, setTemporarySelectedCards] = useState<Card[]>(
+    [],
+  );
   const [trickCard, setTrickCard] = useState<Card | null>(null);
   const [trickCards, setTrickCards] = useState<TrickCard[]>([]);
-  const [dealButtonClicked, setDealButtonClicked] = useState<boolean>(false);
-  const [tarokkNumberSent, setTarokkNumberSent] = useState<boolean>(false);
-  const [isGameNew, setIsGameNew] = useState<boolean>(true);
+  const [turnPlayer, setTurnPlayer] = useState<string | null>(
+    game?.turnPlayer || null,
+  );
+
   const cardsToDiscard = useRef<number>(0);
 
   const handlePublicMessage = useCallback(
@@ -204,17 +213,20 @@ function Game() {
           break;
         case "game.newRound":
           setFirstBonusRound(true);
-          setBidPlayer(null);
           setDeclarer(null);
           setBid("-");
           setDeclarerSkartLength(0);
           setOpponentSkartLength(0);
           setDiscardInformation(null);
-          setPublicHand([]);
+          setPublicDiscardedHand([]);
           setDeclarerBonuses(null);
           setOpponentBonuses(null);
           setPublicInformation(message.dealerInfo);
           setIsGameNew(false);
+          setPublicDeclarerSkart([]);
+          setPublicOpponentSkart([]);
+          setPublicDeclarerTricks([]);
+          setPublicOpponentTricks([]);
           setPlayerData((prev) => ({
             ...prev,
             ...(player1
@@ -281,8 +293,64 @@ function Game() {
           setDeclarer(message.declarer);
           setTurnPlayer(message.turnPlayer);
           setPublicInformation(message.info);
-          setBidPlayer(message.bidPlayer);
           console.log("Public bid info updated:", message);
+          break;
+        case "game.fourPasses":
+          setPublicInformation(message.info);
+          setTurnPlayer(message.turnPlayer);
+          setGameState("NEW");
+          setPlayerData((prev) => ({
+            ...prev,
+            ...(player1
+              ? { [player1]: { ...prev[player1], playerCardsNumber: 0 } }
+              : {}),
+            ...(player2
+              ? { [player2]: { ...prev[player2], playerCardsNumber: 0 } }
+              : {}),
+            ...(player3
+              ? { [player3]: { ...prev[player3], playerCardsNumber: 0 } }
+              : {}),
+            ...(player4
+              ? { [player4]: { ...prev[player4], playerCardsNumber: 0 } }
+              : {}),
+          }));
+          setDealButtonClicked(false);
+          setOwnCards([]);
+          setPrivateInformation("");
+
+          break;
+        case "game.confirmLeaving":
+          setPlayerData(message.playersData);
+          setGameState("NEW");
+          setPotentialBids([]);
+          setDealer(null);
+          setDealButtonClicked(false);
+          setTurnPlayer(null);
+          setStartPlayer(null);
+          setFirstBonusRound(true);
+          setDeclarer(null);
+          setBid("-");
+          setDeclarerSkartLength(0);
+          setOpponentSkartLength(0);
+          setDiscardInformation(null);
+          setPublicDiscardedHand([]);
+          setDeclarerBonuses(null);
+          setOpponentBonuses(null);
+          setPublicInformation(message.dealerInfo);
+          setIsGameNew(true);
+          setPublicDeclarerSkart([]);
+          setPublicOpponentSkart([]);
+          setPublicDeclarerTricks([]);
+          setPublicOpponentTricks([]);
+          setPrivateInformation(message.info);
+          setOwnCards([]);
+          setTalonCardsNumber(0);
+          switch(message.playerName) {
+            case player1: setPlayer1(null); break;
+            case player2: setPlayer2(null); break;
+            case player3: setPlayer3(null); break;
+            case player4: setPlayer4(null); break;
+          }
           break;
         case "game.gameState":
           setGameState(message.gameState);
@@ -320,11 +388,11 @@ function Game() {
           console.log("Public information updated:", message.info);
           break;
         case "game.discardHand":
-          setPublicInformation(message.info);
-          setBidPlayer(null);
+          setPublicInformation(message.info); //? duplication
           setDeclarer(null);
+          setTurnPlayer(message.turnPlayer);
           setBid("-");
-          setPublicHand(message.cards);
+          setPublicDiscardedHand(message.cards);
           setPublicInformation(
             message.playerName.toUpperCase() + " " + message.info,
           );
@@ -333,13 +401,17 @@ function Game() {
           setGameState("NEW");
           setPlayerData((prev) => ({
             ...prev,
-            ...(message.playerName
-              ? {
-                  [message.playerName]: {
-                    ...prev[message.playerName],
-                    playerCardsNumber: 0,
-                  },
-                }
+            ...(player1
+              ? { [player1]: { ...prev[player1], playerCardsNumber: 0 } }
+              : {}),
+            ...(player2
+              ? { [player2]: { ...prev[player2], playerCardsNumber: 0 } }
+              : {}),
+            ...(player3
+              ? { [player3]: { ...prev[player3], playerCardsNumber: 0 } }
+              : {}),
+            ...(player4
+              ? { [player4]: { ...prev[player4], playerCardsNumber: 0 } }
               : {}),
           }));
           setDealButtonClicked(false);
@@ -349,8 +421,6 @@ function Game() {
           break;
         case "game.tarokkInSkart":
           setDeclarerSkart(message.cards);
-          //setPublicInformation(message.info);
-          //setPublicInformation((prev) => `${prev}@ ${message.info}`);
           console.log("Declarer's skart with tarokk updated:", message.cards);
           break;
         case "game.publicSkartPhaseFinishInfo":
@@ -559,6 +629,10 @@ function Game() {
         setSelectedTarokkNumber(0);
         setSelectedBonuses([]);
         setFirstBonusRound(false);
+        break;
+      case "game.logoutWarning":
+        setLogoutWarning(message.info);
+        console.log("Penalty warning: ", message.info);
         break;
       case "game.privateResult":
         setPrivateInformation(message.info);
@@ -1158,9 +1232,10 @@ function Game() {
   }
 
   const handleLogout = () => {
-    setToken(null);
-    setUser(null);
-    navigate("/");
+    send("/app/game.logoutRequest", {
+      username: user?.username,
+      gameId: game.gameId,
+    });
   };
 
   function handleDeal() {
@@ -1389,206 +1464,177 @@ function Game() {
       ));
   }
 
+  function formatLogoutWarning() {
+    if (!logoutWarning) return null;
+    return logoutWarning
+      .split("@")
+      .filter(Boolean)
+      .map((sentence, index) => (
+        <span key={index}>
+          {sentence.trim()}
+          <br />
+        </span>
+      ));
+  }
+
+  function confirmLogout() {
+    send("/app/game.confirmLogout", {
+      username: user?.username,
+      gameId: game.gameId,
+    });
+    setLogoutWarning(null);
+    setToken(null);
+    setUser(null);
+    navigate("/");
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-table-background px-4 py-8">
       <div className="p-4 sm:p-6 bg-[#4B2E1F] rounded-[90px] shadow-inner w-full flex gap-4 justify-around">
         {/*Card table */}
         <div className="w-3/4 h-207.5 bg-poker-table rounded-[70px] shadow-2xl text-white px-6 sm:px-8 flex flex-col items-center justify-center">
-          {/* Menu buttons */}
-          <div className="w-full h-1/12 flex justify-around items-center">
-            <button
-              className="border-black border-2 w-1/8 h-2/3 bg-green-300 hover:scale-105 hover:bg-green-400 cursor-pointer text-[#2f4b3a] text-2xl font-bold rounded-lg"
-              onClick={handleLogout}
-            >
-              Logout
-            </button>
-            <button className="border-black border-2 w-1/8 h-2/3 bg-green-300 hover:scale-105 hover:bg-green-400 cursor-pointer text-[#2f4b3a] text-2xl font-bold rounded-lg">
-              Back
-            </button>
-            {user?.username === dealer &&
-              (gameState === "NEW" || gameState === "FINISHED") &&
-              !dealButtonClicked && (
-                <button
-                  className="border-black border-2 w-1/8 h-2/3 bg-green-300 hover:scale-105 hover:bg-green-400 cursor-pointer text-[#2f4b3a] text-2xl font-bold rounded-lg"
-                  onClick={handleDeal}
-                >
-                  DEAL
-                </button>
-              )}
-          </div>
+          <MenuButtons
+            onHandleLogout={handleLogout}
+            onHandleDeal={handleDeal}
+            dealButtonClicked={dealButtonClicked}
+            gameState={gameState}
+            user={user}
+            dealer={dealer}
+          />
 
           {/* Game area */}
           <div className="w-full h-11/12 flex flex-col">
             {/* Top row */}
             <div className="w-full flex flex-auto">
-              {/* Declarer's skart area */}
-              <div className="w-1/4 grow">
-                <div className="h-1/6 flex justify-center items-end font-bold text-xl text-green-100">
-                  {declarerSkartLength > 0 && <p>Declarer's skart</p>}
-                </div>
-                <div className="flex justify-center items-start h-5/6 mt-2">
-                  {declarerSkart.length > 0 &&
-                    gameState !== "FINISHED" &&
-                    displayDeclarerSkartWithTarokk()}
-                  {declarerSkart.length === 0 &&
-                    gameState !== "FINISHED" &&
-                    displaySkart(declarerSkartLength)}
-                  {gameState === "FINISHED" &&
-                    displayPublicCards(publicDeclarerSkart)}
-                </div>
-              </div>
+              <DeclarerSkart
+                declarerSkart={declarerSkart}
+                declarerSkartLength={declarerSkartLength}
+                gameState={gameState}
+                publicDeclarerSkart={publicDeclarerSkart}
+                onDisplayDeclarerSkartWithTarokk={
+                  displayDeclarerSkartWithTarokk
+                }
+                onDisplaySkart={displaySkart}
+                onDisplayPublicCards={displayPublicCards}
+              />
 
-              {/* Player 3's area */}
-              {gameState !== "TRICK_PHASE" && gameState !== "FINISHED" && (
-                <div className="w-1/2">{renderPlayerHand("NORTH")}</div>
-              )}
-              {gameState === "TRICK_PHASE" && (
-                <div className="w-1/2">
-                  {renderNorthernPlayerHandInTrickPhase()}
-                </div>
-              )}
-              {gameState === "FINISHED" && <div className="w-1/4"></div>}
+              <NorthernPlayerHand
+                gameState={gameState}
+                onRenderPlayerHand={() => renderPlayerHand("NORTH")}
+                onRenderNorthernPlayerHandInTrickPhase={
+                  renderNorthernPlayerHandInTrickPhase
+                }
+              />
 
-              {/* Opponent's skart area */}
-              <div className="w-1/4 grow">
-                <div className="h-1/6 flex justify-center items-center font-bold text-xl text-green-100">
-                  {opponentSkartLength > 0 && <p>Opponent's skart</p>}
-                </div>
-                <div className="flex justify-center items-start h-5/6 mt-2">
-                  {gameState !== "FINISHED"
-                    ? displaySkart(opponentSkartLength)
-                    : displayPublicCards(publicOpponentSkart)}
-                </div>
-              </div>
+              <OpponentSkart
+                opponentSkartLength={opponentSkartLength}
+                gameState={gameState}
+                publicOpponentSkart={publicOpponentSkart}
+                onDisplaySkart={displaySkart}
+                onDisplayPublicCards={displayPublicCards}
+              />
             </div>
 
             {/* Middle row */}
             {gameState === "FINISHED" ? (
-              <div className="w-full flex flex-col flex-auto justify-center items-center">
-                <p className="text-center text-xl font-bold text-green-100 mb-4">
-                  Tricks of declarer side:
-                </p>
-                {displayPublicCards(publicDeclarerTricks)}
-              </div>
+              <DeclarerPublicTricks
+                publicDeclarerTricks={publicDeclarerTricks}
+                onDisplayPublicCards={displayPublicCards}
+              />
             ) : (
               <div className="w-full h-1/3 flex">
-                {/* Player 4's area */}
-                {gameState !== "TRICK_PHASE" ? (
-                  <div className="w-1/4">{renderPlayerHand("WEST")}</div>
-                ) : (
-                  <div className="w-[35%]">
-                    {renderWesternPlayerHandInTrickPhase()}
-                  </div>
-                )}
+                <WesternPlayerHand
+                  gameState={gameState}
+                  onRenderPlayerHand={() => renderPlayerHand("WEST")}
+                  onRenderWesternPlayerHandInTrickPhase={
+                    renderWesternPlayerHandInTrickPhase
+                  }
+                />
 
                 {/* Talon and play area */}
-                {gameState !== "TRICK_PHASE" ? (
+                {logoutWarning ? (
+                  <LogoutWarning
+                    onFormatLogoutWarning={formatLogoutWarning}
+                    onSetLogoutWarning={setLogoutWarning}
+                    onConfirmLeaving={confirmLogout}
+                  />
+                ) : gameState !== "TRICK_PHASE" ? (
                   <div className="w-1/2">
-                    {isGameNew && (
-                      <div className="w-full h-full flex justify-center items-center">
-                        <img src="deck.png" alt="Deck" className="h-full" />
-                      </div>
-                    )}
-                    {talonCardsNumber > 0 && (
-                      <Talon talonCardsNumber={talonCardsNumber} />
-                    )}
-                    {gameState === "SKART_LAY_DOWN" &&
-                      discardInformation === null &&
-                      (ownCards.length > 9 ||
-                        temporarySelectedCards.length > 0) && (
-                        <Skart
-                          temporarySelectedCards={temporarySelectedCards}
-                          onDisplayTemporarySelectedCards={() => (
-                            <>{displayTemporarySelectedCards()}</>
-                          )}
-                          cardsToDiscard={cardsToDiscard}
-                          sendSkartCards={sendSkartCards}
-                          turnPlayer={turnPlayer}
-                          user={user}
-                        />
+                    <OpeningImage isGameNew={isGameNew} />
+
+                    <Talon talonCardsNumber={talonCardsNumber} />
+
+                    <Skart
+                      temporarySelectedCards={temporarySelectedCards}
+                      onDisplayTemporarySelectedCards={() => (
+                        <>{displayTemporarySelectedCards()}</>
                       )}
-                    {(gameState === "SKART_LAY_DOWN" ||
-                      gameState === "BONUS_ANNOUNCEMENT") &&
-                      discardInformation !== null && (
-                        <div className="w-full h-[95%] border-black border-2 bg-green-300 text-[#2f4b3a] rounded-xl">
-                          <div className="w-full h-1/2">
-                            <p className="text-center text-3xl font-bold pt-4 px-2">
-                              {formatDiscardInformation()}
-                            </p>
-                          </div>
-                          <div className="w-full h-1/2 flex items-center justify-around">
-                            <button
-                              className="w-40 h-15 text-2xl bg-[#2f4b3a] hover:bg-green-700 cursor-pointer text-green-300 font-bold py-2 px-4 rounded-lg"
-                              onClick={handleDiscardHand}
-                            >
-                              Yes
-                            </button>
-                            <button
-                              className="w-40 h-15 text-2xl bg-red-600 hover:bg-red-700 cursor-pointer text-red-100 font-bold py-2 px-4 rounded-lg"
-                              onClick={() => setDiscardInformation(null)}
-                            >
-                              No
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    {gameState === "NEW" && publicHand.length > 0 && (
-                      <PublicHand publicHand={publicHand} />
-                    )}
-                    {gameState === "BONUS_ANNOUNCEMENT" &&
-                      discardInformation === null &&
-                      turnPlayer === user?.username && (
-                        <Bonuses
-                          hasEightTarokks={hasEightTarokks}
-                          hasNineTarokks={hasNineTarokks}
-                          declarer={declarer}
-                          callableTarokks={callableTarokks}
-                          onRenderTarokkNumberButton={() =>
-                            renderTarokkNumberButton()
-                          }
-                          onRenderCallableTarokkButtons={() =>
-                            renderCallableTarokkButtons()
-                          }
-                          onRenderBonusButtons={() => renderBonusButtons()}
-                        />
-                      )}
+                      gameState={gameState}
+                      discardInformation={discardInformation}
+                      ownCards={ownCards}
+                      cardsToDiscard={cardsToDiscard}
+                      sendSkartCards={sendSkartCards}
+                      turnPlayer={turnPlayer}
+                      user={user}
+                    />
+
+                    <DisposableHandInfo
+                      gameState={gameState}
+                      discardInformation={discardInformation}
+                      onFormatDiscardInformation={formatDiscardInformation}
+                      onHandleDiscardHand={handleDiscardHand}
+                      onSetDiscardInformation={setDiscardInformation}
+                    />
+
+                    <PublicDescardedHand
+                      publicHand={publicDiscardedHand}
+                      gameState={gameState}
+                    />
+
+                    <Bonuses
+                      gameState={gameState}
+                      discardInformation={discardInformation}
+                      turnPlayer={turnPlayer}
+                      user={user}
+                      hasEightTarokks={hasEightTarokks}
+                      hasNineTarokks={hasNineTarokks}
+                      declarer={declarer}
+                      callableTarokks={callableTarokks}
+                      onRenderTarokkNumberButton={() =>
+                        renderTarokkNumberButton()
+                      }
+                      onRenderCallableTarokkButtons={() =>
+                        renderCallableTarokkButtons()
+                      }
+                      onRenderBonusButtons={() => renderBonusButtons()}
+                    />
                   </div>
                 ) : (
-                  <div className="w-[30%]">
-                    <div className="h-full flex flex-col justify-center items-center">
-                      <div className="relative w-full h-full">
-                        {renderTrickCards()}
-                      </div>
-                    </div>
-                  </div>
+                  <TrickPlace onRenderTrickCards={() => renderTrickCards()} />
                 )}
 
                 {/* Player 2's area */}
-                {gameState !== "TRICK_PHASE" ? (
-                  <div className="w-1/4">{renderPlayerHand("EAST")}</div>
-                ) : (
-                  <div className="w-[35%]">
-                    {renderEasternPlayerHandInTrickPhase()}
-                  </div>
-                )}
+                <EasternPlayerHand
+                  gameState={gameState}
+                  onRenderPlayerHand={() => renderPlayerHand("EAST")}
+                  onRenderEasternPlayerHandInTrickPhase={
+                    renderEasternPlayerHandInTrickPhase
+                  }
+                />
               </div>
             )}
 
             {/* Bottom row */}
-            {gameState !== "FINISHED" ? (
-              <div className="w-full h-1/3">{renderOwnHand()}</div>
-            ) : (
-              <div className="w-full flex flex-col flex-auto justify-center items-center">
-                <p className="text-center text-xl font-bold text-green-100 mb-4">
-                  Tricks of opponent side:
-                </p>
-                {displayPublicCards(publicOpponentTricks)}
-              </div>
-            )}
+
+            <OwnHand
+              gameState={gameState}
+              renderOwnHand={renderOwnHand}
+              displayPublicCards={displayPublicCards}
+              publicOpponentTricks={publicOpponentTricks}
+            />
           </div>
         </div>
 
-        {/*Info table */}
         <InfoTable
           bid={bid}
           declarer={declarer}

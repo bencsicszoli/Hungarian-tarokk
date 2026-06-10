@@ -371,16 +371,12 @@ public class BonusService {
     private void setBonusAnnouncer(Bonus bonus, Player player, Game game, String announcerTeam) {
         if (bonus.equals(Bonus.PAGAT_ULTIMO)) {
             player.setAnnouncedUltimo(true);
-        } else if (bonus.equals(Bonus.VOLAT)) {
-            game.setVolatAnnouncer(announcerTeam);
         } else if (bonus.equals(Bonus.TRULL)) {
             game.setTrullAnnouncer(announcerTeam);
         } else if (bonus.equals(Bonus.FOUR_KINGS)) {
             game.setFourKingsAnnouncer(announcerTeam);
         } else if (bonus.equals(Bonus.DOUBLE)) {
             game.setDoubleGameAnnouncer(announcerTeam);
-        } else if (bonus.equals(Bonus.XXI_CATCH)) {
-            game.setXXICatchAnnouncer(announcerTeam); // ?
         }
     }
 

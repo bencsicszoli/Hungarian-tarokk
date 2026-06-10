@@ -1,11 +1,14 @@
 package com.codecool.tarokkgame.service;
 
+import com.codecool.tarokkgame.model.PlayerData;
 import com.codecool.tarokkgame.model.dto.messagedto.response.*;
 import com.codecool.tarokkgame.model.entity.*;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class MapperService {
@@ -81,5 +84,25 @@ public class MapperService {
     public PrivateInfoDTO mapToPrivateResult(Player player) {
         RoundResult result = player.getResult();
         return new PrivateInfoDTO(result.getInfo(), "game.privateResult");
+    }
+
+    public Map<String, PlayerData> mapPlayersDataToHashMap(Game game) {
+        Map<String, PlayerData> playersData = new HashMap<>();
+        for (Player player : game.getPlayers()) {
+            if (player.getName().equals(game.getPlayer1())) {
+                PlayerData playerData = new PlayerData(player.getPlayerCards().size(), game.getPlayer1TrickCards(), player.getBalance());
+                playersData.put(player.getName(), playerData);
+            } else if (player.getName().equals(game.getPlayer2())) {
+                PlayerData playerData = new PlayerData(player.getPlayerCards().size(), game.getPlayer2TrickCards(), player.getBalance());
+                playersData.put(player.getName(), playerData);
+            } else if (player.getName().equals(game.getPlayer3())) {
+                PlayerData playerData = new PlayerData(player.getPlayerCards().size(), game.getPlayer3TrickCards(), player.getBalance());
+                playersData.put(player.getName(), playerData);
+            } else {
+                PlayerData playerData = new PlayerData(player.getPlayerCards().size(), game.getPlayer4TrickCards(), player.getBalance());
+                playersData.put(player.getName(), playerData);
+            }
+        }
+        return playersData;
     }
 }

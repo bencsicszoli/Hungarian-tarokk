@@ -25,6 +25,7 @@ public class Game {
     private boolean isTarokkInDeclarerSkart = false;
     private boolean isTarokkInOpponentSkart = false;
     private boolean declarerAlone = false;
+    private boolean isPrivateGame = false;
     private String invitAcceptor;
     private int biddingPasses = 0;
     private int invitedTarokk = 0;
@@ -35,11 +36,9 @@ public class Game {
     private int player3TrickCards = 0;
     private int player4TrickCards = 0;
     private String XXICatcher;
-    private String volatAnnouncer; // ?
     private String trullAnnouncer;
     private String fourKingsAnnouncer;
     private String doubleGameAnnouncer;
-    private String XXICatchAnnouncer; // ?
     private String successfulUltimo;
     private String dealer;
     private String startPlayer;
@@ -386,5 +385,40 @@ public class Game {
             this.players.sort(Comparator.comparing(Player::getPlace));
         }
         return this.players;
+    }
+
+    public void resetGame() {
+        setXIXInvit(false);
+        setXVIIIInvit(false);
+        setYielded(false);
+        setTarokkInDeclarerSkart(false);
+        setTarokkInOpponentSkart(false);
+        setDeclarerAlone(false);
+        setInvitAcceptor(null);
+        setBiddingPasses(0);
+        setInvitedTarokk(0);
+        setBonusPasses(0);
+        setTrickRound(1);
+        setPlayer1TrickCards(0);
+        setPlayer2TrickCards(0);
+        setPlayer3TrickCards(0);
+        setPlayer4TrickCards(0);
+        setXXICatcher(null);
+        setTrullAnnouncer(null);
+        setFourKingsAnnouncer(null);
+        setDoubleGameAnnouncer(null);
+        setSuccessfulUltimo(null);
+        setDealer(null);
+        setStartPlayer(null);
+        setTurnPlayer(null);
+        setDeclarer(null);
+        setInformation(null);
+        setLastBonusAnnouncer("declarer");
+        setCardOrder(1);
+        setBidLevel(BidLevel.NONE);
+        setState(GameState.NEW);
+        optionalBonuses.clear();
+        declarerBonuses.clear();
+        opponentBonuses.clear();
     }
 }

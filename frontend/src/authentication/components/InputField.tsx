@@ -26,7 +26,7 @@ function InputField({
     <div>
       <label
         htmlFor={htmlFor}
-        className="block mb-2 text-md font-medium text-green-100"
+        className="block mb-2 text-lg font-medium text-green-50"
       >
         {labelText}
       </label>
@@ -34,7 +34,7 @@ function InputField({
         type={inputType}
         name={inputName}
         id={inputId}
-        className="bg-green-300 border border-gray-300 text-[#2f4b3a] font-semibold placeholder:text-[#2f4b3a] placeholder:font-normal rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
+        className="bg-green-300 border border-gray-300 text-lg text-[#2f4b3a] font-semibold placeholder:text-[#2f4b3a] placeholder:font-normal rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
         placeholder={placeholderText}
         value={inputValue}
         onChange={(e) => onInputValue(e.target.value)}

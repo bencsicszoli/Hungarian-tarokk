@@ -1,4 +1,4 @@
-import type { User, PlayerData } from "./Types";
+import type { User, PlayerData } from "./types";
 
 export function createPrivateInfo(
   selectedTarokkNumber: number,

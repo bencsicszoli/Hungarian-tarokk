@@ -1,12 +1,14 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
-import type {User, UserContextType} from "../Types";
+import type { User, UserContextType } from "../types";
 
 const UserContext = createContext<UserContextType | null>(null);
 
 export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem("jwtToken") || null);
+  const [token, setToken] = useState<string | null>(
+    localStorage.getItem("jwtToken") || null,
+  );
   const logout = () => setUser(null);
 
   useEffect(() => {
@@ -18,9 +20,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }, [token]);
 
   return (
-    <UserContext.Provider
-      value={{ user, setUser, logout, token, setToken }}
-    >
+    <UserContext.Provider value={{ user, setUser, logout, token, setToken }}>
       {children}
     </UserContext.Provider>
   );

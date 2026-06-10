@@ -12,4 +12,6 @@ public interface DeclarerSkartRepository extends JpaRepository<DeclarerSkart, Lo
 
     List<DeclarerSkart> findAllByGameId(Long gameId);
     int countAllByGameId(Long gameId);
+
+    void deleteAllByGameId(long gameId);
 }

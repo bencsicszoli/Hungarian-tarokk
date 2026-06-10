@@ -1,12 +1,10 @@
 import type { JSX } from "react";
-
-interface Card {
-  cardId: number;
-  imagePath: string;
-  clickable: boolean;
-}
+import type { Card, GameState } from "./types";
 
 function Skart({
+  gameState,
+  discardInformation,
+  ownCards,
   temporarySelectedCards,
   onDisplayTemporarySelectedCards,
   cardsToDiscard,
@@ -14,6 +12,9 @@ function Skart({
   turnPlayer,
   user,
 }: {
+  gameState: GameState;
+  discardInformation: string | null;
+  ownCards: Card[];
   temporarySelectedCards: Card[];
   onDisplayTemporarySelectedCards: () => JSX.Element;
   cardsToDiscard: React.RefObject<number>;
@@ -21,7 +22,12 @@ function Skart({
   turnPlayer: string | null;
   user: { username: string } | null;
 }) {
-  return (
+
+  if (gameState === "SKART_LAY_DOWN" &&
+                      discardInformation === null &&
+                      (ownCards.length > 9 ||
+                        temporarySelectedCards.length > 0)) {
+    return (
     <div className="flex h-full justify-center gap-4">
       <div className="w-auto flex justify-center items-center font-bold text-xl">
       {turnPlayer === user?.username && (<p className="border-green-300 border-2 rounded-md text-green-300 px-4 py-1">Skart here:</p>)}
@@ -42,6 +48,8 @@ function Skart({
       </div>
     </div>
   );
+  }
+  
 }
 
 export default Skart;
