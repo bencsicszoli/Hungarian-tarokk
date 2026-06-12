@@ -46,6 +46,17 @@ public class JoiningService {
         }
     }
 
+    @Transactional
+    public JoinMessageDTO joinGameWithId(String username, long gameId) {
+        Game game = gameRepository.findById(gameId).orElseThrow(() -> new NoSuchElementException(String.format("Game with id %s not found", gameId)));
+        AppUser user = userRepository.findByUsername(username).orElseThrow(() -> new NoSuchElementException(String.format("User %s not found", username.toUpperCase())));
+        if (game.getPlayers() == null) {
+            return createMessageWhenNoGameWithMissingPlayer(user, username);
+        } else {
+            return createMessageWhenGameWithMissingPlayerExists(game, user, username);
+        }
+    }
+
     private JoinMessageDTO createMessageWhenGameWithMissingPlayerExists(Game gameWithEmptySeat, AppUser user, String username) {
         Player newPlayer = new Player();
         newPlayer.setUser(user);
@@ -58,8 +69,6 @@ public class JoiningService {
             setRolesAtCardTable(sortedPlayers, gameWithEmptySeat);
         }
         newPlayer.setGame(gameWithEmptySeat);
-        //playerRepository.save(newPlayer);
-        //gameRepository.save(gameWithEmptySeat);
         return mapper.mapToJoinMessageDTO(gameWithEmptySeat, sortedPlayers);
     }
 

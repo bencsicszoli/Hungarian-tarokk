@@ -7,8 +7,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface SkartRepository extends JpaRepository<Skart, Long> {
-    @NativeQuery(value = "SELECT COUNT(id) WHERE game_id = ?1")
-    int countByGameId(Long gameId);
 
     void deleteAllByGameId(Long gameId);
 }

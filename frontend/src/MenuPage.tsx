@@ -1,17 +1,17 @@
 import { useNavigate } from "react-router-dom";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useUser } from "./context/UserContext";
 import { useWebSocket } from "./context/WebSocketContext";
-import CardTableDecoration from "./gamePageComponents/CardTableDecoration";
 import LinkButton from "./menuPageComponents/LinkButton";
 
 function MenuPage() {
   const navigate = useNavigate();
   const userContext = useUser();
   const webSocketContext = useWebSocket();
-  const { user, setUser, setToken } = userContext || {
+  const { user, setUser, token, setToken } = userContext || {
     user: null,
     setUser: () => {},
+    token: null,
     setToken: () => {},
   };
   const { connected, subscribe, send } = webSocketContext || {
@@ -19,8 +19,12 @@ function MenuPage() {
     subscribe: () => null,
     send: () => {},
   };
+  const [customGameId, setCustomGameId] = useState<string>("");
+  const [joinWithIdClicked, setJoinWithIdClicked] = useState<boolean>(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [getGameIdClicked, setGetGameIdClicked] = useState<boolean>(false);
+  const [gameIdToSend, setGameIdToSend] = useState<string | null>(null);
 
-  console.log("User: ", user);
   useEffect(() => {
     if (!user) navigate(`/`);
   }, [user, navigate]);
@@ -68,6 +72,35 @@ function MenuPage() {
     send("/app/game.join", { username: user?.username });
   }
 
+  async function getGameId() {
+    setGetGameIdClicked(true);
+    const response = await fetch(`/api/auth/customId`, {
+      headers: { Authorization: "Bearer " + token },
+    });
+    if (!response.ok) throw new Error("Could not get a game ID");
+    const id = await response.json();
+    console.log("Custom game ID: ", id);
+    setCustomGameId(id);
+  }
+
+  function joinGameWithId() {
+    if (!connected) {
+      console.warn("WebSocket not connected yet, cannot join game.");
+      return;
+    }
+    setJoinWithIdClicked(true);
+  }
+
+  function submitId(e: { preventDefault: () => void }) {
+    e.preventDefault();
+    send("/app/game.joinWithId", {
+      username: user?.username,
+      gameId: gameIdToSend,
+    });
+    setJoinWithIdClicked(false);
+    console.log("Join request sent with id ", customGameId);
+  }
+
   const handleLogout = () => {
     setToken(null);
     setUser(null);
@@ -79,46 +112,116 @@ function MenuPage() {
   };
 
   return (
-    <div className="w-full h-screen bg-[#2f4b3a] flex flex-col items-center justify-center text-white px-6 sm:px-8">
-      <CardTableDecoration />
-      <h2 className="text-3xl font-extrabold mb-11 drop-shadow-lg text-center text-green-100 md:text-4xl">
-        Select an option:
-      </h2>
+    <div className="w-full h-screen bg-[#2f4b3a] text-white px-6 sm:px-8 flex justify-center items-center">
+      <div className="w-1/5 h-1/5">
+      {getGameIdClicked && (<div className=" flex justify-center items-center border border-green-300 rounded-lg">
+          <div className="flex flex-col w-4/5">
+            <div className="m-2">
+              <label htmlFor="" className="text-lg font-medium text-green-50">
+                Your game ID:
+              </label>
+            </div>
 
-      <div className="w-full bg-[#2f4b3a] border border-green-300 rounded-lg shadow md:mt-0 sm:max-w-md xl:p-0">
-        <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
-          <LinkButton
-            buttonText="PLAY"
-            fontStyle="font-extrabold text-xl"
-            onHandleClick={joinGame}
-          />
-          <LinkButton
-            whereToLink={`/statistics`}
-            buttonText="Statistics"
-            fontStyle="font-semibold text-lg"
-          />
-          <LinkButton
-            whereToLink={`/editpage`}
-            buttonText="Edit profile"
-            fontStyle="font-semibold text-lg"
-          />
-          <LinkButton
-            whereToLink={`/`}
-            buttonText="Bug report"
-            fontStyle="font-semibold text-lg"
-          />
-          <LinkButton
-            buttonText="Rules"
-            onHandleClick={handleHelpClick}
-            fontStyle="font-semibold text-lg"
-          />
-          <LinkButton
-            whereToLink={`/`}
-            buttonText="Logout"
-            onHandleClick={handleLogout}
-            fontStyle="font-semibold text-lg"
-          />
+            <input
+              type="text"
+              placeholder="Waiting for the ID..."
+              value={customGameId}
+              className="h-12 font-bold text-2xl text-center text-[#2f4b3a] bg-green-300 rounded-lg m-2 placeholder:text-[#2f4b3a] placeholder:font-normal placeholder: text-md"
+            />
+            <div className="m-2 flex justify-center items-center">
+              <button
+                type="submit"
+                className="bg-green-700 rounded-lg w-42 h-10 border border-green-300 hover:scale-105 hover:bg-green-900 cursor-pointer"
+                onClick={async () => {
+                  await navigator.clipboard.writeText(customGameId);
+                  setCopiedId("write-text");
+                }}
+              >
+                {copiedId === "write-text" ? "Copied" : "Copy ID to clipboard"}
+              </button>
+            </div>
+          </div>
+        </div>)}
+        
+      </div>
+      <div className="w-1/3 flex flex-col justify-center items-center">
+        <h2 className="text-3xl font-extrabold mb-11 drop-shadow-lg text-green-100 md:text-4xl">
+          Select an option:
+        </h2>
+
+        <div className="w-full bg-[#2f4b3a] border border-green-300 rounded-lg shadow md:mt-0 sm:max-w-md xl:p-0">
+          <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
+            <LinkButton
+              buttonText="Join a random game"
+              fontStyle="font-extrabold text-xl"
+              onHandleClick={joinGame}
+            />
+            <LinkButton
+              buttonText="Join a game with ID"
+              fontStyle="font-extrabold text-xl"
+              onHandleClick={joinGameWithId}
+            />
+            <LinkButton
+              buttonText="Get an ID to invite players"
+              fontStyle="font-semibold text-lg"
+              onHandleClick={getGameId}
+            />
+            <LinkButton
+              whereToLink={`/statistics`}
+              buttonText="Statistics"
+              fontStyle="font-semibold text-lg"
+            />
+            <LinkButton
+              whereToLink={`/editpage`}
+              buttonText="Edit profile"
+              fontStyle="font-semibold text-lg"
+            />
+            <LinkButton
+              whereToLink={`/`}
+              buttonText="Bug report"
+              fontStyle="font-semibold text-lg"
+            />
+            <LinkButton
+              buttonText="Rules"
+              onHandleClick={handleHelpClick}
+              fontStyle="font-semibold text-lg"
+            />
+            <LinkButton
+              whereToLink={`/`}
+              buttonText="Logout"
+              onHandleClick={handleLogout}
+              fontStyle="font-semibold text-lg"
+            />
+          </div>
         </div>
+      </div>
+      <div className="w-1/5 h-1/5">
+        {joinWithIdClicked && (
+          <div className=" border border-green-300 rounded-lg flex justify-center items-center">
+            <form onSubmit={submitId} className="flex flex-col w-4/5">
+              <div className="m-2">
+                <label htmlFor="" className="text-lg font-medium text-green-50">
+                  Enter the ID:
+                </label>
+              </div>
+
+              <input
+                type="text"
+                placeholder="Enter the ID here:"
+                onChange={(e) => setGameIdToSend(e.target.value)}
+                className="h-12 font-bold text-2xl text-center text-[#2f4b3a] bg-green-300 rounded-lg m-2 placeholder:text-[#2f4b3a] placeholder:font-normal placeholder: text-md"
+              />
+              <div className="m-2 flex justify-center items-center">
+                <button
+                  type="submit"
+                  className="bg-green-700 rounded-lg w-40 h-10 border border-green-300 hover:scale-105 hover:bg-green-900 cursor-pointer"
+                >
+                  Send
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   );

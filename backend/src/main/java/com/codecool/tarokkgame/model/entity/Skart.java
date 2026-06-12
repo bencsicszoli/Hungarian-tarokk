@@ -21,7 +21,5 @@ public abstract class Skart implements Summary {
 
     @ManyToOne
     protected Card card;
-
-    public abstract RoleInGame getOwner();
 }
 

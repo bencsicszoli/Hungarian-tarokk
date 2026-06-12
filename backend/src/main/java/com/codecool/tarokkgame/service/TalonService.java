@@ -113,6 +113,9 @@ public class TalonService {
             boolean clickable = setIfCardsNotClickable(playerCard, player, game);
             PlayerCardDTO dto = new PlayerCardDTO(playerCard.getCard().getId(), player.getId(), playerCard.getCard().getFrontImagePath(), clickable);
             DTOs.add(dto);
+            if (playerCard.getCard().getStrength() == 1) {
+                player.setHasPagat(true);
+            }
         }
     }
 

@@ -93,14 +93,10 @@ public class TrickService {
         Trick strongestCard = getStrongestCard(game, tricks);
         Player trickWinner = strongestCard.getPlayer();
         switch (trickWinner.getPlace()) {
-            case 1: game.setPlayer1TrickCards(game.getPlayer1TrickCards() + 4);
-            break;
-            case 2: game.setPlayer2TrickCards(game.getPlayer2TrickCards() + 4);
-            break;
-            case 3: game.setPlayer3TrickCards(game.getPlayer3TrickCards() + 4);
-            break;
-            case 4: game.setPlayer4TrickCards(game.getPlayer4TrickCards() + 4);
-            break;
+            case 1: game.setPlayer1TrickCards(game.getPlayer1TrickCards() + 4); break;
+            case 2: game.setPlayer2TrickCards(game.getPlayer2TrickCards() + 4); break;
+            case 3: game.setPlayer3TrickCards(game.getPlayer3TrickCards() + 4); break;
+            case 4: game.setPlayer4TrickCards(game.getPlayer4TrickCards() + 4); break;
             default: throw new RuntimeException("Invalid trick winner place");
         }
 

@@ -13,12 +13,11 @@ function LinkButton({
   onHandleClick,
   fontStyle,
 }: LinkButtonProps) {
-  // render just a button when no destination URL is provided; otherwise wrap
-  // with a <Link> so we can use react-router navigation for static links.
+  
   const button = (
     <button
       onClick={onHandleClick}
-      className={`w-full text-[#2f4b3a] bg-green-300 hover:bg-green-500 focus:ring-4 focus:outline-none focus:ring-green-400 ${fontStyle} rounded-lg px-5 py-2.5 text-center ${fontStyle}`}
+      className={`w-full text-[#2f4b3a] bg-green-300 hover:bg-green-500 focus:ring-4 focus:outline-none focus:ring-green-400 rounded-lg px-5 py-2.5 text-center ${fontStyle}`}
     >
       {buttonText}
     </button>

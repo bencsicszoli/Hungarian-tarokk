@@ -1,7 +1,6 @@
 package com.codecool.tarokkgame.constants;
 
 import lombok.Getter;
-
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -96,10 +95,6 @@ public enum Bonus {
 
     public static List<Bonus> sortBonuses(Set<Bonus> bonuses) {
         return bonuses.stream().sorted(Comparator.comparingInt(b -> b.order)).collect(Collectors.toList());
-    }
-
-    public static boolean isContainDoubled(List<Bonus> bonuses) {
-        return bonuses.stream().anyMatch(b -> b.level == 1);
     }
 
     public static boolean isContainReDoubled(List<Bonus> bonuses) {

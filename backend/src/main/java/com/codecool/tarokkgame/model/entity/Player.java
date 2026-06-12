@@ -67,12 +67,6 @@ public class Player {
         return user.getUsername();
     }
 
-    public List<PlayerCard> getSortedCards() {
-        List<PlayerCard> sortedCards = new ArrayList<>(playerCards);
-        sortedCards.sort(Comparator.comparingInt(o -> o.getCard().getId()));
-        return sortedCards;
-    }
-
     public int getBalance() {
         return user.getBalance();
     }
@@ -90,28 +84,6 @@ public class Player {
             }
         }
         return false;
-    }
-
-    public boolean couldAnnounce18Invit() {
-        return checkNumberOfTarokksAndGivenTarokkExist(18);
-    }
-
-    public boolean couldAnnounce19Invit() {
-        return checkNumberOfTarokksAndGivenTarokkExist(19);
-    }
-
-    private boolean checkNumberOfTarokksAndGivenTarokkExist(int tarokkStrength) {
-        int tarokks = 0;
-        boolean tarokkExist = false;
-        for (PlayerCard playerCard : playerCards) {
-            if (playerCard.getCard().getStrength() > 0) {
-                tarokks++;
-            }
-            if (playerCard.getCard().getStrength() == tarokkStrength) {
-                tarokkExist = true;
-            }
-        }
-        return tarokkExist && tarokks >= 5;
     }
 
     public SpecialBidCasesDTO getSpecialBidCases() {

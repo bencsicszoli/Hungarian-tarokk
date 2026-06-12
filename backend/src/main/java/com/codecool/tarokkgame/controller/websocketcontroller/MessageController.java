@@ -80,17 +80,29 @@ public class MessageController {
                 messagingTemplate.convertAndSendToUser(playerName, "/queue/private", joinMessage);
                 System.out.println("Errormessage sent");
             } else {
-                Objects.requireNonNull(headerAccessor.getSessionAttributes()).put("gameId", joinMessage.getGameId());
-                headerAccessor.getSessionAttributes().put("player", playerName);
-                joinMessage.setType("game.joined");
-                if (joinMessage.getPlayer1() != null && joinMessage.getPlayer2() != null && joinMessage.getPlayer3() != null && joinMessage.getPlayer4() != null) {
-                    joinMessage.setPrivateInformation("You are the fourth player.@ Let the game start!");
-                }
-                messagingTemplate.convertAndSendToUser(playerName, "/queue/private", joinMessage);
-                messagingTemplate.convertAndSend("/topic/game." + joinMessage.getGameId(), joinMessage);
+                handleJoinAndSendMessages(headerAccessor, joinMessage, playerName);
             }
         }
         else {
+            throw new NotAllowedOperationException("Invalid username");
+        }
+    }
+
+    @MessageMapping("/game.joinWithId")
+    public void joinGameWithId(@Payload GeneralRequestDTO request, SimpMessageHeaderAccessor headerAccessor, Principal principal) {
+        String playerName = principal.getName();
+        if (playerName.equals(request.username())) {
+            JoinMessageDTO joinMessageDTO = joiningService.joinGameWithId(playerName, request.gameId());
+            if (joinMessageDTO == null) {
+                joinMessageDTO = new JoinMessageDTO();
+                joinMessageDTO.setGameId(request.gameId());
+                joinMessageDTO.setInformation("Something went wrong.");
+                messagingTemplate.convertAndSendToUser(playerName, "/queue/private", joinMessageDTO);
+                System.out.println("Errormessage sent");
+            } else {
+                handleJoinAndSendMessages(headerAccessor, joinMessageDTO, playerName);
+            }
+        } else {
             throw new NotAllowedOperationException("Invalid username");
         }
     }
@@ -160,7 +172,6 @@ public class MessageController {
             messagingTemplate.convertAndSend("/topic/game." + gameId, playerLeaveDTO);
         }
     }
-
 
     @MessageMapping("/game.deal")
     @Transactional
@@ -535,9 +546,20 @@ public class MessageController {
         }
     }
 
+    private void handleJoinAndSendMessages(SimpMessageHeaderAccessor headerAccessor, JoinMessageDTO joinMessage, String playerName) {
+        Objects.requireNonNull(headerAccessor.getSessionAttributes()).put("gameId", joinMessage.getGameId());
+        headerAccessor.getSessionAttributes().put("player", playerName);
+        joinMessage.setType("game.joined");
+        if (joinMessage.getPlayer1() != null && joinMessage.getPlayer2() != null && joinMessage.getPlayer3() != null && joinMessage.getPlayer4() != null) {
+            joinMessage.setPrivateInformation("You are the fourth player.@ Let the game start!");
+        }
+        messagingTemplate.convertAndSendToUser(playerName, "/queue/private", joinMessage);
+        messagingTemplate.convertAndSend("/topic/game." + joinMessage.getGameId(), joinMessage);
+    }
+
     private void dealTalonCards(Game game, GeneralRequestDTO request) {
-        //shuffleService.addShuffledDeck(game);
-        shuffleService.useFakeDeck(game);
+        shuffleService.addShuffledDeck(game);
+        //shuffleService.useFakeDeck(game);
         dealService.setTalonCards(game);
         try {
             Thread.sleep(1000);

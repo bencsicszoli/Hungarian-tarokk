@@ -11,7 +11,6 @@ import com.codecool.tarokkgame.repository.DeclarerSkartRepository;
 import com.codecool.tarokkgame.repository.OpponentSkartRepository;
 import com.codecool.tarokkgame.repository.OwnTrickRepository;
 import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;

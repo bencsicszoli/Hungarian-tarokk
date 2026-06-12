@@ -2,7 +2,6 @@ package com.codecool.tarokkgame.repository;
 
 import com.codecool.tarokkgame.constants.RoleInGame;
 import com.codecool.tarokkgame.model.entity.OwnTrick;
-import com.codecool.tarokkgame.model.entity.Player;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,7 +11,6 @@ import java.util.List;
 
 @Repository
 public interface OwnTrickRepository extends JpaRepository<OwnTrick, Long> {
-    List<OwnTrick> findAllByPlayer(Player player);
     void deleteAllByPlayerGameId(Long playerGameId);
 
     @Query("""

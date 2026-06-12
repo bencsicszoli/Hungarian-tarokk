@@ -18,19 +18,16 @@ public class ResultService {
     private final OwnTrickRepository ownTrickRepository;
     private final GameRepository gameRepository;
     private final DeclarerSkartRepository declarerSkartRepository;
-    private final PlayerRepository playerRepository;
 
     public ResultService(OwnTrickRepository ownTrickRepository, GameRepository gameRepository, DeclarerSkartRepository declarerSkartRepository, PlayerRepository playerRepository) {
         this.ownTrickRepository = ownTrickRepository;
         this.gameRepository = gameRepository;
         this.declarerSkartRepository = declarerSkartRepository;
-        this.playerRepository = playerRepository;
     }
 
     public void setResult(long gameId) {
         Game game = gameRepository.findById(gameId).orElseThrow(() -> new NoSuchElementException("Game not found"));
         List<OwnTrick> declarerTricks = ownTrickRepository.findAllByRolesAndPlayerGameId(List.of(RoleInGame.DECLARER, RoleInGame.DECLARER_PARTNER), gameId);
-        //List<OwnTrick> partnerTricks = ownTrickRepository.findAllByPlayerGameAndPlayerRoleInGame(game, RoleInGame.DECLARER_PARTNER);
         List<DeclarerSkart> declarerSkartCards = declarerSkartRepository.findAllByGameId(gameId);
         int bidMultiplier = game.getBidLevel().getBidValue();
         String bidLevel = game.getBidLevel().getBidLevelByBidValue(bidMultiplier).getDescription();

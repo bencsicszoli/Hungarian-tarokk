@@ -50,8 +50,6 @@ public class ResetService {
         game.setLastBonusAnnouncer("declarer");
         game.setTricks(new ArrayList<>(4));
         game.setBidLevel(BidLevel.NONE);
-        // game.setState(GameState.NEW);
-
         game.setOptionalBonuses(new HashSet<>());
         game.setDeclarerBonuses(new HashSet<>());
         game.setOpponentBonuses(new HashSet<>());
@@ -79,7 +77,6 @@ public class ResetService {
             player.setRoleInGame(RoleInGame.NOT_CLEAR_YET);
             player.setBidLevels(new HashSet<>());
             player.setResult(null);
-            // player.setResult(new RoundResult());
             playerRepository.save(player); // ?
         }
     }

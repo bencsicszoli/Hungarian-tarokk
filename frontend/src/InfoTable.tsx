@@ -61,14 +61,11 @@ function InfoTable({
         onDisplayInformation={(publicInfo) => displayInformation(publicInfo)}
       />
 
-      {/* Private information */}
       <PrivateInfo
         privateInfo={privateInfo}
         onDisplayInformation={(privateInfo) => displayInformation(privateInfo)}
         gameState={gameState}
       />
-
-      {/* Bonuses information */}
 
       <BonusLists
         declarerBonuses={declarerBonuses}

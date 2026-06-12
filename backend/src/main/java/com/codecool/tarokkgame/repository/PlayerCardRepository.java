@@ -8,9 +8,5 @@ import java.util.List;
 
 @Repository
 public interface PlayerCardRepository extends JpaRepository<PlayerCard, Long> {
-    List<PlayerCard> findAllByPlayerId(Long playerId);
-    void deleteAllByPlayerId(Long playerId);
-    void deleteByPlayerIdAndCardId(Long playerId, int cardId);
-    int countAllByPlayerId(Long playerId);
     void deleteAllByPlayerGameId(Long playerGameId);
 }

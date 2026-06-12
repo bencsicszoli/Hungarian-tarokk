@@ -14,12 +14,4 @@ public enum RoleInGame {
     RoleInGame(String team) {
         this.team = team;
     }
-
-    public Boolean isDeclarer(RoleInGame role) {
-        return role.team.equals("declarer");
-    }
-
-    public Boolean isOpponent(RoleInGame role) {
-        return role.team.equals("opponent");
-    }
 }

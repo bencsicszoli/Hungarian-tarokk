@@ -19,7 +19,6 @@ public class LeavingService {
     private final DeckCardRepository deckCardRepository;
     private final DeclarerSkartRepository declarerSkartRepository;
     private final OpponentSkartRepository opponentSkartRepository;
-    private final PlayerCardRepository playerCardRepository;
     private final GameRepository gameRepository;
     private final TalonCardRepository talonCardRepository;
     private final MapperService mapperService;
@@ -31,7 +30,6 @@ public class LeavingService {
         this.deckCardRepository = deckCardRepository;
         this.declarerSkartRepository = declarerSkartRepository;
         this.opponentSkartRepository = opponentSkartRepository;
-        this.playerCardRepository = playerCardRepository;
         this.gameRepository = gameRepository;
         this.talonCardRepository = talonCardRepository;
         this.mapperService = mapperService;
@@ -89,7 +87,7 @@ public class LeavingService {
         } else if (player.getName().equals(game.getPlayer3())) {
             game.setPlayer3(null);
         } else {
-            game.setPlayer1(null);
+            game.setPlayer4(null);
         }
         if (player.getPenalty() == 0) {
             for (Player tarokkPlayer : game.getPlayers()) {
@@ -123,7 +121,7 @@ public class LeavingService {
 
             Map<String, PlayerData> playersData = mapperService.mapPlayersDataToHashMap(game);
             return new PlayerLeaveDTO(player.getName(), String.format("%s quit the game", player.getName().toUpperCase()), playersData, "game.confirmLeaving");
-        } else {
+        } else {  // Only one player remained
             game.getPlayers().remove(player);
             playerRepository.delete(player);
             if (!game.isPrivateGame()) {

@@ -2,7 +2,6 @@ export interface User {
   id: string;
   username: string;
   email: string;
-  // Add other player properties as needed
 }
 
 export interface UserContextType {

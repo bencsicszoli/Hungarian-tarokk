@@ -44,5 +44,10 @@ public class AuthController {
     public Map<String, String> editCredentials(@RequestBody EditCredentialsDTO request) {
         return authService.editCredentials(request);
     }
+
+    @GetMapping("/customId")
+    public long getCustomId() {
+        return authService.getCustomGameId();
+    }
 }
 

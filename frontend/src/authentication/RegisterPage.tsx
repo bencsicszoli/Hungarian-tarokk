@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import CardTableDecoration from "../gamePageComponents/CardTableDecoration";
 import InputField from "./components/InputField";
 
 function RegistrationPage() {
@@ -37,7 +36,6 @@ function RegistrationPage() {
 
   return (
     <div className="w-full h-screen bg-[#2f4b3a] flex flex-col items-center justify-center text-white px-6 sm:px-8">
-      <CardTableDecoration />
 
       <h2 className="text-4xl font-extrabold mb-11 drop-shadow-lg text-center text-green-50">
         Welcome to Tarokk game!

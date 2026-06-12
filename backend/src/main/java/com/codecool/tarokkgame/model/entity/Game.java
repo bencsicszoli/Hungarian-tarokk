@@ -5,7 +5,6 @@ import com.codecool.tarokkgame.model.TarokkNumberAnnouncers;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-
 import java.util.*;
 
 @Entity
@@ -190,29 +189,12 @@ public class Game {
         }
     }
 
-    public int getNumberOfOpponents() {
-        int opponents = 0;
-        for (Player player : getPlayers()) {
-            if (player.getRoleInGame().equals(RoleInGame.OPPONENT)) {
-                opponents++;
-            }
-        }
-        return opponents;
-    }
-
-    public void setLastPlayerAsDeclarer() {
-        for (Player player : getPlayers()) {
-            if (player.getRoleInGame().equals(RoleInGame.NOT_CLEAR_YET)) {
-                player.setRoleInGame(RoleInGame.DECLARER_PARTNER);
-            }
-        }
-    }
-
     public boolean isDeclarerAnnouncedUltimo() {
         boolean isAnnouncedUltimo = false;
         for (Bonus bonus : declarerBonuses) {
             if (bonus.getBonusIndex() == 4) {
                 isAnnouncedUltimo = true;
+                break;
             }
         }
         return isAnnouncedUltimo;
@@ -223,6 +205,7 @@ public class Game {
         for (Bonus bonus : opponentBonuses) {
             if (bonus.getBonusIndex() == 4) {
                 isAnnouncedUltimo = true;
+                break;
             }
         }
         return isAnnouncedUltimo;
@@ -330,26 +313,6 @@ public class Game {
             }
         }
         return isAnnouncedVolat;
-    }
-
-    public boolean announcedBonus(String side, Bonus bonus) {
-        boolean isAnnouncedBonus = false;
-        if (side.equals("declarer")) {
-            for (Bonus declarerBonus : declarerBonuses) {
-                if (declarerBonus.getBonusIndex() == bonus.getBonusIndex()) {
-                    isAnnouncedBonus = true;
-                    break;
-                }
-            }
-        } else {
-            for (Bonus opponentBonus : opponentBonuses) {
-                if (opponentBonus.getBonusIndex() == bonus.getBonusIndex()) {
-                    isAnnouncedBonus = true;
-                    break;
-                }
-            }
-        }
-        return isAnnouncedBonus;
     }
 
     public Bonus findBonusByIndex(Bonus bonus, String side) {

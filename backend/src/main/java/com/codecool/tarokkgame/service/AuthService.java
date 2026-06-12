@@ -6,8 +6,10 @@ import com.codecool.tarokkgame.exceptionhandling.customexception.NotAllowedOpera
 import com.codecool.tarokkgame.exceptionhandling.customexception.UsernameAlreadyExistsException;
 import com.codecool.tarokkgame.model.dto.restdto.*;
 import com.codecool.tarokkgame.model.entity.AppUser;
+import com.codecool.tarokkgame.model.entity.Game;
 import com.codecool.tarokkgame.model.entity.Player;
 import com.codecool.tarokkgame.repository.AppUserRepository;
+import com.codecool.tarokkgame.repository.GameRepository;
 import com.codecool.tarokkgame.security.jwt.JwtUtils;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -28,12 +30,14 @@ public class AuthService {
     private final PasswordEncoder encoder;
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
+    private final GameRepository gameRepository;
 
-    public AuthService(AppUserRepository appUserRepository, PasswordEncoder encoder, AuthenticationManager authenticationManager, JwtUtils jwtUtils) {
+    public AuthService(AppUserRepository appUserRepository, PasswordEncoder encoder, AuthenticationManager authenticationManager, JwtUtils jwtUtils, GameRepository gameRepository) {
         this.appUserRepository = appUserRepository;
         this.encoder = encoder;
         this.authenticationManager = authenticationManager;
         this.jwtUtils = jwtUtils;
+        this.gameRepository = gameRepository;
     }
 
     public Map<String, String> createPlayer(RegisterDTO request) {
@@ -115,5 +119,12 @@ public class AuthService {
             result.put("message", String.format("User '%s' edited successfully. The new username is '%s'.", user.getUsername(), request.username()));
         }
         return result;
+    }
+
+    public long getCustomGameId() {
+        Game game = new Game();
+        game.setPrivateGame(true);
+        Game savedGame = gameRepository.save(game);
+        return savedGame.getId();
     }
 }

@@ -317,7 +317,8 @@ function Game() {
           setDealButtonClicked(false);
           setOwnCards([]);
           setPrivateInformation("");
-
+          setTalonCardsNumber(0);
+          setIsGameNew(true);
           break;
         case "game.confirmLeaving":
           setPlayerData(message.playersData);
@@ -388,7 +389,7 @@ function Game() {
           console.log("Public information updated:", message.info);
           break;
         case "game.discardHand":
-          setPublicInformation(message.info); //? duplication
+          //setPublicInformation(message.info); //? duplication
           setDeclarer(null);
           setTurnPlayer(message.turnPlayer);
           setBid("-");
@@ -569,13 +570,13 @@ function Game() {
       (payload as Record<string, unknown>).body as string,
     );
     console.log("Private message received:", message);
-    // Handle hand updates here
+    
     switch (message.type) {
       case "game.playerCards":
         setOwnCards(message.cards);
         console.log("Own cards updated:", message.cards);
         break;
-      case "game.playerCardsWithTalon": // Function to add onClick methods is missing
+      case "game.playerCardsWithTalon":
         setOwnCards(message.cards);
         cardsToDiscard.current = message.cards.length - 9;
         console.log("Own cards with talon updated:", message.cards);
@@ -632,7 +633,7 @@ function Game() {
         break;
       case "game.logoutWarning":
         setLogoutWarning(message.info);
-        console.log("Penalty warning: ", message.info);
+        console.log("Logout warning: ", message.info);
         break;
       case "game.privateResult":
         setPrivateInformation(message.info);
