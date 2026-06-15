@@ -1,6 +1,59 @@
 @import "tailwindcss";
 @import "tailwindcss-animated";
 
+/* Card slides onto the table from the direction of the player who played it */
+@keyframes card-from-north {
+  from { translate: 0 -30vh; opacity: 0; }
+  to   { translate: 0 0;     opacity: 1; }
+}
+@keyframes card-from-south {
+  from { translate: 0 30vh;  opacity: 0; }
+  to   { translate: 0 0;     opacity: 1; }
+}
+@keyframes card-from-east {
+  from { translate: 30vw 0;  opacity: 0; }
+  to   { translate: 0 0;     opacity: 1; }
+}
+@keyframes card-from-west {
+  from { translate: -30vw 0; opacity: 0; }
+  to   { translate: 0 0;     opacity: 1; }
+}
+
+/* Card flies to the winner's trick pile after the trick is won.
+   NORTH pile: top-left (-14vw left of center, ~27vh up)
+   SOUTH pile: bottom-left (~38vw left of center, ~13vh down)
+   EAST pile:  right (~33vw right of center)
+   WEST pile:  left  (~33vw left of center)              */
+@keyframes card-fly-north {
+  from { translate: 0 0;          opacity: 1; }
+  80%  { translate: -10vw -23vh;  opacity: 1; }
+  to   { translate: -10vw -23vh;  opacity: 0; }
+}
+@keyframes card-fly-south {
+  from { translate: 0 0;          opacity: 1; }
+  80%  { translate: -31vw 23vh;   opacity: 1; }
+  to   { translate: -31vw 23vh;   opacity: 0; }
+}
+@keyframes card-fly-east {
+  from { translate: 0 0;          opacity: 1; }
+  80%  { translate: 29vw 0;       opacity: 1; }
+  to   { translate: 29vw 0;       opacity: 0; }
+}
+@keyframes card-fly-west {
+  from { translate: 0 0;          opacity: 1; }
+  80%  { translate: -29vw 0;      opacity: 1; }
+  to   { translate: -29vw 0;      opacity: 0; }
+}
+
+.card-from-north { animation: card-from-north 0.4s ease-out forwards; }
+.card-from-south { animation: card-from-south 0.4s ease-out forwards; }
+.card-from-east  { animation: card-from-east  0.4s ease-out forwards; }
+.card-from-west  { animation: card-from-west  0.4s ease-out forwards; }
+.card-fly-north  { animation: card-fly-north  0.5s ease-in  forwards; }
+.card-fly-south  { animation: card-fly-south  0.5s ease-in  forwards; }
+.card-fly-east   { animation: card-fly-east   0.5s ease-in  forwards; }
+.card-fly-west   { animation: card-fly-west   0.5s ease-in  forwards; }
+
 @layer utilities {
   .bg-poker-table {
     background-color: #2f4b3a; /* darker, earthier green */

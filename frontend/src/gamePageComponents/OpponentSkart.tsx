@@ -7,7 +7,8 @@ function OpponentSkart({
   publicOpponentSkart,
   onDisplaySkart,
   onDisplayPublicCards,
-} : {  opponentSkartLength: number;
+}: {
+  opponentSkartLength: number;
   gameState: GameState;
   publicOpponentSkart: CardImage[];
   onDisplaySkart: (length: number) => JSX.Element[];

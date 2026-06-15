@@ -148,11 +148,17 @@ function Game() {
   );
   const [trickCard, setTrickCard] = useState<Card | null>(null);
   const [trickCards, setTrickCards] = useState<TrickCard[]>([]);
+  const [trickWinnerDirection, setTrickWinnerDirection] = useState<
+    "north" | "east" | "south" | "west" | null
+  >(null);
   const [turnPlayer, setTurnPlayer] = useState<string | null>(
     game?.turnPlayer || null,
   );
 
   const cardsToDiscard = useRef<number>(0);
+  const playerTrickCountsRef = useRef<Record<string, number>>({});
+  const trickCardIdsRef = useRef<Set<number>>(new Set());
+  const cardAnimationsRef = useRef<Map<number, string>>(new Map());
 
   const handlePublicMessage = useCallback(
     (payload: unknown) => {
@@ -215,6 +221,7 @@ function Game() {
           setFirstBonusRound(true);
           setDeclarer(null);
           setBid("-");
+          setDeclarerSkart([]);
           setDeclarerSkartLength(0);
           setOpponentSkartLength(0);
           setDiscardInformation(null);
@@ -331,6 +338,7 @@ function Game() {
           setFirstBonusRound(true);
           setDeclarer(null);
           setBid("-");
+          setDeclarerSkart([]);
           setDeclarerSkartLength(0);
           setOpponentSkartLength(0);
           setDiscardInformation(null);
@@ -397,6 +405,7 @@ function Game() {
           setPublicInformation(
             message.playerName.toUpperCase() + " " + message.info,
           );
+          setDeclarerSkart([]);
           setDeclarerSkartLength(0);
           setOpponentSkartLength(0);
           setGameState("NEW");
@@ -440,14 +449,58 @@ function Game() {
           setFirstBonusRound(false);
           console.log("Public bonus info updated:", message.info);
           break;
-        case "game.trickCards":
-          setTrickCards(message.cards);
+        case "game.trickCards": {
+          const newCards: TrickCard[] = message.cards;
+          const turnName: string | null = message.turnName ?? null;
+
+          if (turnName && user) {
+            const newCard = newCards.find(
+              (c) => !trickCardIdsRef.current.has(c.cardId),
+            );
+            if (newCard) {
+              let dir: "north" | "east" | "south" | "west" | null = null;
+              if (turnName === user.username) {
+                dir = "south";
+              } else {
+                switch (user.username) {
+                  case player1:
+                    if (turnName === player2) dir = "east";
+                    else if (turnName === player3) dir = "north";
+                    else if (turnName === player4) dir = "west";
+                    break;
+                  case player2:
+                    if (turnName === player3) dir = "east";
+                    else if (turnName === player4) dir = "north";
+                    else if (turnName === player1) dir = "west";
+                    break;
+                  case player3:
+                    if (turnName === player4) dir = "east";
+                    else if (turnName === player1) dir = "north";
+                    else if (turnName === player2) dir = "west";
+                    break;
+                  case player4:
+                    if (turnName === player1) dir = "east";
+                    else if (turnName === player2) dir = "north";
+                    else if (turnName === player3) dir = "west";
+                    break;
+                }
+              }
+              if (dir)
+                cardAnimationsRef.current.set(
+                  newCard.cardId,
+                  `card-from-${dir}`,
+                );
+            }
+          }
+
+          trickCardIdsRef.current = new Set(newCards.map((c) => c.cardId));
+          setTrickCards(newCards);
           setPlayerData((prev) => ({
             ...prev,
-            ...(message.turnName
+            ...(turnName
               ? {
-                  [message.turnName]: {
-                    ...prev[message.turnName],
+                  [turnName]: {
+                    ...prev[turnName],
                     playerCardsNumber: message.cardsInHand || 0,
                   },
                 }
@@ -455,16 +508,64 @@ function Game() {
           }));
           console.log("Trick cards updated:", message);
           break;
-        case "game.newTrickRound":
-          setTrickCards([]);
-          setTrickCard(null);
+        }
+        case "game.newTrickRound": {
+          const trickPlayers = [player1, player2, player3, player4];
+          const newCounts: number[] = message.playerTricks;
+
+          const winnerIndex = newCounts.findIndex((newCount, i) => {
+            const name = trickPlayers[i];
+            return (
+              name !== null &&
+              newCount > (playerTrickCountsRef.current[name] ?? 0)
+            );
+          });
+
+          trickPlayers.forEach((name, i) => {
+            if (name) playerTrickCountsRef.current[name] = newCounts[i];
+          });
+
+          if (winnerIndex >= 0) {
+            const winnerName = trickPlayers[winnerIndex];
+            if (winnerName && user) {
+              let dir: "north" | "east" | "south" | "west" | null = null;
+              if (winnerName === user.username) {
+                dir = "south";
+              } else {
+                switch (user.username) {
+                  case player1:
+                    if (winnerName === player2) dir = "east";
+                    else if (winnerName === player3) dir = "north";
+                    else if (winnerName === player4) dir = "west";
+                    break;
+                  case player2:
+                    if (winnerName === player3) dir = "east";
+                    else if (winnerName === player4) dir = "north";
+                    else if (winnerName === player1) dir = "west";
+                    break;
+                  case player3:
+                    if (winnerName === player4) dir = "east";
+                    else if (winnerName === player1) dir = "north";
+                    else if (winnerName === player2) dir = "west";
+                    break;
+                  case player4:
+                    if (winnerName === player1) dir = "east";
+                    else if (winnerName === player2) dir = "north";
+                    else if (winnerName === player3) dir = "west";
+                    break;
+                }
+              }
+              if (dir) setTrickWinnerDirection(dir);
+            }
+          }
+
           setPlayerData((prev) => ({
             ...prev,
             ...(player1
               ? {
                   [player1]: {
                     ...prev[player1],
-                    playerTrickCards: message.playerTricks[0],
+                    playerTrickCards: newCounts[0],
                   },
                 }
               : {}),
@@ -472,7 +573,7 @@ function Game() {
               ? {
                   [player2]: {
                     ...prev[player2],
-                    playerTrickCards: message.playerTricks[1],
+                    playerTrickCards: newCounts[1],
                   },
                 }
               : {}),
@@ -480,7 +581,7 @@ function Game() {
               ? {
                   [player3]: {
                     ...prev[player3],
-                    playerTrickCards: message.playerTricks[2],
+                    playerTrickCards: newCounts[2],
                   },
                 }
               : {}),
@@ -488,14 +589,23 @@ function Game() {
               ? {
                   [player4]: {
                     ...prev[player4],
-                    playerTrickCards: message.playerTricks[3],
+                    playerTrickCards: newCounts[3],
                   },
                 }
               : {}),
           }));
 
+          setTimeout(() => {
+            setTrickCards([]);
+            setTrickCard(null);
+            setTrickWinnerDirection(null);
+            trickCardIdsRef.current.clear();
+            cardAnimationsRef.current.clear();
+          }, 600);
+
           console.log("Trick reset message:", message);
           break;
+        }
         case "game.newBalances":
           setPlayerData((prev) => ({
             ...prev,
@@ -1424,12 +1534,15 @@ function Game() {
     return (
       <div className="relative w-full h-full">
         {trickCards.map((card, index) => {
+          const animClass = trickWinnerDirection
+            ? `card-fly-${trickWinnerDirection}`
+            : (cardAnimationsRef.current.get(card.cardId) ?? "");
           return (
             <img
-              key={index}
+              key={trickWinnerDirection ? `fly-${card.cardId}` : card.cardId}
               src={card.imagePath}
               alt={`Trick card ${index + 1}`}
-              className="w-20 absolute"
+              className={`w-20 absolute ${animClass}`}
               style={{
                 left: `calc(50% + ${card?.x ?? 0}%)`,
                 top: `calc(50% + ${card?.y ?? 0}%)`,

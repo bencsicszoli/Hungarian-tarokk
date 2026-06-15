@@ -445,7 +445,6 @@ public class MessageController {
         }
     }
 
-
     @Transactional
     @MessageMapping("/game.playCard")
     public void handleTrick(TrickRequestDTO request, Principal principal) {
@@ -476,6 +475,11 @@ public class MessageController {
                     GameStateDTO gameStateDTO = new GameStateDTO(GameState.FINISHED.toString(), "game.gameState");
                     messagingTemplate.convertAndSend("/topic/game." + request.gameId(), gameStateDTO);
                     GeneralRequestDTO generalRequestDTO = new GeneralRequestDTO(request.username(), request.gameId());
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                    }
                     sendResults(generalRequestDTO, principal);
                 }
 
@@ -491,8 +495,6 @@ public class MessageController {
         }
     }
 
-    @Transactional
-    @MessageMapping("/game.results")  // Kell ez?
     public void sendResults(GeneralRequestDTO request, Principal principal) {
         String playerName = principal.getName();
         if (playerName.equals(request.username())) {
