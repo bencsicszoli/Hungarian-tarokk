@@ -1,0 +1,70 @@
+# Éles (production) stack – a Hetzner VPS-en ezt futtatjuk.
+#
+# Indítás:   docker compose -f docker-compose.prod.yml up -d --build
+# Leállítás: docker compose -f docker-compose.prod.yml down
+# Logok:     docker compose -f docker-compose.prod.yml logs -f
+#
+# Eltérések a fejlesztői docker-compose.yml-hez képest:
+#   - Caddy reverse proxy a 80/443 porton, automatikus HTTPS (Let's Encrypt).
+#   - A db / backend / frontend NEM publikál portot a host felé,
+#     csak a belső Docker-hálón érhetők el (biztonságosabb).
+#   - restart: unless-stopped – újraindulás után a stack magától feljön.
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: tarokk-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-tarokk}
+      POSTGRES_USER: ${POSTGRES_USER:-tarokk}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tarokk}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tarokk} -d ${POSTGRES_DB:-tarokk}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    container_name: tarokk-backend
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-tarokk}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-tarokk}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-tarokk}
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    container_name: tarokk-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: tarokk-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+
+volumes:
+  db_data:
+  caddy_data:
+  caddy_config:

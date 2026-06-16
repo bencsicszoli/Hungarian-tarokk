@@ -1,0 +1,14 @@
+{
+	# E-mail a Let's Encrypt tanúsítvány-értesítésekhez
+	email {$ACME_EMAIL}
+}
+
+# A domain az .env-ből (DOMAIN) jön. A Caddy automatikusan kér és újít
+# ingyenes Let's Encrypt TLS-tanúsítványt erre a névre.
+{$DOMAIN} {
+	encode gzip
+	# Minden kérést a frontend nginx-re továbbítunk; az route-ol tovább
+	# (/api és /ws → backend, minden más → SPA). A WebSocket-upgrade-et
+	# a Caddy automatikusan kezeli.
+	reverse_proxy frontend:80
+}
