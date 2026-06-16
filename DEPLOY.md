@@ -35,10 +35,13 @@ A HTTPS-hez kell egy név. A DuckDNS ingyenes.
 1. Regisztrálj: <https://accounts.hetzner.com/signUp> (a Hetzner **Cloud** kell).
 2. A Cloud Console-ban: **New Project** → nevezd el (pl. `tarokk`).
 3. **Add Server**:
-   - **Location:** Nuremberg vagy Falkenstein (Németország, közel van).
+   - **Location:** Nuremberg, Falkenstein vagy Helsinki (NE USA – ott drágább,
+     és tőled is messzebb van).
    - **Image:** **Ubuntu 24.04**.
-   - **Type:** a **CX22** (Shared vCPU, x86, 2 vCPU / 4 GB RAM) – ez kell, mert
-     a Spring Boot fordítása RAM-igényes.
+   - **Type:** a **Shared vCPU** kategóriában a **CX23** (x86, 2 vCPU / 4 GB RAM,
+     ~€3,5/hó) – ez kell, mert a Spring Boot fordítása RAM-igényes. (Az ARM-os
+     **CAX11** is jó és hasonló árú; a Docker-setup azon is elfut.) Ha jóval
+     drágábbat látsz, ellenőrizd a lokációt és hogy a Shared vCPU fülön vagy-e.
    - **Networking:** a Public IPv4 maradjon bekapcsolva.
    - **SSH key:** ha nem ismered, hagyd ki – akkor a szerver jelszavát
      e-mailben küldik. (Haladóknak: SSH-kulcs feltöltése kényelmesebb.)
@@ -179,4 +182,4 @@ docker exec tarokk-db pg_dump -U tarokk tarokk > backup-$(date +%F).sql
 - **A backend újraindulgat:** `docker compose -f docker-compose.prod.yml logs backend`
   – legtöbbször hibás adatbázis-jelszó az `.env`-ben.
 - **„Cannot connect” a build során / kevés a RAM:** győződj meg róla, hogy a
-  CX22 (4 GB) gépet választottad, ne a kisebbet.
+  CX23 (vagy CAX11, 4 GB) gépet választottad, ne a kisebbet.
