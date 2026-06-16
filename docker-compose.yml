@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: tarokk-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-tarokk}
+      POSTGRES_USER: ${POSTGRES_USER:-tarokk}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tarokk}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      # Az init.sql automatikusan lefut az adatbázis ELSŐ indításakor (üres data volume esetén)
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      # A host 5433-as portja → konténer 5432 (a 5432 gyakran foglalt helyi postgres miatt)
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tarokk} -d ${POSTGRES_DB:-tarokk}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    container_name: tarokk-backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-tarokk}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-tarokk}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-tarokk}
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build: ./frontend
+    container_name: tarokk-frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+
+volumes:
+  db_data:

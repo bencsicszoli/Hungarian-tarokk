@@ -23,7 +23,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     }
 
     const client = new Client({
-      webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
+      webSocketFactory: () => new SockJS(`${window.location.origin}/ws`),
 
       connectHeaders: {
         Authorization: "Bearer " + token,
