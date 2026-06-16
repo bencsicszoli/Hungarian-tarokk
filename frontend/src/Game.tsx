@@ -42,9 +42,8 @@ function Game() {
   const userContext = useUser();
   const webSocketContext = useWebSocket();
   const { game } = location.state || {};
-  const { user, token, setToken, setUser } = userContext || {
+  const { user, setToken, setUser } = userContext || {
     user: null,
-    token: null,
     setToken: () => {},
     setUser: () => {},
   };
@@ -354,11 +353,19 @@ function Game() {
           setPrivateInformation(message.info);
           setOwnCards([]);
           setTalonCardsNumber(0);
-          switch(message.playerName) {
-            case player1: setPlayer1(null); break;
-            case player2: setPlayer2(null); break;
-            case player3: setPlayer3(null); break;
-            case player4: setPlayer4(null); break;
+          switch (message.playerName) {
+            case player1:
+              setPlayer1(null);
+              break;
+            case player2:
+              setPlayer2(null);
+              break;
+            case player3:
+              setPlayer3(null);
+              break;
+            case player4:
+              setPlayer4(null);
+              break;
           }
           break;
         case "game.gameState":
@@ -668,7 +675,7 @@ function Game() {
           break;
       }
     },
-    [player1, player2, player3, player4],
+    [player1, player2, player3, player4, user],
   );
 
   useEffect(() => {
@@ -680,7 +687,7 @@ function Game() {
       (payload as Record<string, unknown>).body as string,
     );
     console.log("Private message received:", message);
-    
+
     switch (message.type) {
       case "game.playerCards":
         setOwnCards(message.cards);
@@ -834,7 +841,7 @@ function Game() {
     ) {
       setPrivateInformation("");
     }
-  }, [gameState, turnPlayer, user]);
+  }, [gameState, turnPlayer, user, privateInformation]);
 
   function dealTalonToPlayers() {
     send("/app/game.dealTalonToPlayers", {
@@ -1648,14 +1655,28 @@ function Game() {
                 onDisplayPublicCards={displayPublicCards}
               />
             </div>
-
             {/* Middle row */}
-            {gameState === "FINISHED" ? (
+            {gameState === "FINISHED" && !logoutWarning && (
               <DeclarerPublicTricks
                 publicDeclarerTricks={publicDeclarerTricks}
                 onDisplayPublicCards={displayPublicCards}
               />
-            ) : (
+            )}
+            {gameState === "FINISHED" && logoutWarning && (
+              <div className="w-full h-1/4 flex">
+                <div className="w-1/4"></div>
+                <div className="w-1/2">
+                  <LogoutWarning
+                    onFormatLogoutWarning={formatLogoutWarning}
+                    onSetLogoutWarning={setLogoutWarning}
+                    onConfirmLeaving={confirmLogout}
+                  />
+                </div>
+
+                <div className="w-1/4"></div>
+              </div>
+            )}
+            {gameState !== "FINISHED" && (
               <div className="w-full h-1/3 flex">
                 <WesternPlayerHand
                   gameState={gameState}
@@ -1739,7 +1760,6 @@ function Game() {
             )}
 
             {/* Bottom row */}
-
             <OwnHand
               gameState={gameState}
               renderOwnHand={renderOwnHand}

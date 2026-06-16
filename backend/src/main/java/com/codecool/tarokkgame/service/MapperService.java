@@ -4,7 +4,6 @@ import com.codecool.tarokkgame.model.PlayerData;
 import com.codecool.tarokkgame.model.dto.messagedto.response.*;
 import com.codecool.tarokkgame.model.entity.*;
 import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
