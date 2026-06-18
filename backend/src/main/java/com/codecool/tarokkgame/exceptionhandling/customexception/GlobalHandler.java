@@ -41,6 +41,12 @@ public class GlobalHandler {
         return new ErrorMessage("Wrong username or password");
     }
 
+    @ExceptionHandler(FeedbackDeliveryException.class)
+    @ResponseStatus(HttpStatus.BAD_GATEWAY)
+    public ErrorMessage handleFeedbackDeliveryException(FeedbackDeliveryException e) {
+        return new ErrorMessage("Could not send your feedback right now. Please try again later.");
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorMessage handleGenericException(Exception e) {

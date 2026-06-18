@@ -16,7 +16,7 @@
   <br>
   <img src="https://img.shields.io/badge/Java-21-ED8B00?style=flat-square&logo=openjdk&logoColor=white" alt="Java 21">
   <img src="https://img.shields.io/badge/Spring_Boot-4-6DB33F?style=flat-square&logo=springboot&logoColor=white" alt="Spring Boot">
-  <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL">
+  <img src="https://img.shields.io/badge/PostgreSQL-17-4179E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL">
   <img src="https://img.shields.io/badge/WebSocket-STOMP-010101?style=flat-square&logo=socketdotio&logoColor=white" alt="WebSocket / STOMP">
   <img src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker">
 </p>
@@ -51,7 +51,7 @@ New to the rules? See the full ruleset on
 |---|---|
 | **Frontend** | React 19, TypeScript 5.9, Tailwind CSS 4, Vite 7, React Router 7, STOMP.js + SockJS (WebSocket client) |
 | **Backend** | Java 21, Spring Boot 4, Spring Security + JWT (JJWT), Spring WebSocket (STOMP), Spring Data JPA, Lombok |
-| **Infrastructure** | PostgreSQL 16, Docker & Docker Compose, Caddy (automatic HTTPS reverse proxy), Hetzner VPS |
+| **Infrastructure** | PostgreSQL 17, Docker & Docker Compose, Caddy (automatic HTTPS reverse proxy), Hetzner VPS |
 
 ## Architecture
 

@@ -120,6 +120,11 @@ Töltsd ki **éles, erős** értékekkel:
   vagy futtasd: `openssl rand -base64 48`, és másold be az eredményt.
 - `DOMAIN` – a duckdns neved, pl. `tarokk-bencsics.duckdns.org`.
 - `ACME_EMAIL` – a saját e-mail-címed.
+- `MAIL_USERNAME` / `MAIL_PASSWORD` – a játékosok visszajelzésének
+  e-mailben küldéséhez. Gmailnél kapcsold be a kétlépcsős azonosítást, majd
+  generálj **App password**-öt (https://myaccount.google.com/apppasswords),
+  és azt írd a `MAIL_PASSWORD`-be. Ha üresen hagyod, a visszajelzés funkció
+  nem küld levelet. `FEEDBACK_TO` opcionális (alapból a `MAIL_USERNAME` címre megy).
 
 Mentés a nano-ban: `Ctrl+O`, `Enter`, majd kilépés: `Ctrl+X`.
 

@@ -24,6 +24,11 @@ function MenuPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [getGameIdClicked, setGetGameIdClicked] = useState<boolean>(false);
   const [gameIdToSend, setGameIdToSend] = useState<string | null>(null);
+  const [feedbackOpen, setFeedbackOpen] = useState<boolean>(false);
+  const [feedbackText, setFeedbackText] = useState<string>("");
+  const [feedbackStatus, setFeedbackStatus] = useState<
+    "idle" | "sending" | "sent" | "error"
+  >("idle");
 
   useEffect(() => {
     if (!user) navigate(`/`);
@@ -111,6 +116,37 @@ function MenuPage() {
     window.open("https://www.pagat.com/tarot/xx-hivas.html");
   };
 
+  async function submitFeedback(e: { preventDefault: () => void }) {
+    e.preventDefault();
+    if (!feedbackText.trim()) return;
+    setFeedbackStatus("sending");
+    try {
+      const response = await fetch(`/api/feedback`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token,
+        },
+        body: JSON.stringify({
+          message: feedbackText,
+          userAgent: navigator.userAgent,
+        }),
+      });
+      if (!response.ok) throw new Error("Failed to send feedback");
+      setFeedbackStatus("sent");
+      setFeedbackText("");
+    } catch (err) {
+      console.error("Could not send feedback:", err);
+      setFeedbackStatus("error");
+    }
+  }
+
+  function closeFeedback() {
+    setFeedbackOpen(false);
+    setFeedbackStatus("idle");
+    setFeedbackText("");
+  }
+
   return (
     <div className="w-full h-screen bg-[#2f4b3a] text-white px-6 sm:px-8 flex justify-center items-center">
       <div className="w-1/5 h-1/5">
@@ -177,8 +213,8 @@ function MenuPage() {
               fontStyle="font-semibold text-lg"
             />
             <LinkButton
-              whereToLink={`/`}
-              buttonText="Bug report"
+              buttonText="Feedback"
+              onHandleClick={() => setFeedbackOpen(true)}
               fontStyle="font-semibold text-lg"
             />
             <LinkButton
@@ -223,6 +259,68 @@ function MenuPage() {
           </div>
         )}
       </div>
+
+      {feedbackOpen && (
+        <div
+          className="fixed inset-0 z-50 flex justify-center items-center bg-black/60"
+          onClick={closeFeedback}
+        >
+          <div
+            className="w-11/12 max-w-md bg-[#2f4b3a] border border-green-300 rounded-lg p-6 shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {feedbackStatus === "sent" ? (
+              <div className="flex flex-col items-center gap-4 text-center">
+                <p className="text-lg font-medium text-green-50">
+                  Thanks for your feedback!
+                </p>
+                <button
+                  onClick={closeFeedback}
+                  className="bg-green-700 rounded-lg w-32 h-10 border border-green-300 hover:scale-105 hover:bg-green-900 cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={submitFeedback} className="flex flex-col gap-3">
+                <label className="text-lg font-medium text-green-50">
+                  Found a bug or have a suggestion?
+                </label>
+                <textarea
+                  value={feedbackText}
+                  onChange={(e) => setFeedbackText(e.target.value)}
+                  placeholder="Describe the bug or your idea..."
+                  rows={6}
+                  className="w-full p-3 text-[#2f4b3a] bg-green-300 rounded-lg resize-none placeholder:text-[#2f4b3a]/70 focus:outline-none focus:ring-4 focus:ring-green-400"
+                />
+                {feedbackStatus === "error" && (
+                  <p className="text-red-300 text-sm">
+                    Could not send your feedback. Please try again later.
+                  </p>
+                )}
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={closeFeedback}
+                    className="rounded-lg px-4 h-10 border border-green-300 text-green-50 hover:bg-green-900 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={
+                      feedbackStatus === "sending" || !feedbackText.trim()
+                    }
+                    className="bg-green-700 rounded-lg px-4 h-10 border border-green-300 hover:scale-105 hover:bg-green-900 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  >
+                    {feedbackStatus === "sending" ? "Sending..." : "Send"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

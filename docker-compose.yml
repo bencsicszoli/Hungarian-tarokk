@@ -27,6 +27,12 @@ services:
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-tarokk}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-tarokk}
       JWT_SECRET: ${JWT_SECRET}
+      # Visszajelzés e-mail (SMTP). Üresen hagyva a funkció nem küld levelet.
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      FEEDBACK_TO: ${FEEDBACK_TO:-}
     depends_on:
       db:
         condition: service_healthy
