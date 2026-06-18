@@ -43,7 +43,7 @@ services:
       MAIL_PORT: ${MAIL_PORT:-587}
       MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
-      FEEDBACK_TO: ${FEEDBACK_TO:-}
+      FEEDBACK_TO: ${FEEDBACK_TO:-${MAIL_USERNAME:-}}
     depends_on:
       db:
         condition: service_healthy
