@@ -49,10 +49,6 @@ public class ResultService {
             cardValues += skart.getCardValue();
         }
         TarokkNumberAnnouncers announcers = game.getAnnouncers();
-        System.out.println("Card values: " + cardValues);
-        System.out.println("Honours: " + honours);
-        System.out.println("Kings: " + kings);
-        System.out.println("Card count: " + cardCount);
         List<Player> players = game.getPlayers();
 
         Bonus party = game.findBonusByIndex(Bonus.PASS, "declarer");

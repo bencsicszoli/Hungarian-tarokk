@@ -203,12 +203,7 @@ function MenuPage() {
               onHandleClick={getGameId}
             />
             <LinkButton
-              whereToLink={`/statistics`}
-              buttonText="Statistics"
-              fontStyle="font-semibold text-lg"
-            />
-            <LinkButton
-              whereToLink={`/editpage`}
+              whereToLink={`/edit`}
               buttonText="Edit profile"
               fontStyle="font-semibold text-lg"
             />

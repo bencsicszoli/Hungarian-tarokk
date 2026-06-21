@@ -7,6 +7,7 @@ import { UserProvider } from "./context/UserContext.tsx";
 import { WebSocketProvider } from "./context/WebSocketContext.tsx";
 import MenuPage from "./MenuPage.tsx";
 import Game from "./Game.tsx";
+import EditPage from "./EditPage.tsx";
 
 export default function App() {
   const router = createBrowserRouter([
@@ -14,6 +15,7 @@ export default function App() {
     { path: "/register", element: <RegisterPage /> },
     { path: "/menu", element: <MenuPage /> },
     { path: "/game", element: <Game /> },
+    { path: "/edit", element: <EditPage />}
     
   ]);
 

@@ -222,19 +222,19 @@ public class Player {
             }
         }
         if (tarokks == 0) {
-            setDiscardReason(" does not have any tarokks");
+            setDiscardReason(String.format("%s does not have any tarokks", getName()));
             return "You don't have any tarokks.@Would you like to discard your hand and require new deal?";
         } else if (tarokks == 1 && hasPagat) {
-            setDiscardReason(" has a solo pagat");
+            setDiscardReason(String.format("%s has a solo pagat", getName()));
             return "You have a solo pagat.@Would you like to discard your hand and require new deal?";
         } else if (tarokks == 1 && hasXXI) {
-            setDiscardReason(" has a solo XXI");
+            setDiscardReason(String.format("%s has a solo XXI", getName()));
             return "You have a solo XXI.@Would you like to discard your hand and require new deal?";
         } else if (tarokks == 2 && hasPagat && hasXXI) {
-            setDiscardReason(" has a pagat and a XXI alone");
+            setDiscardReason(String.format("%s has a pagat and a XXI alone", getName()));
             return "You have pagat and XXI alone.@Would you like to discard your hand and require new deal?";
         } else if (kings == 4) {
-            setDiscardReason(" has four kings");
+            setDiscardReason(String.format("%s has four kings", getName()));
             return "You have four kings.@Would you like to discard your hand and require new deal?";
         } else {
             return null;

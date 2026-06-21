@@ -67,7 +67,9 @@ public class TalonService {
         } else {
             singularOrPluralCard = "cards";
         }
-        String discardedCardsInfo = player.getName() + " added " + thrownCards + " " + singularOrPluralCard + " to skart";
+        System.out.println(player.getName() + " " + thrownCards + " " + singularOrPluralCard);
+
+        String discardedCardsInfo = String.format("%s added %d %s to skart", player.getName(), thrownCards, singularOrPluralCard);
         Player nextPlayer = game.getNextPlayer(player);
         String turnPlayer = nextPlayer.getName();
         game.setTurnPlayer(turnPlayer);

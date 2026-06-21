@@ -830,8 +830,14 @@ function Game() {
       turnPlayer === user?.username &&
       cardsToDiscard.current > 0
     ) {
+      let cardsToDiscardVar = "";
+      if (cardsToDiscard.current === 1) {
+        cardsToDiscardVar = "card";
+      } else {
+        cardsToDiscardVar = "cards";
+      }
       setPrivateInformation(
-        `Select ${cardsToDiscard.current} cards to discard!`,
+        `Select ${cardsToDiscard.current} ${cardsToDiscardVar} to discard!`,
       );
     } else if (gameState === "SKART_LAY_DOWN") {
       setPrivateInformation("");

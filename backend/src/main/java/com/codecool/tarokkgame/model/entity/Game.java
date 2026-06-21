@@ -168,17 +168,17 @@ public class Game {
     }
 
     public String getMessageWithTarokksInOpponentSkart() {
-        StringBuilder stringBuilder = new StringBuilder();
+        String message = "";
         for (Player player : getPlayers()) {
             if (player.getRoleInGame() != RoleInGame.DECLARER) {
                 if (player.getTarokksInSkart() == 1) {
-                    stringBuilder.append(player.getName()).append(" placed ").append(player.getTarokksInSkart()).append(" TAROKK IN SKART!@");
+                    message = String.format("%s placed %d TAROKK IN SKART!@", player.getName(), player.getTarokksInSkart());
                 } else if (player.getTarokksInSkart() == 2) {
-                    stringBuilder.append(player.getName()).append(" placed ").append(player.getTarokksInSkart()).append(" TAROKKS IN SKART!@");
+                    message = String.format("%s placed %d TAROKKS IN SKART!@", player.getName(), player.getTarokksInSkart());
                 }
             }
         }
-        return stringBuilder.toString();
+        return message;
     }
 
     public void markPlayersAsOpponent() {

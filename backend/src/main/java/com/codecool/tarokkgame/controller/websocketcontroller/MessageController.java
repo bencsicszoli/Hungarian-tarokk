@@ -181,7 +181,7 @@ public class MessageController {
             Game game = gameRepository.findById(request.gameId()).orElseThrow(() -> new NoSuchElementException("Game not found"));
             resetService.resetGame(game);
             resetService.resetPlayers(game);
-            NewRoundDTO newRoundDTO = new NewRoundDTO(game.getDealer().toUpperCase() + " is dealing...", "game.newRound");
+            NewRoundDTO newRoundDTO = new NewRoundDTO(String.format("%s is dealing...", game.getDealer().toUpperCase()), "game.newRound");
             messagingTemplate.convertAndSend("/topic/game." + request.gameId(), newRoundDTO);
             dealTalonCards(game, request);
 
@@ -318,7 +318,6 @@ public class MessageController {
             List<PlayerCardDTO> playerCardList = mapperService.mapToPlayerCardListDTO(player.getPlayerCards());
             DiscardedHandDTO discardedHand = new DiscardedHandDTO(
                     playerCardList,
-                    playerName,
                     turnPlayer,
                     player.getDiscardReason() + ", discards their hand and requires new deal",
                     "game.discardHand");

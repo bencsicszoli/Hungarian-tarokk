@@ -193,7 +193,7 @@ public class BonusService {
         } else {
             int callableTarokk = player.findMissingStrongestTarokk();
             String romanForm = RomanTarokkNumber.fromArabicNumber(callableTarokk).toString();
-            callableTarokks.add("I call the " + romanForm);
+            callableTarokks.add(String.format("I call the %s", romanForm));
             callableTarokks.add("I call the XX");
         }
     }
