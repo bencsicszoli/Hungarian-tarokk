@@ -1,4 +1,5 @@
-import type { GameState } from "../types.ts";
+import { useTranslation } from "react-i18next";
+import type { GameState, InfoLine } from "../types.ts";
 
 function DisposableHandInfo({
   gameState,
@@ -8,12 +9,13 @@ function DisposableHandInfo({
   onSetDiscardInformation,
 } : {
   gameState: GameState;
-  discardInformation: string | null;
+  discardInformation: InfoLine[] | null;
   onFormatDiscardInformation: () => React.JSX.Element[] | null;
   onHandleDiscardHand: () => void;
-  onSetDiscardInformation: (info: string | null) => void;
+  onSetDiscardInformation: (info: InfoLine[] | null) => void;
 }) {
-    
+  const { t } = useTranslation();
+
   if (                           // Why do we need BONUS_ANNOUNCEMENT?
     (gameState === "SKART_LAY_DOWN" || gameState === "BONUS_ANNOUNCEMENT") &&
     discardInformation !== null
@@ -30,13 +32,13 @@ function DisposableHandInfo({
             className="w-40 h-15 text-2xl bg-[#2f4b3a] hover:bg-green-700 cursor-pointer text-green-300 font-bold py-2 px-4 rounded-lg"
             onClick={onHandleDiscardHand}
           >
-            Yes
+            {t("game.yes")}
           </button>
           <button
             className="w-40 h-15 text-2xl bg-red-600 hover:bg-red-700 cursor-pointer text-red-100 font-bold py-2 px-4 rounded-lg"
             onClick={() => onSetDiscardInformation(null)}
           >
-            No
+            {t("game.no")}
           </button>
         </div>
       </div>

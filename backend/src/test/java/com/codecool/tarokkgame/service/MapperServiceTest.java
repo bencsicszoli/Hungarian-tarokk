@@ -1,12 +1,17 @@
 package com.codecool.tarokkgame.service;
 
-import com.codecool.tarokkgame.model.dto.messagedto.response.PrivateInfoDTO;
+import com.codecool.tarokkgame.constants.MessageKey;
+import com.codecool.tarokkgame.model.dto.LocalizedMessage;
+import com.codecool.tarokkgame.model.dto.messagedto.response.PrivateInfoListDTO;
 import com.codecool.tarokkgame.model.entity.Player;
 import com.codecool.tarokkgame.model.entity.RoundResult;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -17,25 +22,26 @@ public class MapperServiceTest {
     private MapperService mapperService;
 
     @Test
-    public void mapToPrivateResultShouldReturnPrivateInfoDTOIfPlayerHasResultWithInfo() {
+    public void mapToPrivateResultShouldReturnPrivateInfoListDTOIfPlayerHasResultWithInfo() {
         RoundResult result = new RoundResult();
-        result.setInfo("This player won the game");
+        List<LocalizedMessage> info = List.of(new LocalizedMessage(MessageKey.RESULT_TOTAL, Map.of("sum", 5, "count", 5)));
+        result.setInfo(info);
         Player player = new Player();
         player.setResult(result);
 
-        PrivateInfoDTO infoDTO = mapperService.mapToPrivateResult(player);
+        PrivateInfoListDTO infoDTO = mapperService.mapToPrivateResult(player);
 
-        assertEquals(new PrivateInfoDTO("This player won the game", "game.privateResult"), infoDTO);
+        assertEquals(new PrivateInfoListDTO(info, "game.privateResult"), infoDTO);
     }
 
     @Test
-    public void mapToPrivateResultShouldReturnPrivateInfoDTOIfPlayerHasResultWithoutInfo() {
+    public void mapToPrivateResultShouldReturnPrivateInfoListDTOIfPlayerHasResultWithoutInfo() {
         RoundResult result = new RoundResult();
         Player player = new Player();
         player.setResult(result);
 
-        PrivateInfoDTO infoDTO = mapperService.mapToPrivateResult(player);
+        PrivateInfoListDTO infoDTO = mapperService.mapToPrivateResult(player);
 
-        assertEquals(new PrivateInfoDTO(null, "game.privateResult"), infoDTO);
+        assertEquals(new PrivateInfoListDTO(null, "game.privateResult"), infoDTO);
     }
 }

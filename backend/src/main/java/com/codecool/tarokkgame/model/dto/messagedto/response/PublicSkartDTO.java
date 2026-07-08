@@ -1,4 +1,6 @@
 package com.codecool.tarokkgame.model.dto.messagedto.response;
 
-public record PublicSkartDTO(String username, int playerHandLength, int declarerSkartLength, int opponentSkartLength, String discardedCardsInfo, String turnPlayer, String type) {
+import com.codecool.tarokkgame.model.dto.LocalizedMessage;
+
+public record PublicSkartDTO(String username, int playerHandLength, int declarerSkartLength, int opponentSkartLength, LocalizedMessage discardedCardsInfo, String turnPlayer, String type) {
 }

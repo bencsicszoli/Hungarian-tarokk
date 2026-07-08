@@ -2,6 +2,8 @@ package com.codecool.tarokkgame.model.entity;
 
 import com.codecool.tarokkgame.constants.*;
 import com.codecool.tarokkgame.model.TarokkNumberAnnouncers;
+import com.codecool.tarokkgame.model.converter.LocalizedMessageListConverter;
+import com.codecool.tarokkgame.model.dto.LocalizedMessage;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -43,7 +45,9 @@ public class Game {
     private String startPlayer;
     private String turnPlayer;
     private String declarer;
-    private String information;
+    @Convert(converter = LocalizedMessageListConverter.class)
+    @Column(columnDefinition = "TEXT")
+    private List<LocalizedMessage> information;
     private String lastBonusAnnouncer = "declarer";
     private int cardOrder = 1; // ?
 
@@ -167,14 +171,12 @@ public class Game {
         }
     }
 
-    public String getMessageWithTarokksInOpponentSkart() {
-        String message = "";
+    public LocalizedMessage getMessageWithTarokksInOpponentSkart() {
+        LocalizedMessage message = null;
         for (Player player : getPlayers()) {
             if (player.getRoleInGame() != RoleInGame.DECLARER) {
-                if (player.getTarokksInSkart() == 1) {
-                    message = String.format("%s placed %d TAROKK IN SKART!@", player.getName(), player.getTarokksInSkart());
-                } else if (player.getTarokksInSkart() == 2) {
-                    message = String.format("%s placed %d TAROKKS IN SKART!@", player.getName(), player.getTarokksInSkart());
+                if (player.getTarokksInSkart() == 1 || player.getTarokksInSkart() == 2) {
+                    message = new LocalizedMessage(MessageKey.SKART_TAROKK_PLACED, Map.of("player", player.getName(), "count", player.getTarokksInSkart()));
                 }
             }
         }

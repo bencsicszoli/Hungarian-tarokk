@@ -1,0 +1,127 @@
+{
+  "join": {
+    "playerJoined": "{{username}} has joined the game",
+    "fourthPlayer": "You are the fourth player.",
+    "letGameStart": "Let the game start!",
+    "failed": "Failed to join the game.",
+    "joinWithIdFailed": "Failed to join the game with the given ID."
+  },
+  "leave": {
+    "confirmQuit": "Are you sure you want to quit?",
+    "mustPayBonuses": "You must pay the penalties for the announced bonuses:",
+    "bonusPenaltyLine": "{{bonusName}}: {{points}} points",
+    "totalPenalty": "Total penalty: {{penalty}} points",
+    "playerQuit": "{{username}} has left the game.",
+    "confirmPrompt": "Are you sure you want to quit?"
+  },
+  "round": {
+    "dealing": "{{dealer}} is dealing the cards.",
+    "noOneBid": "No one has bid.",
+    "dealAgain": "{{dealer}} deals again.",
+    "skartPhaseStarted": "The skart phase has started.",
+    "bonusPhaseStarted": "The bonus announcement phase has started.",
+    "trickPhase": "The trick phase has started."
+  },
+  "bid": {
+    "announced": "{{player}} bid {{level}}."
+  },
+  "skart": {
+    "cardsAdded": "{{player}} added {{count}} card(s) to the skart.",
+    "tarokkPlaced": "{{player}} placed {{count}} tarokk(s) in the skart.",
+    "declarerTarokkPlaced": "The declarer ({{player}}) placed {{count}} tarokk(s) in the skart."
+  },
+  "bonus": {
+    "announceTarokkPrompt": "Announce a tarokk!",
+    "choosePrompt": "Choose your bonuses!",
+    "passOrChoosePrompt": "Pass or choose your bonuses!",
+    "playerHasTarokks": "{{player}} has {{count}} tarokks.",
+    "playerCalledTarokk": "{{player}} called the {{tarokk}}.",
+    "playerAnnounced": "{{player}} announced: {{bonuses}}",
+    "callTarokk": "I call the {{romanNumeral}}",
+    "pagatUltimoRequires8": "Pagat Ultimo requires 8 tarokks.",
+    "pagatUltimoRequires9": "Pagat Ultimo requires 9 tarokks.",
+    "turnPagatUltimoRequires8": "Pagat Ultimo requires 8 tarokks.",
+    "turnPagatUltimoRequires9": "Pagat Ultimo requires 9 tarokks.",
+    "doubleVolatConflict": "You cannot double and announce Volat at the same time.",
+    "announceAfterVolatConflict": "You cannot announce further bonuses after Volat.",
+    "mustDoubleDeclarerSide": "You must double on the declarer's side.",
+    "mustDoubleOpponentSide": "You must double on the opponents' side.",
+    "selectedTarokks": "Selected {{count}} tarokks.",
+    "selectedBonus": "Selected bonus: {{bonuses}}",
+    "selectedBonuses": "Selected bonuses: {{bonuses}}"
+  },
+  "discard": {
+    "noTarokks": "{{username}} has no tarokks.",
+    "soloPagat": "{{username}} has only the Pagat.",
+    "soloXXI": "{{username}} has only the XXI.",
+    "pagatAndXXI": "{{username}} has only the Pagat and the XXI.",
+    "fourKings": "{{username}} has all four Kings.",
+    "promptNoTarokks": "Do you want to throw in your hand?",
+    "promptSoloPagat": "Do you want to throw in your hand?",
+    "promptSoloXXI": "Do you want to throw in your hand?",
+    "promptPagatAndXXI": "Do you want to throw in your hand?",
+    "promptFourKings": "Do you want to throw in your hand?",
+    "handSubmitted": "{{username}} has thrown in the hand."
+  },
+  "validation": {
+    "ok": "Validation is OK.",
+    "ultimoOk": "Ultimo validation is OK."
+  },
+  "error": {
+    "wrongCredentials": "Invalid username or password.",
+    "feedbackDelivery": "Failed to deliver the feedback.",
+    "usernameExists": "The username \"{{username}}\" is already taken.",
+    "emailExists": "The email address \"{{email}}\" is already registered.",
+    "notAllowedOperation": "This operation is not allowed.",
+    "invalidPassword": "Invalid password for {{username}}.",
+    "notFound": "Not found.",
+    "generic": "An unexpected error occurred.",
+    "feedbackMessageEmpty": "The feedback message cannot be empty."
+  },
+  "auth": {
+    "playerCreated": "Player \"{{username}}\" created successfully.",
+    "userDeleted": "User \"{{username}}\" deleted successfully.",
+    "credentialsEdited": "Credentials for \"{{username}}\" updated successfully.",
+    "credentialsEditedWithNewUsername": "Credentials updated. Your username has changed from \"{{username}}\" to \"{{newUsername}}\"."
+  },
+  "feedback": {
+    "thanks": "Thank you for your feedback!"
+  },
+  "result": {
+    "bid": "Bid: {{bidLevel}}",
+    "gameScore": "Game score: {{score}}",
+    "party": "Party: {{points}}",
+    "partyDoubled": "Party doubled: {{points}}",
+    "partyRedoubled": "Party redoubled: {{points}}",
+    "silentTrull": "Silent trull: {{points}}",
+    "trull": "Trull: {{points}}",
+    "trullDoubled": "Trull doubled: {{points}}",
+    "trullRedoubled": "Trull redoubled: {{points}}",
+    "silentFourKings": "Silent four kings: {{points}}",
+    "fourKings": "Four kings: {{points}}",
+    "fourKingsDoubled": "Four kings doubled: {{points}}",
+    "fourKingsRedoubled": "Four kings redoubled: {{points}}",
+    "silentDoubleGame": "Silent double game: {{points}}",
+    "doubleGame": "Double game: {{points}}",
+    "doubleGameDoubled": "Double game doubled: {{points}}",
+    "doubleGameRedoubled": "Double game redoubled: {{points}}",
+    "silentUltimo": "Silent pagat ultimo: {{points}}",
+    "ultimo": "Pagat ultimo: {{points}}",
+    "ultimoDoubled": "Pagat ultimo doubled: {{points}}",
+    "ultimoRedoubled": "Pagat ultimo redoubled: {{points}}",
+    "silentXXICatch": "Silent XXI-catch: {{points}}",
+    "xxiCatch": "XXI-catch: {{points}}",
+    "xxiCatchDoubled": "XXI-catch doubled: {{points}}",
+    "xxiCatchRedoubled": "XXI-catch redoubled: {{points}}",
+    "silentVolat": "Silent volat: {{points}}",
+    "volat": "Volat: {{points}}",
+    "volatDoubled": "Volat doubled: {{points}}",
+    "volatRedoubled": "Volat redoubled: {{points}}",
+    "eightTarokksInAdvance": "Eight tarokks in advance: {{points}}",
+    "nineTarokksInAdvance": "Nine tarokks in advance: {{points}}",
+    "eightTarokksAfterwards": "Eight tarokks afterwards: {{points}}",
+    "nineTarokksAfterwards": "Nine tarokks afterwards: {{points}}",
+    "total_one": "TOTAL: {{sum}} unit",
+    "total_other": "TOTAL: {{sum}} units"
+  }
+}

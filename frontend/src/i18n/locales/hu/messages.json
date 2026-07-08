@@ -1,0 +1,127 @@
+{
+  "join": {
+    "playerJoined": "{{username}} csatlakozott a játékhoz",
+    "fourthPlayer": "Te vagy a negyedik játékos.",
+    "letGameStart": "Kezdődjön a játék!",
+    "failed": "Nem sikerült csatlakozni a játékhoz.",
+    "joinWithIdFailed": "Nem sikerült csatlakozni a megadott azonosítójú játékhoz."
+  },
+  "leave": {
+    "confirmQuit": "Biztosan ki szeretnél lépni?",
+    "mustPayBonuses": "Ki kell fizetned a bejelentett bónuszok büntetését:",
+    "bonusPenaltyLine": "{{bonusName}}: {{points}} pont",
+    "totalPenalty": "Összes büntetés: {{penalty}} pont",
+    "playerQuit": "{{username}} elhagyta a játékot.",
+    "confirmPrompt": "Biztosan ki szeretnél lépni?"
+  },
+  "round": {
+    "dealing": "{{dealer}} osztja a lapokat.",
+    "noOneBid": "Senki sem licitált.",
+    "dealAgain": "{{dealer}} újra oszt.",
+    "skartPhaseStarted": "Elkezdődött a skartolási szakasz.",
+    "bonusPhaseStarted": "Elkezdődött a bónuszbejelentési szakasz.",
+    "trickPhase": "Elkezdődött az ütésszakasz."
+  },
+  "bid": {
+    "announced": "{{player}} licitált: {{level}}."
+  },
+  "skart": {
+    "cardsAdded": "{{player}} {{count}} lapot tett a skartba.",
+    "tarokkPlaced": "{{player}} {{count}} tarokkot tett a skartba.",
+    "declarerTarokkPlaced": "A vitéz ({{player}}) {{count}} tarokkot tett a skartba."
+  },
+  "bonus": {
+    "announceTarokkPrompt": "Jelents be egy tarokkot!",
+    "choosePrompt": "Válaszd ki a bónuszaidat!",
+    "passOrChoosePrompt": "Passzolj, vagy válaszd ki a bónuszaidat!",
+    "playerHasTarokks": "{{player}} {{count}} tarokkal rendelkezik.",
+    "playerCalledTarokk": "{{player}} bemondta a(z) {{tarokk}}-t.",
+    "playerAnnounced": "{{player}} bejelentette: {{bonuses}}",
+    "callTarokk": "Bemondom a(z) {{romanNumeral}}-t",
+    "pagatUltimoRequires8": "A Pagát Ultimóhoz 8 tarokk szükséges.",
+    "pagatUltimoRequires9": "A Pagát Ultimóhoz 9 tarokk szükséges.",
+    "turnPagatUltimoRequires8": "A Pagát Ultimóhoz 8 tarokk szükséges.",
+    "turnPagatUltimoRequires9": "A Pagát Ultimóhoz 9 tarokk szükséges.",
+    "doubleVolatConflict": "Nem dupplázhatsz és jelenthetsz be Volatot egyszerre.",
+    "announceAfterVolatConflict": "Volat bejelentése után nem jelenthetsz be további bónuszokat.",
+    "mustDoubleDeclarerSide": "A vitéz oldalán kell dupplázni.",
+    "mustDoubleOpponentSide": "Az ellenfelek oldalán kell dupplázni.",
+    "selectedTarokks": "{{count}} tarokk kiválasztva.",
+    "selectedBonus": "Kiválasztott bónusz: {{bonuses}}",
+    "selectedBonuses": "Kiválasztott bónuszok: {{bonuses}}"
+  },
+  "discard": {
+    "noTarokks": "{{username}} kezében nincs tarokk.",
+    "soloPagat": "{{username}} kezében csak a Pagát van.",
+    "soloXXI": "{{username}} kezében csak a XXI van.",
+    "pagatAndXXI": "{{username}} kezében csak a Pagát és a XXI van.",
+    "fourKings": "{{username}} kezében mind a négy Király megvan.",
+    "promptNoTarokks": "Be szeretnéd dobni a lapjaidat?",
+    "promptSoloPagat": "Be szeretnéd dobni a lapjaidat?",
+    "promptSoloXXI": "Be szeretnéd dobni a lapjaidat?",
+    "promptPagatAndXXI": "Be szeretnéd dobni a lapjaidat?",
+    "promptFourKings": "Be szeretnéd dobni a lapjaidat?",
+    "handSubmitted": "{{username}} bedobta a lapjait."
+  },
+  "validation": {
+    "ok": "Az érvényesítés sikeres.",
+    "ultimoOk": "Az ultimó érvényesítés sikeres."
+  },
+  "error": {
+    "wrongCredentials": "Érvénytelen felhasználónév vagy jelszó.",
+    "feedbackDelivery": "Nem sikerült elküldeni a visszajelzést.",
+    "usernameExists": "A(z) \"{{username}}\" felhasználónév már foglalt.",
+    "emailExists": "A(z) \"{{email}}\" e-mail cím már regisztrálva van.",
+    "notAllowedOperation": "Ez a művelet nem engedélyezett.",
+    "invalidPassword": "Érvénytelen jelszó a következőhöz: {{username}}.",
+    "notFound": "Nem található.",
+    "generic": "Váratlan hiba történt.",
+    "feedbackMessageEmpty": "A visszajelzés szövege nem lehet üres."
+  },
+  "auth": {
+    "playerCreated": "A(z) \"{{username}}\" játékos sikeresen létrejött.",
+    "userDeleted": "A(z) \"{{username}}\" felhasználó sikeresen törölve.",
+    "credentialsEdited": "A(z) \"{{username}}\" adatai sikeresen frissítve.",
+    "credentialsEditedWithNewUsername": "Az adatok frissültek. A felhasználóneved megváltozott \"{{username}}\"-ról \"{{newUsername}}\"-ra."
+  },
+  "feedback": {
+    "thanks": "Köszönjük a visszajelzésed!"
+  },
+  "result": {
+    "bid": "Licit: {{bidLevel}}",
+    "gameScore": "Parti eredmény: {{score}}",
+    "party": "Parti: {{points}}",
+    "partyDoubled": "Parti dupplázva: {{points}}",
+    "partyRedoubled": "Parti újradupplázva: {{points}}",
+    "silentTrull": "Néma trull: {{points}}",
+    "trull": "Trull: {{points}}",
+    "trullDoubled": "Trull dupplázva: {{points}}",
+    "trullRedoubled": "Trull újradupplázva: {{points}}",
+    "silentFourKings": "Néma négy király: {{points}}",
+    "fourKings": "Négy király: {{points}}",
+    "fourKingsDoubled": "Négy király dupplázva: {{points}}",
+    "fourKingsRedoubled": "Négy király újradupplázva: {{points}}",
+    "silentDoubleGame": "Néma duplajáték: {{points}}",
+    "doubleGame": "Duplajáték: {{points}}",
+    "doubleGameDoubled": "Duplajáték dupplázva: {{points}}",
+    "doubleGameRedoubled": "Duplajáték újradupplázva: {{points}}",
+    "silentUltimo": "Néma pagát ultimó: {{points}}",
+    "ultimo": "Pagát ultimó: {{points}}",
+    "ultimoDoubled": "Pagát ultimó dupplázva: {{points}}",
+    "ultimoRedoubled": "Pagát ultimó újradupplázva: {{points}}",
+    "silentXXICatch": "Néma XXI-fogás: {{points}}",
+    "xxiCatch": "XXI-fogás: {{points}}",
+    "xxiCatchDoubled": "XXI-fogás dupplázva: {{points}}",
+    "xxiCatchRedoubled": "XXI-fogás újradupplázva: {{points}}",
+    "silentVolat": "Néma volát: {{points}}",
+    "volat": "Volát: {{points}}",
+    "volatDoubled": "Volát dupplázva: {{points}}",
+    "volatRedoubled": "Volát újradupplázva: {{points}}",
+    "eightTarokksInAdvance": "Nyolc tarokk előre bemondva: {{points}}",
+    "nineTarokksInAdvance": "Kilenc tarokk előre bemondva: {{points}}",
+    "eightTarokksAfterwards": "Nyolc tarokk utólag bemondva: {{points}}",
+    "nineTarokksAfterwards": "Kilenc tarokk utólag bemondva: {{points}}",
+    "total_one": "ÖSSZESEN: {{sum}} egység",
+    "total_other": "ÖSSZESEN: {{sum}} egység"
+  }
+}

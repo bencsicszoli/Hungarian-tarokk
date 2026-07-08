@@ -2,7 +2,9 @@ package com.codecool.tarokkgame.service;
 
 import com.codecool.tarokkgame.constants.BidLevel;
 import com.codecool.tarokkgame.constants.GameState;
+import com.codecool.tarokkgame.constants.MessageKey;
 import com.codecool.tarokkgame.constants.RoleInGame;
+import com.codecool.tarokkgame.model.dto.LocalizedMessage;
 import com.codecool.tarokkgame.model.dto.SpecialBidCasesDTO;
 import com.codecool.tarokkgame.model.dto.messagedto.response.PotentialBidsDTO;
 import com.codecool.tarokkgame.model.dto.messagedto.response.PublicBidDTO;
@@ -13,6 +15,7 @@ import com.codecool.tarokkgame.repository.PlayerCardRepository;
 import com.codecool.tarokkgame.repository.PlayerRepository;
 import org.springframework.stereotype.Service;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
@@ -57,7 +60,7 @@ public class BidService {
     public PublicBidDTO getPublicBidInfo(Game game, String bidPlayer, String announcedLevel, String turnPlayer) {
         String declarer = game.getDeclarer();
         String bid = game.getBidLevel().getBidNameToDisplay();
-        String info = bidPlayer.toUpperCase() + ": " + announcedLevel;
+        LocalizedMessage info = new LocalizedMessage(MessageKey.BID_ANNOUNCED, Map.of("player", bidPlayer.toUpperCase(), "level", announcedLevel));
         return new PublicBidDTO(declarer, bidPlayer, turnPlayer, bid, info,"game.publicBidInfo");
     }
 
@@ -113,7 +116,6 @@ public class BidService {
 
     private PotentialBidsDTO handleBidIfNotPass(Game game, Player sender, BidLevel bidLevel, Set<String> bids) {
         game.setDeclarer(sender.getName());
-        game.setInformation(bidLevel.getDescription());
 
         handleInvitAcceptance(game, sender);
 

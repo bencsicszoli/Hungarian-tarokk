@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useUser } from "./context/UserContext";
 import { useWebSocket } from "./context/WebSocketContext";
@@ -11,7 +12,10 @@ import type {
   PlayerData,
   CardImage,
   GameState,
+  InfoLine,
+  LocalizedMessage,
 } from "./types.ts";
+import { translateInfoLines, translateMessage } from "./i18n/translateMessage.ts";
 import Bonuses from "./gamePageComponents/Bonuses.tsx";
 import PublicDescardedHand from "./gamePageComponents/PublicDiscardedHand.tsx";
 import MenuButtons from "./gamePageComponents/MenuButtons.tsx";
@@ -37,6 +41,7 @@ const INITIAL_ROTATION = [
 ];
 
 function Game() {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const userContext = useUser();
@@ -54,7 +59,9 @@ function Game() {
   };
 
   const [bid, setBid] = useState<"-" | "3" | "2" | "1" | "solo">("-");
-  const [callableTarokks, setCallableTarokks] = useState<string[]>([]);
+  const [callableTarokks, setCallableTarokks] = useState<LocalizedMessage[]>(
+    [],
+  );
   const [calledTarokk, setCalledTarokk] = useState<string | null>(null);
   const [dealButtonClicked, setDealButtonClicked] = useState<boolean>(false);
   const [dealer, setDealer] = useState<string | null>(game?.dealer || null);
@@ -64,9 +71,9 @@ function Game() {
   const [declarerBonuses, setDeclarerBonuses] = useState<string | null>(null);
   const [declarerSkart, setDeclarerSkart] = useState<Card[]>([]);
   const [declarerSkartLength, setDeclarerSkartLength] = useState<number>(0);
-  const [discardInformation, setDiscardInformation] = useState<string | null>(
-    null,
-  );
+  const [discardInformation, setDiscardInformation] = useState<
+    InfoLine[] | null
+  >(null);
   const [firstBonusRound, setFirstBonusRound] = useState<boolean>(true);
   const [gameState, setGameState] = useState<GameState>(
     game?.gameState || "NEW",
@@ -77,7 +84,7 @@ function Game() {
   const [opponentBonuses, setOpponentBonuses] = useState<string | null>(null);
   const [opponentSkartLength, setOpponentSkartLength] = useState<number>(0);
   const [ownCards, setOwnCards] = useState<Card[]>([]);
-  const [logoutWarning, setLogoutWarning] = useState<string | null>(null);
+  const [logoutWarning, setLogoutWarning] = useState<InfoLine[] | null>(null);
   const initialPlayerData: Record<string, PlayerData> = {};
   if (game?.player1) {
     initialPlayerData[game.player1] = {
@@ -115,8 +122,8 @@ function Game() {
   const [player4, setPlayer4] = useState<string | null>(game?.player4 || null);
   const [potentialBids, setPotentialBids] = useState<string[]>([]);
   const [potentialBonuses, setPotentialBonuses] = useState<string[]>([]);
-  const [privateInformation, setPrivateInformation] = useState<string>(
-    game?.privateInformation || "",
+  const [privateInformation, setPrivateInformation] = useState<InfoLine[]>(
+    game?.privateInformation || [],
   );
   const [publicDeclarerSkart, setPublicDeclarerSkart] = useState<CardImage[]>(
     [],
@@ -132,8 +139,8 @@ function Game() {
   const [publicOpponentTricks, setPublicOpponentTricks] = useState<CardImage[]>(
     [],
   );
-  const [publicInformation, setPublicInformation] = useState<string>(
-    game?.information || "",
+  const [publicInformation, setPublicInformation] = useState<InfoLine[]>(
+    game?.information || [],
   );
   const [selectedTarokkNumber, setSelectedTarokkNumber] = useState<number>(0);
   const [selectedBonuses, setSelectedBonuses] = useState<string[]>([]);
@@ -155,6 +162,7 @@ function Game() {
   );
 
   const cardsToDiscard = useRef<number>(0);
+  const discardPromptShown = useRef<boolean>(false);
   const playerTrickCountsRef = useRef<Record<string, number>>({});
   const trickCardIdsRef = useRef<Set<number>>(new Set());
   const cardAnimationsRef = useRef<Map<number, string>>(new Map());
@@ -175,7 +183,7 @@ function Game() {
           setStartPlayer(message.startPlayer);
           setTurnPlayer(message.turnPlayer);
           setGameState(message.gameState);
-          setPublicInformation(message.information);
+          setPublicInformation(message.information || []);
           setPlayerData({
             ...(message.player1
               ? {
@@ -227,7 +235,7 @@ function Game() {
           setPublicDiscardedHand([]);
           setDeclarerBonuses(null);
           setOpponentBonuses(null);
-          setPublicInformation(message.dealerInfo);
+          setPublicInformation([message.dealerInfo]);
           setIsGameNew(false);
           setPublicDeclarerSkart([]);
           setPublicOpponentSkart([]);
@@ -279,8 +287,8 @@ function Game() {
           break;
         case "game.lastDeal":
           setGameState("BIDDING");
-          setPublicInformation("Bidding phase has started!");
-          setPrivateInformation("");
+          setPublicInformation([t("game.biddingPhaseStarted")]);
+          setPrivateInformation([]);
           setPlayerData((prev) => ({
             ...prev,
             ...(message.username
@@ -298,7 +306,7 @@ function Game() {
           setBid(message.bid);
           setDeclarer(message.declarer);
           setTurnPlayer(message.turnPlayer);
-          setPublicInformation(message.info);
+          setPublicInformation([message.info]);
           console.log("Public bid info updated:", message);
           break;
         case "game.fourPasses":
@@ -322,7 +330,7 @@ function Game() {
           }));
           setDealButtonClicked(false);
           setOwnCards([]);
-          setPrivateInformation("");
+          setPrivateInformation([]);
           setTalonCardsNumber(0);
           setIsGameNew(true);
           break;
@@ -344,13 +352,13 @@ function Game() {
           setPublicDiscardedHand([]);
           setDeclarerBonuses(null);
           setOpponentBonuses(null);
-          setPublicInformation(message.dealerInfo);
+          setPublicInformation([message.info]);
           setIsGameNew(true);
           setPublicDeclarerSkart([]);
           setPublicOpponentSkart([]);
           setPublicDeclarerTricks([]);
           setPublicOpponentTricks([]);
-          setPrivateInformation(message.info);
+          setPrivateInformation([message.info]);
           setOwnCards([]);
           setTalonCardsNumber(0);
           switch (message.playerName) {
@@ -374,7 +382,7 @@ function Game() {
           break;
         case "game.gameStateInfo":
           setGameState(message.gameState);
-          setPublicInformation(message.info);
+          setPublicInformation([message.info]);
           console.log(
             "Game state and info updated:",
             message.gameState,
@@ -396,7 +404,7 @@ function Game() {
               : {}),
           }));
           setTurnPlayer(message.turnPlayer);
-          setPublicInformation(message.discardedCardsInfo);
+          setPublicInformation([message.discardedCardsInfo]);
           console.log("Public skart info updated:", message);
           break;
         case "game.publicInfo":
@@ -404,14 +412,11 @@ function Game() {
           console.log("Public information updated:", message.info);
           break;
         case "game.discardHand":
-          //setPublicInformation(message.info); //? duplication
           setDeclarer(null);
           setTurnPlayer(message.turnPlayer);
           setBid("-");
           setPublicDiscardedHand(message.cards);
-          setPublicInformation(
-            message.playerName.toUpperCase() + " " + message.info,
-          );
+          setPublicInformation(message.info);
           setDeclarerSkart([]);
           setDeclarerSkartLength(0);
           setOpponentSkartLength(0);
@@ -433,7 +438,7 @@ function Game() {
           }));
           setDealButtonClicked(false);
           setOwnCards([]);
-          setPrivateInformation("");
+          setPrivateInformation([]);
           console.log("Public discard hand info updated:", message.info);
           break;
         case "game.tarokkInSkart":
@@ -441,7 +446,7 @@ function Game() {
           console.log("Declarer's skart with tarokk updated:", message.cards);
           break;
         case "game.publicSkartPhaseFinishInfo":
-          setPublicInformation((prev) => `${prev}@ ${message.info}`);
+          setPublicInformation((prev) => [...prev, ...message.info]);
           console.log("Public skart phase finish info updated:", message.info);
           break;
         case "game.turnPlayer":
@@ -652,9 +657,9 @@ function Game() {
           setDealer(message.newDealer);
           setStartPlayer(message.newStartPlayer);
           setTurnPlayer(message.newStartPlayer);
-          setPublicInformation(
-            `New dealer is ${message.newDealer.toUpperCase()}`,
-          );
+          setPublicInformation([
+            t("game.newDealer", { name: message.newDealer.toUpperCase() }),
+          ]);
           setDealButtonClicked(false);
           console.log("Balances updated:", message);
           break;
@@ -675,7 +680,7 @@ function Game() {
           break;
       }
     },
-    [player1, player2, player3, player4, user],
+    [player1, player2, player3, player4, user, t],
   );
 
   useEffect(() => {
@@ -830,24 +835,21 @@ function Game() {
       turnPlayer === user?.username &&
       cardsToDiscard.current > 0
     ) {
-      let cardsToDiscardVar = "";
-      if (cardsToDiscard.current === 1) {
-        cardsToDiscardVar = "card";
-      } else {
-        cardsToDiscardVar = "cards";
-      }
-      setPrivateInformation(
-        `Select ${cardsToDiscard.current} ${cardsToDiscardVar} to discard!`,
-      );
+      setPrivateInformation([
+        t("game.selectCardsToDiscard", { count: cardsToDiscard.current }),
+      ]);
+      discardPromptShown.current = true;
     } else if (gameState === "SKART_LAY_DOWN") {
-      setPrivateInformation("");
+      setPrivateInformation([]);
+      discardPromptShown.current = false;
     } else if (
       gameState === "BONUS_ANNOUNCEMENT" &&
-      privateInformation.includes("cards to discard")
+      discardPromptShown.current
     ) {
-      setPrivateInformation("");
+      setPrivateInformation([]);
+      discardPromptShown.current = false;
     }
-  }, [gameState, turnPlayer, user, privateInformation]);
+  }, [gameState, turnPlayer, user, t]);
 
   function dealTalonToPlayers() {
     send("/app/game.dealTalonToPlayers", {
@@ -878,7 +880,9 @@ function Game() {
       <div className="flex flex-col h-full">
         <div className="h-1/8 flex justify-center items-center font-bold text-xl">
           <div className="w-1/8 flex justify-center items-center text-green-100">
-            {playerTrickCards > 0 && <p>{playerName}'s tricks</p>}
+            {playerTrickCards > 0 && (
+              <p>{t("game.playerTricks", { name: playerName })}</p>
+            )}
           </div>
           <div className="w-3/4 flex justify-center items-center mt-1">
             {playerName === turnPlayer ? (
@@ -899,7 +903,7 @@ function Game() {
               {displayOwnCards()}
             </div>
             <div className="h-1/6 flex justify-center items-center font-bold text-xl w-full text-green-100">
-              <p>Balance: {playerBalance}</p>
+              <p>{t("game.balance", { balance: playerBalance })}</p>
             </div>
           </div>
         )}
@@ -919,7 +923,7 @@ function Game() {
               {displayOwnCardsWithTalon()}
             </div>
             <div className="h-1/6 flex justify-center items-center font-bold text-xl w-full text-green-100">
-              <p>Balance: {playerBalance}</p>
+              <p>{t("game.balance", { balance: playerBalance })}</p>
             </div>
           </div>
         )}
@@ -929,7 +933,7 @@ function Game() {
               {displayOwnCards()}
             </div>
             <div className="h-1/6 flex justify-center items-center font-bold text-xl w-full text-green-100">
-              <p>Balance: {playerBalance}</p>
+              <p>{t("game.balance", { balance: playerBalance })}</p>
             </div>
           </div>
         )}
@@ -944,7 +948,7 @@ function Game() {
                   {displayOwnPlayableCards()}
                 </div>
                 <div className="h-1/6 flex justify-center items-center font-bold text-xl w-full text-green-100">
-                  <p>Balance: {playerBalance}</p>
+                  <p>{t("game.balance", { balance: playerBalance })}</p>
                 </div>
               </div>
 
@@ -962,7 +966,7 @@ function Game() {
                   {displayOwnCards()}
                 </div>
                 <div className="h-1/6 flex justify-center items-center font-bold text-xl w-full text-green-100">
-                  <p>Balance: {playerBalance}</p>
+                  <p>{t("game.balance", { balance: playerBalance })}</p>
                 </div>
               </div>
               <div className="w-1/8 h-2/3"></div>
@@ -1011,7 +1015,7 @@ function Game() {
             console.log("Tarokk number selected: 8");
           }}
         >
-          8 Tarokks
+          {t("game.eightTarokks")}
         </button>
       );
     } else if (hasNineTarokks) {
@@ -1032,7 +1036,7 @@ function Game() {
             console.log("Tarokk number selected: 9");
           }}
         >
-          9 Tarokks
+          {t("game.nineTarokks")}
         </button>
       );
     }
@@ -1040,26 +1044,29 @@ function Game() {
   }
 
   function renderCallableTarokkButtons() {
-    return callableTarokks.map((tarokk) => (
-      <button
-        key={tarokk}
-        className={`border-green-300 border-2 w-32 h-10 hover:scale-105 hover:bg-green-700 cursor-pointer transition-transform duration-200 ml-5 mr-5 font-semibold rounded-md
-          ${calledTarokk === tarokk ? "bg-green-600" : ""}`}
-        onClick={() => {
-          setCalledTarokk(tarokk);
-          send("/app/game.bonusInfo", {
-            turnPlayer: turnPlayer,
-            gameId: game.gameId,
-            selectedTarokkNumber: selectedTarokkNumber,
-            calledTarokk: tarokk,
-            bonuses: selectedBonuses,
-          });
-          console.log("Tarokk called:", tarokk);
-        }}
-      >
-        {tarokk}
-      </button>
-    ));
+    return callableTarokks.map((tarokk) => {
+      const romanNumeral = tarokk.params?.romanNumeral as string;
+      return (
+        <button
+          key={romanNumeral}
+          className={`border-green-300 border-2 w-32 h-10 hover:scale-105 hover:bg-green-700 cursor-pointer transition-transform duration-200 ml-5 mr-5 font-semibold rounded-md
+            ${calledTarokk === romanNumeral ? "bg-green-600" : ""}`}
+          onClick={() => {
+            setCalledTarokk(romanNumeral);
+            send("/app/game.bonusInfo", {
+              turnPlayer: turnPlayer,
+              gameId: game.gameId,
+              selectedTarokkNumber: selectedTarokkNumber,
+              calledTarokk: romanNumeral,
+              bonuses: selectedBonuses,
+            });
+            console.log("Tarokk called:", romanNumeral);
+          }}
+        >
+          {translateMessage(tarokk)}
+        </button>
+      );
+    });
   }
 
   function renderBonusButtons() {
@@ -1112,7 +1119,7 @@ function Game() {
               calledTarokk,
               selectedTarokkNumber,
             );
-            setPrivateInformation("");
+            setPrivateInformation([]);
           } else if (
             turnPlayer === user?.username &&
             selectedBonuses.length > 0 &&
@@ -1130,7 +1137,7 @@ function Game() {
               calledTarokk,
               selectedTarokkNumber,
             );
-            setPrivateInformation("");
+            setPrivateInformation([]);
           } else {
             if (
               firstBonusRound &&
@@ -1138,28 +1145,26 @@ function Game() {
               !calledTarokk &&
               selectedBonuses.length === 0
             ) {
-              setPrivateInformation(
-                "You haven't selected a tarokk and a bonus!",
-              );
+              setPrivateInformation([t("game.noTarokkAndBonusSelected")]);
             } else if (
               firstBonusRound &&
               declarer === user?.username &&
               !calledTarokk
             ) {
-              setPrivateInformation("You haven't called a tarokk!");
+              setPrivateInformation([t("game.noTarokkCalled")]);
             } else if (
               firstBonusRound &&
               declarer === user?.username &&
               selectedBonuses.length === 0
             ) {
-              setPrivateInformation("You haven't selected a bonus!");
+              setPrivateInformation([t("game.noBonusSelected")]);
             } else {
-              setPrivateInformation("You haven't selected a bonus!");
+              setPrivateInformation([t("game.noBonusSelected")]);
             }
           }
         }}
       >
-        Submit
+        {t("game.submit")}
       </button>
     );
     return [...buttons, confirmButton];
@@ -1194,7 +1199,7 @@ function Game() {
         </div>
         <div className="h-1/6 flex justify-center items-center font-bold text-xl">
           {playerName && (
-            <p className="text-green-100">Balance: {playerBalance}</p>
+            <p className="text-green-100">{t("game.balance", { balance: playerBalance })}</p>
           )}
         </div>
       </div>
@@ -1220,7 +1225,7 @@ function Game() {
         <div className="w-1/3 flex flex-col">
           <div className="h-1/6 flex justify-center items-center font-bold text-xl">
             {playerTrickCards > 0 && (
-              <p className="text-green-100">{playerName}'s tricks</p>
+              <p className="text-green-100">{t("game.playerTricks", { name: playerName })}</p>
             )}
           </div>
 
@@ -1245,7 +1250,7 @@ function Game() {
               {displayHandBack(playerCardsNumber)}
             </div>
             <div className="h-1/6 flex justify-center items-center font-bold text-xl">
-              <p className="text-green-100">Balance: {playerBalance}</p>
+              <p className="text-green-100">{t("game.balance", { balance: playerBalance })}</p>
             </div>
           </div>
         </div>
@@ -1286,14 +1291,14 @@ function Game() {
               {displayHandBack(playerCardsNumber)}
             </div>
             <div className="h-1/6 flex justify-center items-center font-bold text-xl">
-              <p className="text-green-100">Balance: {playerBalance}</p>
+              <p className="text-green-100">{t("game.balance", { balance: playerBalance })}</p>
             </div>
           </div>
         </div>
         <div className="w-1/3 flex flex-col">
           <div className="h-1/6 flex justify-center items-center font-bold text-xl">
             {playerTrickCards > 0 && (
-              <p className="text-green-100">{playerName}'s tricks</p>
+              <p className="text-green-100">{t("game.playerTricks", { name: playerName })}</p>
             )}
           </div>
           <div className="h-5/6 flex justify-center items-start">
@@ -1323,7 +1328,7 @@ function Game() {
         <div className="w-1/4 flex flex-col">
           <div className="h-1/6 flex justify-center items-center font-bold text-xl">
             {playerTrickCards > 0 && (
-              <p className="text-green-100">{playerName}'s tricks</p>
+              <p className="text-green-100">{t("game.playerTricks", { name: playerName })}</p>
             )}
           </div>
           <div className="h-5/6 flex justify-center items-start">
@@ -1346,7 +1351,7 @@ function Game() {
               {displayHandBack(playerCardsNumber)}
             </div>
             <div className="h-1/6 flex justify-center items-center font-bold text-xl">
-              <p className="text-green-100">Balance: {playerBalance}</p>
+              <p className="text-green-100">{t("game.balance", { balance: playerBalance })}</p>
             </div>
           </div>
         </div>
@@ -1375,7 +1380,7 @@ function Game() {
       <img
         key={index}
         src={imagePath}
-        alt={`Skart card back ${index + 1}`}
+        alt={t("game.alt.skartCardBack", { index: index + 1 })}
         className="w-19 -mx-14"
       />
     ));
@@ -1387,7 +1392,7 @@ function Game() {
       <img
         key={index}
         src={imagePath}
-        alt={`Trick card back ${index + 1}`}
+        alt={t("game.alt.trickCardBack", { index: index + 1 })}
         className="w-19 -mx-9.75"
       />
     ));
@@ -1401,7 +1406,7 @@ function Game() {
         <img
           key={i}
           src="Back.png"
-          alt={`Card back ${i + 1}`}
+          alt={t("game.alt.cardBack", { index: i + 1 })}
           className="w-19 -m-9.5"
           style={{
             transform: `rotate(${rotation}deg)`,
@@ -1419,7 +1424,7 @@ function Game() {
       <img
         key={index}
         src={card.imagePath}
-        alt={`Card ${index + 1}`}
+        alt={t("game.alt.card", { index: index + 1 })}
         className="w-20 mx-1"
       />
     ));
@@ -1430,7 +1435,7 @@ function Game() {
       <img
         key={index}
         src={card.imagePath}
-        alt={`Card ${index + 1}`}
+        alt={t("game.alt.card", { index: index + 1 })}
         className="w-19 mx-1"
       />
     ));
@@ -1442,7 +1447,7 @@ function Game() {
         <img
           key={index}
           src={card.imagePath}
-          alt={`Card ${index + 1}`}
+          alt={t("game.alt.card", { index: index + 1 })}
           className="w-20 mx-1 hover:-translate-y-1 hover:scale-105 cursor-pointer transition-transform duration-200"
           onClick={() => handleDiscardSkart(card)}
         />
@@ -1450,7 +1455,7 @@ function Game() {
         <img
           key={index}
           src={card.imagePath}
-          alt={`Card ${index + 1}`}
+          alt={t("game.alt.card", { index: index + 1 })}
           className="w-20 mx-1"
         />
       ),
@@ -1463,7 +1468,7 @@ function Game() {
         <img
           key={index}
           src={card.imagePath}
-          alt={`Card ${index + 1}`}
+          alt={t("game.alt.card", { index: index + 1 })}
           className="w-20 mx-1 hover:-translate-y-1 hover:scale-105 cursor-pointer transition-transform duration-200"
           onClick={() => handlePlay(card)}
         />
@@ -1471,7 +1476,7 @@ function Game() {
         <img
           key={index}
           src={card.imagePath}
-          alt={`Card ${index + 1}`}
+          alt={t("game.alt.card", { index: index + 1 })}
           className="w-20 mx-1"
         />
       ),
@@ -1497,7 +1502,7 @@ function Game() {
           <img
             key={index}
             src={card.frontImagePath}
-            alt={`Public card ${index + 1}`}
+            alt={t("game.alt.publicCard", { index: index + 1 })}
             className="w-16 mx-1"
           />
         ))}
@@ -1510,7 +1515,7 @@ function Game() {
       <img
         key={index}
         src={card.imagePath}
-        alt={`Selected card ${index + 1}`}
+        alt={t("game.alt.selectedCard", { index: index + 1 })}
         className="w-20 mx-1 hover:-translate-y-1 hover:scale-105 cursor-pointer transition-transform duration-200"
         onClick={() => handleDiscardSkart(card)}
       />
@@ -1532,13 +1537,9 @@ function Game() {
           prev.filter((c) => c.imagePath !== card.imagePath),
         );
       } else {
-        if (cardsToDiscard.current === 1) {
-          setPublicInformation("You can only select 1 card for the skart.");
-        } else {
-          setPublicInformation(
-            `You can only select ${cardsToDiscard.current} cards for the skart.`,
-          );
-        }
+        setPublicInformation([
+          t("game.skartLimit", { count: cardsToDiscard.current }),
+        ]);
       }
     }
   }
@@ -1554,7 +1555,7 @@ function Game() {
             <img
               key={trickWinnerDirection ? `fly-${card.cardId}` : card.cardId}
               src={card.imagePath}
-              alt={`Trick card ${index + 1}`}
+              alt={t("game.alt.trickCard", { index: index + 1 })}
               className={`w-20 absolute ${animClass}`}
               style={{
                 left: `calc(50% + ${card?.x ?? 0}%)`,
@@ -1580,28 +1581,22 @@ function Game() {
 
   function formatDiscardInformation() {
     if (!discardInformation) return null;
-    return discardInformation
-      .split("@")
-      .filter(Boolean)
-      .map((sentence, index) => (
-        <span key={index}>
-          {sentence.trim()}
-          <br />
-        </span>
-      ));
+    return translateInfoLines(discardInformation).map((sentence, index) => (
+      <span key={index}>
+        {sentence}
+        <br />
+      </span>
+    ));
   }
 
   function formatLogoutWarning() {
     if (!logoutWarning) return null;
-    return logoutWarning
-      .split("@")
-      .filter(Boolean)
-      .map((sentence, index) => (
-        <span key={index}>
-          {sentence.trim()}
-          <br />
-        </span>
-      ));
+    return translateInfoLines(logoutWarning).map((sentence, index) => (
+      <span key={index}>
+        {sentence}
+        <br />
+      </span>
+    ));
   }
 
   function confirmLogout() {

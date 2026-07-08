@@ -1,7 +1,9 @@
 package com.codecool.tarokkgame.service;
 
+import com.codecool.tarokkgame.constants.MessageKey;
 import com.codecool.tarokkgame.exceptionhandling.customexception.FeedbackDeliveryException;
 import com.codecool.tarokkgame.exceptionhandling.customexception.NotAllowedOperationException;
+import com.codecool.tarokkgame.model.dto.LocalizedMessage;
 import com.codecool.tarokkgame.model.dto.restdto.FeedbackDTO;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailException;
@@ -11,7 +13,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Service;
 
-import java.util.Map;
 import java.util.Objects;
 
 @Service
@@ -29,9 +30,9 @@ public class FeedbackService {
         this.mailSender = mailSender;
     }
 
-    public Map<String, String> sendFeedback(FeedbackDTO request) {
+    public LocalizedMessage sendFeedback(FeedbackDTO request) {
         if (request.message() == null || request.message().isBlank()) {
-            throw new NotAllowedOperationException("Feedback message must not be empty");
+            throw new NotAllowedOperationException(new LocalizedMessage(MessageKey.ERROR_FEEDBACK_MESSAGE_EMPTY));
         }
 
         String username = currentUsername();
@@ -48,7 +49,7 @@ public class FeedbackService {
             throw new FeedbackDeliveryException("Could not send feedback email", e);
         }
 
-        return Map.of("message", "Thanks for your feedback!");
+        return new LocalizedMessage(MessageKey.FEEDBACK_THANKS);
     }
 
     private String buildBody(String username, FeedbackDTO request) {

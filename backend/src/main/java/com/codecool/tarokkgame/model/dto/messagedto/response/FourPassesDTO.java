@@ -1,4 +1,8 @@
 package com.codecool.tarokkgame.model.dto.messagedto.response;
 
-public record FourPassesDTO(String info, String turnPlayer, String type) {
+import com.codecool.tarokkgame.model.dto.LocalizedMessage;
+
+import java.util.List;
+
+public record FourPassesDTO(List<LocalizedMessage> info, String turnPlayer, String type) {
 }

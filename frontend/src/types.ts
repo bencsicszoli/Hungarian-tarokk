@@ -1,3 +1,10 @@
+export interface LocalizedMessage {
+  key: string;
+  params?: Record<string, unknown>;
+}
+
+export type InfoLine = string | LocalizedMessage;
+
 export interface User {
   id: string;
   username: string;

@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useUser } from "./context/UserContext";
 import EditButton from "./editPageComponents/EditButton";
 import EditPageField from "./editPageComponents/EditPageField";
+import { translateMessage } from "./i18n/translateMessage";
 
 function EditPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const userContext = useUser();
   const { user } = userContext || { user: null };
@@ -32,7 +35,7 @@ function EditPage() {
         },
       });
       if (!response.ok) {
-        throw new Error((await response.json()).message);
+        throw new Error(translateMessage(await response.json()));
       }
       setMessage("");
       console.log(`User ${name} has been deleted`);
@@ -71,8 +74,11 @@ function EditPage() {
       });
       const data = await res.json();
       console.log(data);
-      if (!res.ok) throw new Error(data.message || "Failed to update profile");
-      setMessage(data.message);
+      if (!res.ok)
+        throw new Error(
+          data?.key ? translateMessage(data) : t("edit.errors.updateFailed"),
+        );
+      setMessage(translateMessage(data));
       setName("");
       setTimeout(() => navigate("/"), 3000);
     } catch (err: unknown) {
@@ -90,33 +96,33 @@ function EditPage() {
       <div className="p-4 sm:p-6 bg-[#4B2E1F] rounded-[90px] shadow-inner w-full max-w-7xl">
         <div className="w-full h-168 bg-poker-table rounded-[70px] shadow-2xl flex flex-col items-center justify-center relative px-6 sm:px-8 dark:text-gray-50">
           <h1 className="mb-6 text-3xl font-extrabold leading-tight tracking-tight text-green-100 md:text-4xl xl:text-3xl text-center">
-            Edit your account:
+            {t("edit.title")}
           </h1>
           <div className="text-xl font-bold z-10 w-full bg-[#2f4b3a] border border-green-300 rounded-2xl shadow md:mt-0 md:max-w-2/3 2xl:max-w-1/2 xl:p-0">
             <div className="p-6 space-y-4 md:space-y-8 sm:p-8">
               <form className="space-y-4" onSubmit={handleSave}>
                 <EditPageField
                   htmlFor="username"
-                  labelText="Your username"
+                  labelText={t("edit.usernameLabel")}
                   inputType="text"
                   inputName="username"
-                  placeholder="username"
+                  placeholder={t("edit.usernamePlaceholder")}
                   value={name}
                   onChangeHandler={setName}
                   required={true}
                 />
                 <EditPageField
                   htmlFor="email"
-                  labelText="Email address"
+                  labelText={t("edit.emailLabel")}
                   inputType="email"
                   inputName="email"
-                  placeholder="email"
+                  placeholder={t("edit.emailPlaceholder")}
                   value={email}
                   onChangeHandler={setEmail}
                 />
                 <EditPageField
                   htmlFor="password"
-                  labelText="Your password"
+                  labelText={t("edit.passwordLabel")}
                   inputType="password"
                   inputName="password"
                   placeholder="••••••••"
@@ -126,7 +132,7 @@ function EditPage() {
                 />
                 <EditPageField
                   htmlFor="new-password"
-                  labelText="New password"
+                  labelText={t("edit.newPasswordLabel")}
                   inputType="password"
                   inputName="new-password"
                   placeholder="••••••••"
@@ -136,7 +142,7 @@ function EditPage() {
                 />
                 <EditPageField
                   htmlFor="confirm-password"
-                  labelText="Confirm password"
+                  labelText={t("edit.confirmPasswordLabel")}
                   inputType="password"
                   inputName="confirm-password"
                   placeholder="••••••••"
@@ -146,7 +152,7 @@ function EditPage() {
                 />
                 <div>
                   {confirmPassword && newPassword !== confirmPassword && (
-                    <div>New passwords do not match</div>
+                    <div>{t("edit.passwordMismatch")}</div>
                   )}
                 </div>
                 {message && (
@@ -157,20 +163,20 @@ function EditPage() {
                 <EditButton
                   onHandle={handleSave}
                   type="submit"
-                  buttonText="Save changes"
+                  buttonText={t("edit.save")}
                 />
                 <div>
                   <EditButton
                     onHandle={handleDelete}
                     type="button"
-                    buttonText="Delete account"
+                    buttonText={t("edit.delete")}
                   />
                 </div>
                 <div>
                   <EditButton
                     onHandle={handleCancel}
                     type="button"
-                    buttonText="Back to menu"
+                    buttonText={t("edit.backToMenu")}
                   />
                 </div>
               </form>

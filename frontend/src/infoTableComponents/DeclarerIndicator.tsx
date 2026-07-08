@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { GameState } from "../types";
 
 function DeclarerIndicator({
@@ -9,11 +10,12 @@ function DeclarerIndicator({
   gameState: GameState;
   bid: string;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="w-2/3 h-full">
       <div className="w-full h-1/4 flex items-center pl-3">
         {gameState !== "NEW" && gameState !== "FINISHED" && bid !== "-" && (
-          <p className="text-xl font-semibold">Declarer:</p>
+          <p className="text-xl font-semibold">{t("infoTable.declarerLabel")}</p>
         )}
       </div>
       {gameState !== "NEW" && gameState !== "FINISHED" && (

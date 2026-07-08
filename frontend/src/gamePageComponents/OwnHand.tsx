@@ -1,4 +1,5 @@
 import type { JSX } from "react";
+import { useTranslation } from "react-i18next";
 import type { CardImage, GameState } from "../types";
 
 function OwnHand({
@@ -12,6 +13,7 @@ function OwnHand({
   displayPublicCards: (cards: CardImage[]) => JSX.Element;
   publicOpponentTricks: CardImage[];
 }): JSX.Element {
+  const { t } = useTranslation();
   return (
     <div
       className={`w-full ${gameState !== "FINISHED" ? "h-1/3" : "flex flex-col flex-auto justify-center items-center"}`}
@@ -21,7 +23,7 @@ function OwnHand({
       ) : (
         <>
           <p className="text-center text-xl font-bold text-green-100 mb-4">
-            Tricks of opponent side:
+            {t("game.opponentTricksTitle")}
           </p>
           {displayPublicCards(publicOpponentTricks)}
         </>

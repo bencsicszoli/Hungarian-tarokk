@@ -1,4 +1,6 @@
 package com.codecool.tarokkgame.model.dto.messagedto.response;
 
-public record NewRoundDTO(String dealerInfo, String type) {
+import com.codecool.tarokkgame.model.dto.LocalizedMessage;
+
+public record NewRoundDTO(LocalizedMessage dealerInfo, String type) {
 }

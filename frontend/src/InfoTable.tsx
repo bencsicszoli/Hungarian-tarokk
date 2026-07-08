@@ -2,7 +2,8 @@ import BonusLists from "./infoTableComponents/BonusLists";
 import DealerTurnAndBidInfo from "./infoTableComponents/DealerTurnAndBidInfo";
 import PrivateInfo from "./infoTableComponents/PrivateInfo";
 import PublicInfo from "./infoTableComponents/PublicInfo";
-import type { GameState } from "./types";
+import type { GameState, InfoLine } from "./types";
+import { translateInfoLines } from "./i18n/translateMessage";
 
 function InfoTable({
   bid,
@@ -20,23 +21,20 @@ function InfoTable({
   declarer: string | null;
   dealer: string | null;
   turnPlayer: string | null;
-  publicInfo: string;
-  privateInfo: string;
+  publicInfo: InfoLine[];
+  privateInfo: InfoLine[];
   gameState: GameState;
   declarerBonuses: string | null;
   opponentBonuses: string | null;
   startPlayer: string | null;
 }) {
-  function displayInformation(info: string) {
-    return info
-      .split("@")
-      .filter(Boolean)
-      .map((sentence, index) => (
-        <span key={index}>
-          {sentence.trim()}
-          <br />
-        </span>
-      ));
+  function displayInformation(info: InfoLine[]) {
+    return translateInfoLines(info).map((sentence, index) => (
+      <span key={index}>
+        {sentence}
+        <br />
+      </span>
+    ));
   }
 
   const currentName =

@@ -1,7 +1,10 @@
 package com.codecool.tarokkgame.model.dto.messagedto.response;
 
+import com.codecool.tarokkgame.model.dto.LocalizedMessage;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -15,8 +18,8 @@ public class JoinMessageDTO {
     private String dealer;
     private String startPlayer;
     private String turnPlayer;
-    private String information;
-    private String privateInformation;
+    private List<LocalizedMessage> information;
+    private List<LocalizedMessage> privateInformation;
     private String type;
     private int player1Balance;
     private int player2Balance;

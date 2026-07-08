@@ -1,8 +1,12 @@
 package com.codecool.tarokkgame.model.entity;
 
+import com.codecool.tarokkgame.model.converter.LocalizedMessageListConverter;
+import com.codecool.tarokkgame.model.dto.LocalizedMessage;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.util.List;
 
 @Entity
 @Getter
@@ -46,7 +50,10 @@ public class RoundResult {
     private int nineTarokksAfterwards = 0;
     private int sum = 0;
     private int cardValue = 0;
-    private String info;
+
+    @Convert(converter = LocalizedMessageListConverter.class)
+    @Column(columnDefinition = "TEXT")
+    private List<LocalizedMessage> info;
 
     @OneToOne
     private Player player;

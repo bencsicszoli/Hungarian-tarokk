@@ -12,8 +12,10 @@
   "dependencies": {
     "@stomp/stompjs": "^7.3.0",
     "@tailwindcss/vite": "^4.1.18",
+    "i18next": "^26.3.5",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-i18next": "^17.0.8",
     "react-router-dom": "^7.13.0",
     "sockjs-client": "^1.6.1",
     "tailwindcss": "^4.1.18"

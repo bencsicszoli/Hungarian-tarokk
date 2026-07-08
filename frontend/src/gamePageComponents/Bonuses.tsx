@@ -1,5 +1,6 @@
 import type { JSX } from "react";
-import type { User, GameState } from "../types";
+import { useTranslation } from "react-i18next";
+import type { User, GameState, InfoLine, LocalizedMessage } from "../types";
 
 function Bonuses({
   gameState,
@@ -15,17 +16,18 @@ function Bonuses({
   onRenderBonusButtons,
 }: {
   gameState: GameState;
-  discardInformation: string | null;
+  discardInformation: InfoLine[] | null;
   turnPlayer: string | null;
   user: User | null;
   hasEightTarokks: boolean;
   hasNineTarokks: boolean;
   declarer: string | null;
-  callableTarokks: string[];
+  callableTarokks: LocalizedMessage[];
   onRenderTarokkNumberButton: () => JSX.Element | null;
   onRenderCallableTarokkButtons: () => JSX.Element[];
   onRenderBonusButtons: () => JSX.Element[];
 }) {
+  const { t } = useTranslation();
   if (
     gameState === "BONUS_ANNOUNCEMENT" &&
     discardInformation === null &&
@@ -46,7 +48,7 @@ function Bonuses({
 
         <div className="w-full flex flex-col justify-center items-center">
           <p className="h-1/4 font-semibold mt-1 mb-1 text-lg">
-            Select your bonuses:
+            {t("game.selectBonusesTitle")}
           </p>
           <div className="h-3/4 w-full grid grid-flow-row grid-cols-4">
             {onRenderBonusButtons()}

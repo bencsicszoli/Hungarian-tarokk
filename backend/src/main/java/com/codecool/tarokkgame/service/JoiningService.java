@@ -1,5 +1,7 @@
 package com.codecool.tarokkgame.service;
 
+import com.codecool.tarokkgame.constants.MessageKey;
+import com.codecool.tarokkgame.model.dto.LocalizedMessage;
 import com.codecool.tarokkgame.model.dto.messagedto.response.JoinMessageDTO;
 import com.codecool.tarokkgame.model.entity.AppUser;
 import com.codecool.tarokkgame.model.entity.Game;
@@ -60,7 +62,7 @@ public class JoiningService {
     private JoinMessageDTO createMessageWhenGameWithMissingPlayerExists(Game gameWithEmptySeat, AppUser user, String username) {
         Player newPlayer = new Player();
         newPlayer.setUser(user);
-        gameWithEmptySeat.setInformation(String.format("%s has joined the game", username.toUpperCase()));
+        gameWithEmptySeat.setInformation(List.of(new LocalizedMessage(MessageKey.JOIN_PLAYER_JOINED, Map.of("username", username.toUpperCase()))));
         findEmptySeatAtCardTable(gameWithEmptySeat, newPlayer, username);
         List<Player> players = gameWithEmptySeat.getPlayers();
         players.add(newPlayer);
@@ -102,7 +104,7 @@ public class JoiningService {
         newGame.setPlayer1(username);
         Player newPlayer = new Player();
         newPlayer.setUser(user);
-        newGame.setInformation(String.format("%s has joined the game", username.toUpperCase()));
+        newGame.setInformation(List.of(new LocalizedMessage(MessageKey.JOIN_PLAYER_JOINED, Map.of("username", username.toUpperCase()))));
         newPlayer.setPlace(1);
         List<Player> players = new ArrayList<>(4);
         players.add(newPlayer);

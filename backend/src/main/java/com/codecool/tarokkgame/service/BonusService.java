@@ -2,19 +2,23 @@ package com.codecool.tarokkgame.service;
 
 import com.codecool.tarokkgame.constants.Bonus;
 import com.codecool.tarokkgame.constants.GameState;
+import com.codecool.tarokkgame.constants.MessageKey;
 import com.codecool.tarokkgame.constants.RoleInGame;
 import com.codecool.tarokkgame.constants.RomanTarokkNumber;
 import com.codecool.tarokkgame.model.TarokkNumberHolder;
+import com.codecool.tarokkgame.model.dto.LocalizedMessage;
 import com.codecool.tarokkgame.model.dto.messagedto.response.FirstPotentialBonusesDTO;
 import com.codecool.tarokkgame.model.dto.messagedto.response.PotentialBonusesDTO;
-import com.codecool.tarokkgame.model.dto.messagedto.response.PrivateInfoDTO;
+import com.codecool.tarokkgame.model.dto.messagedto.response.PrivateInfoListDTO;
 import com.codecool.tarokkgame.model.dto.messagedto.response.PublicBonusDTO;
 import com.codecool.tarokkgame.model.entity.Game;
 import com.codecool.tarokkgame.model.entity.Player;
 import org.springframework.stereotype.Service;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -27,10 +31,10 @@ public class BonusService {
     public FirstPotentialBonusesDTO getFirstPotentialDeclarerBonuses(Game game, Player player) {
         List<Bonus> bonuses = Bonus.getBonusesWithBaseLevel();
         List<String> bonusNames = bonuses.stream().map(Bonus::getBonusName).collect(Collectors.toList());
-        Set<String> callableTarokks = new LinkedHashSet<>();
+        Set<LocalizedMessage> callableTarokks = new LinkedHashSet<>();
         setCallableTarokks(game, player, callableTarokks);
         TarokkNumberHolder tarokkNumberHolder = getTarokkNumber(player);
-        String playerInfo = createPlayerInfo(tarokkNumberHolder);
+        List<LocalizedMessage> playerInfo = createPlayerInfo(tarokkNumberHolder);
         game.getOptionalBonuses().addAll(bonuses);
         return new FirstPotentialBonusesDTO(tarokkNumberHolder.isEightTarokk(), tarokkNumberHolder.isNineTarokk(), bonusNames, callableTarokks, playerInfo, "game.firstPotentialBonuses");
     }
@@ -40,7 +44,7 @@ public class BonusService {
         Set<Bonus> optionalBonuses = game.getOptionalBonuses();
         Set<Bonus> bonuses = new HashSet<>(optionalBonuses);
 
-        String playerInfo = createPlayerInfo(tarokkNumberHolder, player, game, bonuses);
+        List<LocalizedMessage> playerInfo = createPlayerInfo(tarokkNumberHolder, player, game, bonuses);
 
         List<Bonus> sortedBonuses = Bonus.sortBonuses(bonuses);
         List<String> bonusNames = sortedBonuses.stream().map(Bonus::getBonusName).toList();
@@ -49,7 +53,7 @@ public class BonusService {
 
     public PotentialBonusesDTO getPotentialTurnPlayerBonuses(Game game, Player player) {
         TarokkNumberHolder tarokkNumberHolder = fillTarokkNumberHolder(player);
-        String playerInfo = createPlayerInfo(tarokkNumberHolder);
+        List<LocalizedMessage> playerInfo = createPlayerInfo(tarokkNumberHolder);
         Set<Bonus> optionalBonuses = game.getOptionalBonuses();
         Set<Bonus> bonuses = new HashSet<>(optionalBonuses);
 
@@ -64,16 +68,13 @@ public class BonusService {
         setAnnouncedTarokkNumberToPlayer(selectedTarokkNumber, player);
         setNewBonusesToDeclarer(game, bonusNames, player);
         String turnPlayer = game.getNextPlayer(player).getName();
-        calledTarokk = calledTarokk.substring(11);
         int invitedTarokkNumber = RomanTarokkNumber.toArabicNumber(calledTarokk);
         game.setInvitedTarokk(invitedTarokkNumber);
         if (player.hasTheGivenTarokk(invitedTarokkNumber)) {
             game.setDeclarerAlone(true);
         }
         String upperCaseName = player.getName().toUpperCase();
-        String announceTarokkNumber = announceTarokkNumber(selectedTarokkNumber, upperCaseName);
-        String bonusNamesToString = String.join("@", bonusNames);
-        String info = createInfoAboutDeclarerAnnouncement(announceTarokkNumber, upperCaseName, calledTarokk, bonusNamesToString);
+        List<LocalizedMessage> info = createInfoAboutDeclarerAnnouncement(selectedTarokkNumber, upperCaseName, calledTarokk, bonusNames);
         return new PublicBonusDTO(info, Bonus.getBonusNames(game.getDeclarerBonuses()), Bonus.getBonusNames(game.getOpponentBonuses()), turnPlayer, "game.publicBonusInfo");
     }
 
@@ -92,12 +93,12 @@ public class BonusService {
         }
         String turnPlayer = game.getNextPlayer(player).getName();
         String upperCaseName = player.getName().toUpperCase();
-        String info = createInfoAboutTurnPlayerAnnouncement(selectedTarokkNumber, upperCaseName, bonusNames);
+        List<LocalizedMessage> info = createInfoAboutTurnPlayerAnnouncement(selectedTarokkNumber, upperCaseName, bonusNames);
 
         return new PublicBonusDTO(info, Bonus.getBonusNames(game.getDeclarerBonuses()), Bonus.getBonusNames(game.getOpponentBonuses()), turnPlayer, "game.publicBonusInfo");
     }
 
-    public PrivateInfoDTO checkDoubleOrRedoubleIfNeeded(Game game, Player player, Set<String> bonusNames) {
+    public PrivateInfoListDTO checkDoubleOrRedoubleIfNeeded(Game game, Player player, Set<String> bonusNames) {
         List<Bonus> bonuses = bonusNames.stream().map(Bonus::getBonusByName).toList();
         if (bonusNames.size() == 1 && bonusNames.contains("Pass")) {
             handleLonelyPass(game);
@@ -115,12 +116,12 @@ public class BonusService {
         }
     }
 
-    public PrivateInfoDTO checkDeclarerUltimoAndTarokkNumber(Player player, Set<String> bonusNames, int selectedTarokkNumber) {
+    public PrivateInfoListDTO checkDeclarerUltimoAndTarokkNumber(Player player, Set<String> bonusNames, int selectedTarokkNumber) {
         if (bonusNames.contains("Pagat ultimo") && selectedTarokkNumber == 0) {
             if (player.isHasEightTarokks()) {
-                return new PrivateInfoDTO("If you announce Pagat ultimo@ you MUST announce 8 tarokks too!", "game.privateInfo");
+                return new PrivateInfoListDTO(List.of(new LocalizedMessage(MessageKey.BONUS_PAGAT_ULTIMO_REQUIRES_8)), "game.privateInfo");
             } else if (player.isHasNineTarokks()) {
-                return new PrivateInfoDTO("If you announce Pagat ultimo@ you MUST announce 9 tarokks too!", "game.privateInfo");
+                return new PrivateInfoListDTO(List.of(new LocalizedMessage(MessageKey.BONUS_PAGAT_ULTIMO_REQUIRES_9)), "game.privateInfo");
             } else {
                 return null;
             }
@@ -128,15 +129,15 @@ public class BonusService {
         return null;
     }
 
-    public PrivateInfoDTO checkTurnPlayerUltimoAndTarokkNumber(Player player, Set<String> bonusNames, int selectedTarokkNumber) {
+    public PrivateInfoListDTO checkTurnPlayerUltimoAndTarokkNumber(Player player, Set<String> bonusNames, int selectedTarokkNumber) {
         if ((bonusNames.contains("Pagat ultimo") || bonusNames.contains("Pagat ultimo doubled")) && selectedTarokkNumber == 0) {
             if (player.isEightTarokksInAdvance() || player.isNineTarokksInAdvance()) {
                 return null;
             }
             if (player.isHasEightTarokks()) {
-                return new PrivateInfoDTO("If you announce or double Pagat ultimo@ you MUST announce 8 tarokks too!", "game.privateInfo");
+                return new PrivateInfoListDTO(List.of(new LocalizedMessage(MessageKey.BONUS_TURN_PAGAT_ULTIMO_REQUIRES_8)), "game.privateInfo");
             } else if (player.isHasNineTarokks()) {
-                return new PrivateInfoDTO("If you announce or double Pagat ultimo@ you MUST announce 9 taroks too!", "game.privateInfo");
+                return new PrivateInfoListDTO(List.of(new LocalizedMessage(MessageKey.BONUS_TURN_PAGAT_ULTIMO_REQUIRES_9)), "game.privateInfo");
             } else {
                 return null;
             }
@@ -144,58 +145,57 @@ public class BonusService {
         return null;
     }
 
-    public PrivateInfoDTO checkDoubleGameAndVolat(Set<String> bonusNames) {
+    public PrivateInfoListDTO checkDoubleGameAndVolat(Set<String> bonusNames) {
         if (bonusNames.contains("Double game") && bonusNames.contains("Volat")) {
-            return new PrivateInfoDTO("You cannot announce Double game and Volat at the same time!@ Click on the bonus again to remove it!", "game.privateInfo");
+            return new PrivateInfoListDTO(List.of(new LocalizedMessage(MessageKey.BONUS_DOUBLE_VOLAT_CONFLICT)), "game.privateInfo");
         }
         return null;
     }
 
-    public PrivateInfoDTO checkAnnouncementsAfterVolat(Player player, Set<String> bonusNames, Game game) {
+    public PrivateInfoListDTO checkAnnouncementsAfterVolat(Player player, Set<String> bonusNames, Game game) {
         String side = identifyPlayerSide(player, game.getInvitedTarokk());
         boolean announcedVolat = game.announcedVolat(side);
         if (announcedVolat && (bonusNames.contains("Trull") || bonusNames.contains("Four kings") || bonusNames.contains("Double game"))) {
-            return new PrivateInfoDTO("You cannot announce Trull, Four kings or Double game after Volat!@ Click on the bonus again to remove it!", "game.privateInfo");
+            return new PrivateInfoListDTO(List.of(new LocalizedMessage(MessageKey.BONUS_ANNOUNCE_AFTER_VOLAT_CONFLICT)), "game.privateInfo");
         } else {
             return null;
         }
     }
 
-    public PrivateInfoDTO informPlayerOfSelectedOptions(int selectedTarokkNumber, String calledTarokk, List<String> selectedBonuses) {
-        StringBuilder builder = new StringBuilder();
+    public PrivateInfoListDTO informPlayerOfSelectedOptions(int selectedTarokkNumber, String calledTarokk, List<String> selectedBonuses) {
+        List<LocalizedMessage> lines = new ArrayList<>();
         if (selectedTarokkNumber > 0) {
-            builder.append("You selected ").append(selectedTarokkNumber).append(" tarokks@");
+            lines.add(new LocalizedMessage(MessageKey.BONUS_SELECTED_TAROKKS, Map.of("count", selectedTarokkNumber)));
         }
         if (calledTarokk != null) {
-            builder.append(" ").append(calledTarokk).append("@");
+            lines.add(callTarokkMessage(calledTarokk));
         }
         if (!selectedBonuses.isEmpty()) {
-            String replacementString;
-            if (selectedBonuses.size() == 1) {
-                replacementString = " Selected bonus:@";
-            } else {
-                replacementString = " Selected bonuses:@";
-            }
-            builder.append(replacementString).append(String.join("@", selectedBonuses)).append("@");
+            String key = selectedBonuses.size() == 1 ? MessageKey.BONUS_SELECTED_BONUS : MessageKey.BONUS_SELECTED_BONUSES;
+            lines.add(new LocalizedMessage(key, Map.of("bonuses", selectedBonuses)));
         }
-        return new PrivateInfoDTO(builder.toString(), "game.privateInfo");
+        return new PrivateInfoListDTO(lines, "game.privateInfo");
     }
 
-    private void setCallableTarokks(Game game, Player player, Set<String> callableTarokks) {
+    private void setCallableTarokks(Game game, Player player, Set<LocalizedMessage> callableTarokks) {
         if (game.getInvitedTarokk() == 20) {
-            callableTarokks.add("I call the XX");
+            callableTarokks.add(callTarokkMessage("XX"));
         } else if (game.getInvitedTarokk() == 19) {
-            callableTarokks.add("I call the XIX");
+            callableTarokks.add(callTarokkMessage("XIX"));
         } else if (game.getInvitedTarokk() == 18) {
-            callableTarokks.add("I call the XVIII");
+            callableTarokks.add(callTarokkMessage("XVIII"));
         } else if (!player.hasTarokk20()) {
-            callableTarokks.add("I call the XX");
+            callableTarokks.add(callTarokkMessage("XX"));
         } else {
             int callableTarokk = player.findMissingStrongestTarokk();
             String romanForm = RomanTarokkNumber.fromArabicNumber(callableTarokk).toString();
-            callableTarokks.add(String.format("I call the %s", romanForm));
-            callableTarokks.add("I call the XX");
+            callableTarokks.add(callTarokkMessage(romanForm));
+            callableTarokks.add(callTarokkMessage("XX"));
         }
+    }
+
+    private LocalizedMessage callTarokkMessage(String romanNumeral) {
+        return new LocalizedMessage(MessageKey.BONUS_CALL_TAROKK, Map.of("romanNumeral", romanNumeral));
     }
 
     private TarokkNumberHolder getTarokkNumber(Player player) {
@@ -217,22 +217,22 @@ public class BonusService {
         return tarokkNumberHolder;
     }
 
-    private String createPlayerInfo(TarokkNumberHolder tarokkNumberHolder, Player player, Game game, Set<Bonus> bonuses) {
-        StringBuilder playerInfo = new StringBuilder();
+    private List<LocalizedMessage> createPlayerInfo(TarokkNumberHolder tarokkNumberHolder, Player player, Game game, Set<Bonus> bonuses) {
+        List<LocalizedMessage> playerInfo = new ArrayList<>();
         if (tarokkNumberHolder.isEightTarokk() || tarokkNumberHolder.isNineTarokk()) {
-            playerInfo.append("Announce tarokknumber (optional, except for Pagat ultimo or doubling it)!@");
+            playerInfo.add(new LocalizedMessage(MessageKey.BONUS_ANNOUNCE_TAROKK_PROMPT));
         }
         if (player.getRoleInGame().equals(RoleInGame.DECLARER_PARTNER) || player.hasTheGivenTarokk(game.getInvitedTarokk())) {
-            playerInfo.append("Choose at least one bonus or pass!@");
+            playerInfo.add(new LocalizedMessage(MessageKey.BONUS_CHOOSE_PROMPT));
         } else {
             if (player.getRoleInGame().equals(RoleInGame.OPPONENT)) {
-                playerInfo.append("Choose at least one bonus or pass!@");
+                playerInfo.add(new LocalizedMessage(MessageKey.BONUS_CHOOSE_PROMPT));
             } else {
-                playerInfo.append("Pass or choose at least one bonus after doubling something!@");
+                playerInfo.add(new LocalizedMessage(MessageKey.BONUS_PASS_OR_CHOOSE_PROMPT));
             }
             addDoubledBonusesToBonuses(game, bonuses);
         }
-        return playerInfo.toString();
+        return playerInfo;
     }
 
     private void addDoubledBonusesToBonuses(Game game, Set<Bonus> bonuses) {
@@ -251,13 +251,13 @@ public class BonusService {
         return tarokkNumberHolder;
     }
 
-    private String createPlayerInfo(TarokkNumberHolder tarokkNumberHolder) {
-        StringBuilder playerInfo = new StringBuilder();
+    private List<LocalizedMessage> createPlayerInfo(TarokkNumberHolder tarokkNumberHolder) {
+        List<LocalizedMessage> playerInfo = new ArrayList<>();
         if (tarokkNumberHolder.isEightTarokk() || tarokkNumberHolder.isNineTarokk()) {
-            playerInfo.append("Announce tarokknumber (optional, except for Pagat ultimo or doubling it)!@");
+            playerInfo.add(new LocalizedMessage(MessageKey.BONUS_ANNOUNCE_TAROKK_PROMPT));
         }
-        playerInfo.append("Choose at least one bonus or pass!@");
-        return playerInfo.toString();
+        playerInfo.add(new LocalizedMessage(MessageKey.BONUS_CHOOSE_PROMPT));
+        return playerInfo;
     }
 
     private void setPotentialBonusesForDeclarerTeam(Game game, Set<Bonus> bonuses) {
@@ -333,28 +333,18 @@ public class BonusService {
         game.getDeclarerBonuses().add(Bonus.PASS);
     }
 
-    private String announceTarokkNumber(int selectedTarokkNumber, String upperCaseName) {
-        StringBuilder announceTarokkNumber = new StringBuilder();
-        if (selectedTarokkNumber == 8) {
-            announceTarokkNumber.append(upperCaseName).append(" has 8 tarokks!@");
-        } else if (selectedTarokkNumber == 9) {
-            announceTarokkNumber.append(upperCaseName).append(" has 9 tarokks!@");
+    private void addTarokkNumberAnnouncementIfAny(int selectedTarokkNumber, String upperCaseName, List<LocalizedMessage> lines) {
+        if (selectedTarokkNumber == 8 || selectedTarokkNumber == 9) {
+            lines.add(new LocalizedMessage(MessageKey.BONUS_PLAYER_HAS_TAROKKS, Map.of("player", upperCaseName, "count", selectedTarokkNumber)));
         }
-        return announceTarokkNumber.toString();
     }
 
-    private String createInfoAboutDeclarerAnnouncement(String announceTarokkNumber, String upperCaseName, String calledTarokk, String bonusNamesToString) {
-        return new StringBuilder()
-                .append(announceTarokkNumber)
-                .append("@")
-                .append(upperCaseName)
-                .append(" called the ")
-                .append(calledTarokk)
-                .append("@")
-                .append(upperCaseName)
-                .append(" announced:@")
-                .append(bonusNamesToString)
-                .append("@").toString();
+    private List<LocalizedMessage> createInfoAboutDeclarerAnnouncement(int selectedTarokkNumber, String upperCaseName, String calledTarokk, Set<String> bonusNames) {
+        List<LocalizedMessage> lines = new ArrayList<>();
+        addTarokkNumberAnnouncementIfAny(selectedTarokkNumber, upperCaseName, lines);
+        lines.add(new LocalizedMessage(MessageKey.BONUS_PLAYER_CALLED_TAROKK, Map.of("player", upperCaseName, "tarokk", calledTarokk)));
+        lines.add(new LocalizedMessage(MessageKey.BONUS_PLAYER_ANNOUNCED, Map.of("player", upperCaseName, "bonuses", List.copyOf(bonusNames))));
+        return lines;
     }
 
     private void handleBaseLevelBonus(Game game, Bonus bonus, Player player) {
@@ -404,18 +394,11 @@ public class BonusService {
         }
     }
 
-    private String createInfoAboutTurnPlayerAnnouncement(int selectedTarokkNumber, String upperCaseName, Set<String> bonusNames) {
-        StringBuilder announceTarokkNumber = new StringBuilder();
-        if (selectedTarokkNumber == 8) {
-            announceTarokkNumber.append(upperCaseName).append(" has 8 tarokks!@");
-        } else if (selectedTarokkNumber == 9) {
-            announceTarokkNumber.append(upperCaseName).append(" has 9 tarokks!@");
-        }
-        String bonusNamesToString = String.join("@", bonusNames);
-        return announceTarokkNumber
-                .append(upperCaseName)
-                .append(" announced:@")
-                .append(bonusNamesToString).toString();
+    private List<LocalizedMessage> createInfoAboutTurnPlayerAnnouncement(int selectedTarokkNumber, String upperCaseName, Set<String> bonusNames) {
+        List<LocalizedMessage> lines = new ArrayList<>();
+        addTarokkNumberAnnouncementIfAny(selectedTarokkNumber, upperCaseName, lines);
+        lines.add(new LocalizedMessage(MessageKey.BONUS_PLAYER_ANNOUNCED, Map.of("player", upperCaseName, "bonuses", List.copyOf(bonusNames))));
+        return lines;
     }
 
     private void handlePlayerBonus(Game game, String bonusName, Player player) {
@@ -436,7 +419,7 @@ public class BonusService {
         }
     }
 
-    private PrivateInfoDTO checkNewDeclarerPartner(Player player, Game game, List<Bonus> bonuses) {
+    private PrivateInfoListDTO checkNewDeclarerPartner(Player player, Game game, List<Bonus> bonuses) {
 
         if (game.getLastBonusAnnouncer().equals("declarer")) {
             player.setRoleInGame(RoleInGame.DECLARER_PARTNER);
@@ -449,12 +432,12 @@ public class BonusService {
                 game.markPlayersAsOpponent();
                 return null;
             } else {
-                return new PrivateInfoDTO("You MUST double or redouble something@ otherwise it is not clear that@ you belong to the declarer", "game.privateInfo");
+                return new PrivateInfoListDTO(List.of(new LocalizedMessage(MessageKey.BONUS_MUST_DOUBLE_DECLARER_SIDE)), "game.privateInfo");
             }
         }
     }
 
-    private PrivateInfoDTO checkNewOpponent(Player player, Game game, List<Bonus> bonuses) {
+    private PrivateInfoListDTO checkNewOpponent(Player player, Game game, List<Bonus> bonuses) {
 
         if (game.getLastBonusAnnouncer().equals("opponent")) {
             player.setRoleInGame(RoleInGame.OPPONENT);
@@ -465,7 +448,7 @@ public class BonusService {
                 player.setRoleInGame(RoleInGame.OPPONENT);
                 return null;
             } else {
-                return new PrivateInfoDTO("You MUST double something@ otherwise it is not clear that@ you are an opponent", "game.privateInfo");
+                return new PrivateInfoListDTO(List.of(new LocalizedMessage(MessageKey.BONUS_MUST_DOUBLE_OPPONENT_SIDE)), "game.privateInfo");
             }
         }
     }

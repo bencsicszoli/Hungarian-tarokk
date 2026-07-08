@@ -1,7 +1,10 @@
 package com.codecool.tarokkgame.model.entity;
 
 import com.codecool.tarokkgame.constants.BidLevel;
+import com.codecool.tarokkgame.constants.MessageKey;
 import com.codecool.tarokkgame.constants.RoleInGame;
+import com.codecool.tarokkgame.model.converter.LocalizedMessageConverter;
+import com.codecool.tarokkgame.model.dto.LocalizedMessage;
 import com.codecool.tarokkgame.model.dto.SpecialBidCasesDTO;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -46,7 +49,8 @@ public class Player {
     private boolean eightTarokksAfterwards = false;
     private boolean nineTarokksInAdvance = false;
     private boolean nineTarokksAfterwards = false;
-    private String discardReason;
+    @Convert(converter = LocalizedMessageConverter.class)
+    private LocalizedMessage discardReason;
 
     @OneToOne(mappedBy = "player", cascade = CascadeType.ALL, orphanRemoval = true)
     private RoundResult result;
@@ -204,7 +208,7 @@ public class Player {
         return false;
     }
 
-    public String checkIfHandIsThrowable() {
+    public List<LocalizedMessage> checkIfHandIsThrowable() {
         int tarokks = 0;
         boolean hasPagat  = false;
         boolean hasXXI  = false;
@@ -222,20 +226,20 @@ public class Player {
             }
         }
         if (tarokks == 0) {
-            setDiscardReason(String.format("%s does not have any tarokks", getName()));
-            return "You don't have any tarokks.@Would you like to discard your hand and require new deal?";
+            setDiscardReason(new LocalizedMessage(MessageKey.DISCARD_NO_TAROKKS, Map.of("username", getName())));
+            return List.of(getDiscardReason(), new LocalizedMessage(MessageKey.DISCARD_PROMPT_NO_TAROKKS));
         } else if (tarokks == 1 && hasPagat) {
-            setDiscardReason(String.format("%s has a solo pagat", getName()));
-            return "You have a solo pagat.@Would you like to discard your hand and require new deal?";
+            setDiscardReason(new LocalizedMessage(MessageKey.DISCARD_SOLO_PAGAT, Map.of("username", getName())));
+            return List.of(getDiscardReason(), new LocalizedMessage(MessageKey.DISCARD_PROMPT_SOLO_PAGAT));
         } else if (tarokks == 1 && hasXXI) {
-            setDiscardReason(String.format("%s has a solo XXI", getName()));
-            return "You have a solo XXI.@Would you like to discard your hand and require new deal?";
+            setDiscardReason(new LocalizedMessage(MessageKey.DISCARD_SOLO_XXI, Map.of("username", getName())));
+            return List.of(getDiscardReason(), new LocalizedMessage(MessageKey.DISCARD_PROMPT_SOLO_XXI));
         } else if (tarokks == 2 && hasPagat && hasXXI) {
-            setDiscardReason(String.format("%s has a pagat and a XXI alone", getName()));
-            return "You have pagat and XXI alone.@Would you like to discard your hand and require new deal?";
+            setDiscardReason(new LocalizedMessage(MessageKey.DISCARD_PAGAT_AND_XXI, Map.of("username", getName())));
+            return List.of(getDiscardReason(), new LocalizedMessage(MessageKey.DISCARD_PROMPT_PAGAT_AND_XXI));
         } else if (kings == 4) {
-            setDiscardReason(String.format("%s has four kings", getName()));
-            return "You have four kings.@Would you like to discard your hand and require new deal?";
+            setDiscardReason(new LocalizedMessage(MessageKey.DISCARD_FOUR_KINGS, Map.of("username", getName())));
+            return List.of(getDiscardReason(), new LocalizedMessage(MessageKey.DISCARD_PROMPT_FOUR_KINGS));
         } else {
             return null;
         }

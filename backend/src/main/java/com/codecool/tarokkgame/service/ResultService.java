@@ -1,15 +1,19 @@
 package com.codecool.tarokkgame.service;
 
 import com.codecool.tarokkgame.constants.Bonus;
+import com.codecool.tarokkgame.constants.MessageKey;
 import com.codecool.tarokkgame.constants.RoleInGame;
 import com.codecool.tarokkgame.model.TarokkNumberAnnouncers;
+import com.codecool.tarokkgame.model.dto.LocalizedMessage;
 import com.codecool.tarokkgame.model.entity.*;
 import com.codecool.tarokkgame.repository.DeclarerSkartRepository;
 import com.codecool.tarokkgame.repository.GameRepository;
 import com.codecool.tarokkgame.repository.OwnTrickRepository;
 import com.codecool.tarokkgame.repository.PlayerRepository;
 import org.springframework.stereotype.Service;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
@@ -67,7 +71,7 @@ public class ResultService {
         handleTarokkNumber(players, announcers.getPlayers());
         for (Player player : players) {
             player.getResult().setSum();
-            String resultInfo = createResultInfo(player.getResult(), bidLevel);
+            List<LocalizedMessage> resultInfo = createResultInfo(player.getResult(), bidLevel);
             player.getResult().setInfo(resultInfo);
             player.setBalance(player.getBalance() + player.getResult().getSum());
         }
@@ -870,99 +874,92 @@ public class ResultService {
         }
     }
 
-    private String createResultInfo(RoundResult result, String bidLevel) {
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("Bid: ").append(bidLevel).append("@");
-        stringBuilder.append("Game score: ").append(result.getCardValue()).append("@");
-        char[] separationLineArray = new char[10];
-        for (int i = 0; i < 10; i++) {
-            separationLineArray[i] = '⎻';
-        }
-        String separationLine = new String(separationLineArray);
-        stringBuilder.append(separationLine).append("@");
+    private List<LocalizedMessage> createResultInfo(RoundResult result, String bidLevel) {
+        List<LocalizedMessage> lines = new ArrayList<>();
+        lines.add(new LocalizedMessage(MessageKey.RESULT_BID, Map.of("bidLevel", bidLevel)));
+        lines.add(new LocalizedMessage(MessageKey.RESULT_GAME_SCORE, Map.of("score", result.getCardValue())));
         if (result.getParty() != 0) {
-            stringBuilder.append("Party: ").append(result.getParty()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_PARTY, result.getParty()));
         } else if (result.getPartyDoubled() != 0) {
-            stringBuilder.append("Party doubled: ").append(result.getPartyDoubled()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_PARTY_DOUBLED, result.getPartyDoubled()));
         } else if (result.getPartyRedoubled() != 0) {
-            stringBuilder.append("Party redoubled: ").append(result.getPartyRedoubled()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_PARTY_REDOUBLED, result.getPartyRedoubled()));
         }
         if (result.getSilentTrull() != 0) {
-            stringBuilder.append("Silent trull: ").append(result.getSilentTrull()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_SILENT_TRULL, result.getSilentTrull()));
         }
         if (result.getTrull() != 0) {
-            stringBuilder.append("Trull: ").append(result.getTrull()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_TRULL, result.getTrull()));
         } else if (result.getTrullDoubled() != 0) {
-            stringBuilder.append("Trull doubled: ").append(result.getTrullDoubled()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_TRULL_DOUBLED, result.getTrullDoubled()));
         } else if (result.getTrullRedoubled() != 0) {
-            stringBuilder.append("Trull redoubled: ").append(result.getTrullRedoubled()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_TRULL_REDOUBLED, result.getTrullRedoubled()));
         }
         if (result.getSilentFourKings() != 0) {
-            stringBuilder.append("Silent four kings: ").append(result.getSilentFourKings()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_SILENT_FOUR_KINGS, result.getSilentFourKings()));
         }
         if (result.getFourKings() != 0) {
-            stringBuilder.append("Four kings: ").append(result.getFourKings()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_FOUR_KINGS, result.getFourKings()));
         } else if (result.getFourKingsDoubled() != 0) {
-            stringBuilder.append("Four kings doubled: ").append(result.getFourKingsDoubled()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_FOUR_KINGS_DOUBLED, result.getFourKingsDoubled()));
         } else if (result.getFourKingsRedoubled() != 0) {
-            stringBuilder.append("Four kings redoubled: ").append(result.getFourKingsRedoubled()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_FOUR_KINGS_REDOUBLED, result.getFourKingsRedoubled()));
         }
         if (result.getSilentDoubleGame() != 0) {
-            stringBuilder.append("Silent double game: ").append(result.getSilentDoubleGame()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_SILENT_DOUBLE_GAME, result.getSilentDoubleGame()));
         }
         if (result.getDoubleGame() != 0) {
-            stringBuilder.append("Double game: ").append(result.getDoubleGame()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_DOUBLE_GAME, result.getDoubleGame()));
         } else if (result.getDoubleGameDoubled() != 0) {
-            stringBuilder.append("Double game doubled: ").append(result.getDoubleGameDoubled()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_DOUBLE_GAME_DOUBLED, result.getDoubleGameDoubled()));
         } else if (result.getDoubleGameRedoubled() != 0) {
-            stringBuilder.append("Double game redoubled: ").append(result.getDoubleGameRedoubled()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_DOUBLE_GAME_REDOUBLED, result.getDoubleGameRedoubled()));
         }
         if (result.getSilentUltimo() != 0) {
-            stringBuilder.append("Silent pagat ultimo: ").append(result.getSilentUltimo()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_SILENT_ULTIMO, result.getSilentUltimo()));
         }
         if (result.getUltimo() != 0) {
-            stringBuilder.append("Pagat ultimo: ").append(result.getUltimo()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_ULTIMO, result.getUltimo()));
         } else if (result.getUltimoDoubled() != 0) {
-            stringBuilder.append("Pagat ultimo doubled: ").append(result.getUltimoDoubled()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_ULTIMO_DOUBLED, result.getUltimoDoubled()));
         } else if (result.getUltimoRedoubled() != 0) {
-            stringBuilder.append("Pagat ultimo redoubled: ").append(result.getUltimoRedoubled()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_ULTIMO_REDOUBLED, result.getUltimoRedoubled()));
         }
         if (result.getSilentXXICatch() != 0) {
-            stringBuilder.append("Silent XXI-catch: ").append(result.getSilentXXICatch()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_SILENT_XXI_CATCH, result.getSilentXXICatch()));
         }
         if (result.getXXICatch() != 0) {
-            stringBuilder.append("XXI-catch: ").append(result.getXXICatch()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_XXI_CATCH, result.getXXICatch()));
         } else if (result.getXXICatchDoubled() != 0) {
-            stringBuilder.append("XXI-catch doubled: ").append(result.getXXICatchDoubled()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_XXI_CATCH_DOUBLED, result.getXXICatchDoubled()));
         } else if (result.getXXICatchRedoubled() != 0) {
-            stringBuilder.append("XXI-catch redoubled: ").append(result.getXXICatchRedoubled()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_XXI_CATCH_REDOUBLED, result.getXXICatchRedoubled()));
         }
         if (result.getSilentVolat() != 0) {
-            stringBuilder.append("Silent volat: ").append(result.getSilentVolat()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_SILENT_VOLAT, result.getSilentVolat()));
         }
         if (result.getVolat() != 0) {
-            stringBuilder.append("Volat: ").append(result.getVolat()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_VOLAT, result.getVolat()));
         } else if (result.getVolatDoubled() != 0) {
-            stringBuilder.append("Volat doubled: ").append(result.getVolatDoubled()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_VOLAT_DOUBLED, result.getVolatDoubled()));
         } else if (result.getVolatRedoubled() != 0) {
-            stringBuilder.append("Volat redoubled: ").append(result.getVolatRedoubled()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_VOLAT_REDOUBLED, result.getVolatRedoubled()));
         }
         if (result.getEightTarokksInAdvance() != 0) {
-            stringBuilder.append("Eight tarokks in advance: ").append(result.getEightTarokksInAdvance()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_EIGHT_TAROKKS_IN_ADVANCE, result.getEightTarokksInAdvance()));
         } else if (result.getNineTarokksInAdvance() != 0) {
-            stringBuilder.append("Nine tarokks in advance: ").append(result.getNineTarokksInAdvance()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_NINE_TAROKKS_IN_ADVANCE, result.getNineTarokksInAdvance()));
         } else if (result.getEightTarokksAfterwards() != 0) {
-            stringBuilder.append("Eight tarokks afterwards: ").append(result.getEightTarokksAfterwards()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_EIGHT_TAROKKS_AFTERWARDS, result.getEightTarokksAfterwards()));
         } else if (result.getNineTarokksAfterwards() != 0) {
-            stringBuilder.append("Nine tarokks afterwards: ").append(result.getNineTarokksAfterwards()).append("@");
+            lines.add(pointsMessage(MessageKey.RESULT_NINE_TAROKKS_AFTERWARDS, result.getNineTarokksAfterwards()));
         }
-        stringBuilder.append("TOTAL: ").append(result.getSum());
-        if (result.getSum() == 1 || result.getSum() == -1) {
-            stringBuilder.append(" unit@");
-        } else {
-            stringBuilder.append(" units@");
-        }
-        return stringBuilder.toString();
+        lines.add(new LocalizedMessage(MessageKey.RESULT_TOTAL, Map.of("sum", result.getSum(), "count", Math.abs(result.getSum()))));
+        return lines;
+    }
+
+    private LocalizedMessage pointsMessage(String key, int points) {
+        return new LocalizedMessage(key, Map.of("points", points));
     }
 
     private void decidePaymentForParty(Player player, Game game, RoundResult result, Bonus party, int bidMultiplier, int declarerFactor, int opponentFactor) {

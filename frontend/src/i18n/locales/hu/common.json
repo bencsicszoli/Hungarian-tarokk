@@ -1,0 +1,122 @@
+{
+  "auth": {
+    "welcome": "Üdvözlünk a Tarokk játékban!",
+    "login": {
+      "title": "Jelentkezz be a fiókodba",
+      "usernameLabel": "Felhasználóneved",
+      "usernamePlaceholder": "felhasználónév",
+      "passwordLabel": "Jelszó",
+      "passwordPlaceholder": "••••••••",
+      "rememberMe": "Emlékezz rám",
+      "forgotPassword": "Elfelejtetted a jelszavad?",
+      "submit": "Bejelentkezés",
+      "noAccount": "Még nincs fiókod?",
+      "signUp": "Regisztráció"
+    },
+    "register": {
+      "title": "Fiók létrehozása",
+      "usernameLabel": "Felhasználóneved",
+      "usernamePlaceholder": "felhasználónév",
+      "emailLabel": "E-mail címed",
+      "emailPlaceholder": "nev@ceg.com",
+      "passwordLabel": "Jelszó",
+      "passwordPlaceholder": "••••••••",
+      "submit": "Fiók létrehozása",
+      "haveAccount": "Már van fiókod?",
+      "loginHere": "Jelentkezz be itt"
+    },
+    "errors": {
+      "unknown": "Ismeretlen hiba történt",
+      "fetchUserInfo": "Nem sikerült lekérni a felhasználói adatokat"
+    }
+  },
+  "menu": {
+    "yourGameId": "A játék azonosítód:",
+    "gameIdPlaceholder": "Azonosító betöltése...",
+    "copyId": "Azonosító másolása",
+    "copied": "Másolva",
+    "selectOption": "Válassz egy lehetőséget:",
+    "joinRandomGame": "Csatlakozás random parti",
+    "joinGameWithId": "Csatlakozás azonosítóval",
+    "getGameId": "Azonosító kérése meghíváshoz",
+    "editProfile": "Profil szerkesztése",
+    "feedback": "Visszajelzés",
+    "rules": "Szabályok",
+    "logout": "Kijelentkezés",
+    "enterId": "Add meg az azonosítót:",
+    "enterIdPlaceholder": "Írd ide az azonosítót:",
+    "send": "Küldés",
+    "sending": "Küldés...",
+    "feedbackThanks": "Köszönjük a visszajelzést!",
+    "close": "Bezárás",
+    "feedbackLabel": "Hibát találtál vagy van egy ötleted?",
+    "feedbackPlaceholder": "Írd le a hibát vagy az ötletedet...",
+    "feedbackError": "Nem sikerült elküldeni a visszajelzést. Próbáld újra később.",
+    "cancel": "Mégse"
+  },
+  "edit": {
+    "title": "Fiók szerkesztése:",
+    "usernameLabel": "Felhasználóneved",
+    "usernamePlaceholder": "felhasználónév",
+    "emailLabel": "E-mail cím",
+    "emailPlaceholder": "e-mail",
+    "passwordLabel": "Jelszavad",
+    "newPasswordLabel": "Új jelszó",
+    "confirmPasswordLabel": "Új jelszó megerősítése",
+    "passwordMismatch": "Az új jelszavak nem egyeznek",
+    "save": "Változtatások mentése",
+    "delete": "Fiók törlése",
+    "backToMenu": "Vissza a menübe",
+    "errors": {
+      "updateFailed": "Nem sikerült frissíteni a profilt"
+    }
+  },
+  "game": {
+    "logout": "Kilépés",
+    "back": "Vissza",
+    "deal": "OSZTÁS",
+    "playerTricks": "{{name}} ütései",
+    "balance": "Egyenleg: {{balance}}",
+    "eightTarokks": "8 Tarokk",
+    "nineTarokks": "9 Tarokk",
+    "submit": "Küldés",
+    "selectBonusesTitle": "Válaszd ki a bónuszaidat:",
+    "biddingPhaseStarted": "A licitálás megkezdődött!",
+    "newDealer": "Az új osztó: {{name}}",
+    "selectCardsToDiscard_one": "Válassz ki {{count}} lapot elvetésre!",
+    "selectCardsToDiscard_other": "Válassz ki {{count}} lapot elvetésre!",
+    "noTarokkAndBonusSelected": "Nem választottál tarokkot és bónuszt!",
+    "noTarokkCalled": "Nem hívtál tarokkot!",
+    "noBonusSelected": "Nem választottál bónuszt!",
+    "skartLimit_one": "Csak {{count}} lapot választhatsz a skarthoz.",
+    "skartLimit_other": "Csak {{count}} lapot választhatsz a skarthoz.",
+    "declarerSkart": "A felváltó skartja",
+    "opponentSkart": "Az ellenfél skartja",
+    "declarerTricksTitle": "A felváltó oldal ütései:",
+    "opponentTricksTitle": "Az ellenfél oldal ütései:",
+    "discardedHandTitle": "Eldobott lapok:",
+    "skartHereLabel": "Skartolj ide:",
+    "talonLabel": "Talon",
+    "yes": "Igen",
+    "no": "Nem",
+    "alt": {
+      "skartCardBack": "Skart lap hátulja {{index}}",
+      "trickCardBack": "Ütés lap hátulja {{index}}",
+      "cardBack": "Lap hátulja {{index}}",
+      "card": "Lap {{index}}",
+      "publicCard": "Nyilvános lap {{index}}",
+      "selectedCard": "Kiválasztott lap {{index}}",
+      "trickCard": "Ütés lap {{index}}",
+      "talonCardBack": "Talon lap hátulja",
+      "deck": "Pakli"
+    }
+  },
+  "infoTable": {
+    "bidLabel": "Licit:",
+    "declarerLabel": "Felváltó:",
+    "dealerLabel": "Osztó:",
+    "turnLabel": "Kör:",
+    "declarerBonusesLabel": "A felváltó bónuszai:",
+    "opponentBonusesLabel": "Az ellenfél bónuszai:"
+  }
+}

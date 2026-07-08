@@ -1,4 +1,6 @@
 package com.codecool.tarokkgame.model.dto.messagedto.response;
 
-public record NewGameStateWithInfoDTO(String gameState, String info, String type) {
+import com.codecool.tarokkgame.model.dto.LocalizedMessage;
+
+public record NewGameStateWithInfoDTO(String gameState, LocalizedMessage info, String type) {
 }

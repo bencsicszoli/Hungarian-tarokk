@@ -1,5 +1,6 @@
 import type { JSX } from "react";
-import type { Card, GameState } from "../types";
+import { useTranslation } from "react-i18next";
+import type { Card, GameState, InfoLine } from "../types";
 
 function Skart({
   gameState,
@@ -13,7 +14,7 @@ function Skart({
   user,
 }: {
   gameState: GameState;
-  discardInformation: string | null;
+  discardInformation: InfoLine[] | null;
   ownCards: Card[];
   temporarySelectedCards: Card[];
   onDisplayTemporarySelectedCards: () => JSX.Element;
@@ -22,6 +23,7 @@ function Skart({
   turnPlayer: string | null;
   user: { username: string } | null;
 }) {
+  const { t } = useTranslation();
   if (
     gameState === "SKART_LAY_DOWN" &&
     discardInformation === null &&
@@ -32,7 +34,7 @@ function Skart({
         <div className="w-auto flex justify-center items-center font-bold text-xl">
           {turnPlayer === user?.username && (
             <p className="border-green-300 border-2 rounded-md text-green-300 px-4 py-1">
-              Skart here:
+              {t("game.skartHereLabel")}
             </p>
           )}
         </div>
@@ -45,7 +47,7 @@ function Skart({
               className="border-black border-2 w-30 h-10 hover:scale-105 hover:bg-green-400 cursor-pointer bg-green-300 text-[#2f4b3a] rounded-md font-semibold mb-2"
               onClick={sendSkartCards}
             >
-              Submit
+              {t("game.submit")}
             </button>
           )}
         </div>

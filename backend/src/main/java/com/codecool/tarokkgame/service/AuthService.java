@@ -1,9 +1,11 @@
 package com.codecool.tarokkgame.service;
 
+import com.codecool.tarokkgame.constants.MessageKey;
 import com.codecool.tarokkgame.constants.Role;
 import com.codecool.tarokkgame.exceptionhandling.customexception.EmailAddressAlreadyExistsException;
 import com.codecool.tarokkgame.exceptionhandling.customexception.NotAllowedOperationException;
 import com.codecool.tarokkgame.exceptionhandling.customexception.UsernameAlreadyExistsException;
+import com.codecool.tarokkgame.model.dto.LocalizedMessage;
 import com.codecool.tarokkgame.model.dto.restdto.*;
 import com.codecool.tarokkgame.model.entity.AppUser;
 import com.codecool.tarokkgame.model.entity.Game;
@@ -40,7 +42,7 @@ public class AuthService {
         this.gameRepository = gameRepository;
     }
 
-    public Map<String, String> createPlayer(RegisterDTO request) {
+    public LocalizedMessage createPlayer(RegisterDTO request) {
         if (appUserRepository.existsByUsername(request.username())) {
             throw new UsernameAlreadyExistsException(request.username());
         }
@@ -53,9 +55,7 @@ public class AuthService {
         user.setEmail(request.email());
         user.setRoles(EnumSet.of(Role.ROLE_USER));
         appUserRepository.save(user);
-        Map<String, String> result = new HashMap<>();
-        result.put("message", String.format("Player '%s' created successfully", request.username()));
-        return result;
+        return new LocalizedMessage(MessageKey.AUTH_PLAYER_CREATED, Map.of("username", request.username()));
     }
 
     public JwtResponseDTO loginUser(LoginDTO request) {
@@ -81,28 +81,25 @@ public class AuthService {
         return new UserDTO(currentPlayer.getUsername(), currentPlayer.getBalance(), currentPlayer.getGames());
     }
 
-    public Map<String, String> deleteMe() {
+    public LocalizedMessage deleteMe() {
         User user = (User) Objects.requireNonNull(SecurityContextHolder.getContext()
                 .getAuthentication()).getPrincipal();
         assert user != null;
         AppUser currentPlayer = appUserRepository.findByUsername(user.getUsername())
                 .orElseThrow(() -> new NoSuchElementException(String.format("User '%s' not found", user.getUsername())));
         appUserRepository.delete(currentPlayer);
-        Map<String, String> response = new HashMap<>();
-        response.put("message", String.format("User '%s' has been deleted", user.getUsername()));
-        return response;
+        return new LocalizedMessage(MessageKey.AUTH_USER_DELETED, Map.of("username", user.getUsername()));
     }
 
-    public Map<String, String> editCredentials(EditCredentialsDTO request) {
+    public LocalizedMessage editCredentials(EditCredentialsDTO request) {
         User user = (User) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getPrincipal();
         assert user != null;
         AppUser currentPlayer = appUserRepository.findByUsername(user.getUsername()).orElseThrow(() -> new NoSuchElementException(String.format("User '%s' not found", user.getUsername())));
-        Map<String, String> result = new HashMap<>();
         if (!request.username().equals(user.getUsername()) && appUserRepository.existsByUsername(request.username())) {
             throw new UsernameAlreadyExistsException(request.username());
         }
         if(!encoder.matches(request.password(), currentPlayer.getPassword())) {
-            throw new NotAllowedOperationException(String.format("Invalid password for user '%s'", user.getUsername()));
+            throw new NotAllowedOperationException(new LocalizedMessage(MessageKey.ERROR_INVALID_PASSWORD, Map.of("username", user.getUsername())));
         }
         currentPlayer.setUsername(request.username());
         if (!request.newPassword().isEmpty()) {
@@ -114,11 +111,10 @@ public class AuthService {
         appUserRepository.save(currentPlayer);
 
         if (request.username().equals(user.getUsername())) {
-            result.put("message",String.format("User '%s' edited successfully", user.getUsername()));
-        } else {
-            result.put("message", String.format("User '%s' edited successfully. The new username is '%s'.", user.getUsername(), request.username()));
+            return new LocalizedMessage(MessageKey.AUTH_CREDENTIALS_EDITED, Map.of("username", user.getUsername()));
         }
-        return result;
+        return new LocalizedMessage(MessageKey.AUTH_CREDENTIALS_EDITED_WITH_NEW_USERNAME,
+                Map.of("username", user.getUsername(), "newUsername", request.username()));
     }
 
     public long getCustomGameId() {

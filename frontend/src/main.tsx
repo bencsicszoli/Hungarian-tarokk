@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import "./i18n";
 import LoginPage from "./authentication/LoginPage.tsx";
 import RegisterPage from "./authentication/RegisterPage.tsx";
 import { UserProvider } from "./context/UserContext.tsx";

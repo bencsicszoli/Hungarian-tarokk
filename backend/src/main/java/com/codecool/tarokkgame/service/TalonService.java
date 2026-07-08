@@ -1,7 +1,9 @@
 package com.codecool.tarokkgame.service;
 
 import com.codecool.tarokkgame.constants.GameState;
+import com.codecool.tarokkgame.constants.MessageKey;
 import com.codecool.tarokkgame.constants.RoleInGame;
+import com.codecool.tarokkgame.model.dto.LocalizedMessage;
 import com.codecool.tarokkgame.model.dto.messagedto.response.DeclarerSkartWithTarokkDTO;
 import com.codecool.tarokkgame.model.dto.messagedto.response.PlayerCardDTO;
 import com.codecool.tarokkgame.model.dto.messagedto.response.PlayerCardListDTO;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 @Service
@@ -61,15 +64,7 @@ public class TalonService {
     public PublicSkartDTO createSkartDTO(Game game, int thrownCards, Player player) {
         int declarerSkartLength = declarerSkartRepository.countAllByGameId(game.getId());
         int opponentSkartLength = opponentSkartRepository.countAllByGameId(game.getId());
-        String singularOrPluralCard;
-        if (thrownCards == 1) {
-            singularOrPluralCard = "card";
-        } else {
-            singularOrPluralCard = "cards";
-        }
-        System.out.println(player.getName() + " " + thrownCards + " " + singularOrPluralCard);
-
-        String discardedCardsInfo = String.format("%s added %d %s to skart", player.getName(), thrownCards, singularOrPluralCard);
+        LocalizedMessage discardedCardsInfo = new LocalizedMessage(MessageKey.SKART_CARDS_ADDED, Map.of("player", player.getName(), "count", thrownCards));
         Player nextPlayer = game.getNextPlayer(player);
         String turnPlayer = nextPlayer.getName();
         game.setTurnPlayer(turnPlayer);
@@ -86,15 +81,15 @@ public class TalonService {
         if (!game.isTarokkInDeclarerSkart() && !game.isTarokkInOpponentSkart()) {
             return null;
         }
-        StringBuilder builder = new StringBuilder();
+        List<LocalizedMessage> infoLines = new ArrayList<>();
         List<PlayerCardDTO> playerCardDTOs = new ArrayList<>();
         if (game.isTarokkInDeclarerSkart()) {
-            handleTarokksInDeclarerSkart(game, builder, playerCardDTOs);
+            handleTarokksInDeclarerSkart(game, infoLines, playerCardDTOs);
         }
         if (game.isTarokkInOpponentSkart()) {
-            handleTarokksInOpponentSkart(game, builder);
+            handleTarokksInOpponentSkart(game, infoLines);
         }
-        return new DeclarerSkartWithTarokkDTO(playerCardDTOs, builder.toString(), "game.tarokkInSkart");
+        return new DeclarerSkartWithTarokkDTO(playerCardDTOs, infoLines, "game.tarokkInSkart");
     }
 
     private void addTalonCardsToPlayerHand(long idFrom, long idTo, Player player, Game game) {
@@ -162,20 +157,18 @@ public class TalonService {
         return new PlayerCardListDTO(sortedCards, "game.playerCards");
     }
 
-    private void handleTarokksInDeclarerSkart(Game game, StringBuilder builder, List<PlayerCardDTO> playerCardDTOs) {
+    private void handleTarokksInDeclarerSkart(Game game, List<LocalizedMessage> infoLines, List<PlayerCardDTO> playerCardDTOs) {
         Player declarer = playerRepository.findByUserUsernameAndGameId(game.getDeclarer(), game.getId()).orElseThrow(() -> new NoSuchElementException("Declarer not found"));
         List<DeclarerSkart> skartCards = declarerSkartRepository.findAllByGameId(game.getId());
         int tarokks = changeFrontImageIfTarokk(skartCards, playerCardDTOs, declarer);
-        if (tarokks != 1) {
-            builder.append(declarer.getName()).append(" placed ").append(tarokks).append(" tarokks").append(" in skart!@");
-        } else {
-            builder.append(declarer.getName()).append(" placed 1 tarokk in skart!@");
-        }
+        infoLines.add(new LocalizedMessage(MessageKey.SKART_DECLARER_TAROKK_PLACED, Map.of("player", declarer.getName(), "count", tarokks)));
     }
 
-    private void handleTarokksInOpponentSkart(Game game, StringBuilder builder) {
-        String opponentSkartInfo = game.getMessageWithTarokksInOpponentSkart();
-        builder.append(opponentSkartInfo);
+    private void handleTarokksInOpponentSkart(Game game, List<LocalizedMessage> infoLines) {
+        LocalizedMessage opponentSkartInfo = game.getMessageWithTarokksInOpponentSkart();
+        if (opponentSkartInfo != null) {
+            infoLines.add(opponentSkartInfo);
+        }
     }
 
     private boolean setIfCardsNotClickable(PlayerCard playerCard, Player player, Game game) {

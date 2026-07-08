@@ -1,4 +1,8 @@
 package com.codecool.tarokkgame.model.dto.messagedto.response;
 
-public record PublicInfoDTO(String info, String type) {
+import com.codecool.tarokkgame.model.dto.LocalizedMessage;
+
+import java.util.List;
+
+public record PublicInfoDTO(List<LocalizedMessage> info, String type) {
 }

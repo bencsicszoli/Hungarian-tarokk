@@ -1,7 +1,9 @@
 package com.codecool.tarokkgame.controller.websocketcontroller;
 
 import com.codecool.tarokkgame.constants.GameState;
+import com.codecool.tarokkgame.constants.MessageKey;
 import com.codecool.tarokkgame.exceptionhandling.customexception.NotAllowedOperationException;
+import com.codecool.tarokkgame.model.dto.LocalizedMessage;
 import com.codecool.tarokkgame.model.dto.messagedto.request.*;
 import com.codecool.tarokkgame.model.dto.messagedto.response.*;
 import com.codecool.tarokkgame.model.entity.Card;
@@ -20,6 +22,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
 import java.security.Principal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -75,7 +78,7 @@ public class MessageController {
             JoinMessageDTO joinMessage = joiningService.joinGame(playerName);
             if (joinMessage == null) {
                 joinMessage = new JoinMessageDTO();
-                joinMessage.setInformation("Something went wrong. You cannot join the game.");
+                joinMessage.setInformation(List.of(new LocalizedMessage(MessageKey.JOIN_FAILED)));
                 joinMessage.setType("error"); // Handle the error in the frontend
                 messagingTemplate.convertAndSendToUser(playerName, "/queue/private", joinMessage);
                 System.out.println("Errormessage sent");
@@ -84,7 +87,7 @@ public class MessageController {
             }
         }
         else {
-            throw new NotAllowedOperationException("Invalid username");
+            throw new NotAllowedOperationException(new LocalizedMessage(MessageKey.ERROR_NOT_ALLOWED_OPERATION));
         }
     }
 
@@ -96,14 +99,14 @@ public class MessageController {
             if (joinMessageDTO == null) {
                 joinMessageDTO = new JoinMessageDTO();
                 joinMessageDTO.setGameId(request.gameId());
-                joinMessageDTO.setInformation("Something went wrong.");
+                joinMessageDTO.setInformation(List.of(new LocalizedMessage(MessageKey.JOIN_WITH_ID_FAILED)));
                 messagingTemplate.convertAndSendToUser(playerName, "/queue/private", joinMessageDTO);
                 System.out.println("Errormessage sent");
             } else {
                 handleJoinAndSendMessages(headerAccessor, joinMessageDTO, playerName);
             }
         } else {
-            throw new NotAllowedOperationException("Invalid username");
+            throw new NotAllowedOperationException(new LocalizedMessage(MessageKey.ERROR_NOT_ALLOWED_OPERATION));
         }
     }
 
@@ -116,14 +119,14 @@ public class MessageController {
             Player player = playerRepository.findByUserUsernameAndGameId(playerName, request.gameId()).orElseThrow(() -> new NoSuchElementException("Player not found"));
             if (!game.getDeclarerBonuses().isEmpty() && (game.getState().equals(GameState.BONUS_ANNOUNCEMENT) || game.getState().equals(GameState.TRICK_PHASE))) {
                 leavingService.calculatePenalty(player, game);
-                PrivateInfoDTO privateInfoDTO = new PrivateInfoDTO(game.getInformation(), "game.logoutWarning");
+                PrivateInfoListDTO privateInfoDTO = new PrivateInfoListDTO(game.getInformation(), "game.logoutWarning");
                 messagingTemplate.convertAndSendToUser(playerName, "/queue/private", privateInfoDTO);
             } else {
-                PrivateInfoDTO privateInfoDTO = new PrivateInfoDTO("Are you sure you want to leave the game?", "game.logoutWarning");
+                PrivateInfoListDTO privateInfoDTO = new PrivateInfoListDTO(List.of(new LocalizedMessage(MessageKey.LEAVE_CONFIRM_PROMPT)), "game.logoutWarning");
                 messagingTemplate.convertAndSendToUser(playerName, "/queue/private", privateInfoDTO);
             }
         } else {
-            throw new NotAllowedOperationException("Invalid username");
+            throw new NotAllowedOperationException(new LocalizedMessage(MessageKey.ERROR_NOT_ALLOWED_OPERATION));
         }
     }
 
@@ -140,7 +143,7 @@ public class MessageController {
                 messagingTemplate.convertAndSend("/topic/game." + request.gameId(), playerLeaveDTO);
             }
         } else {
-            throw new NotAllowedOperationException("Invalid username");
+            throw new NotAllowedOperationException(new LocalizedMessage(MessageKey.ERROR_NOT_ALLOWED_OPERATION));
         }
     }
 
@@ -181,7 +184,7 @@ public class MessageController {
             Game game = gameRepository.findById(request.gameId()).orElseThrow(() -> new NoSuchElementException("Game not found"));
             resetService.resetGame(game);
             resetService.resetPlayers(game);
-            NewRoundDTO newRoundDTO = new NewRoundDTO(String.format("%s is dealing...", game.getDealer().toUpperCase()), "game.newRound");
+            NewRoundDTO newRoundDTO = new NewRoundDTO(new LocalizedMessage(MessageKey.ROUND_DEALING, Map.of("dealer", game.getDealer().toUpperCase())), "game.newRound");
             messagingTemplate.convertAndSend("/topic/game." + request.gameId(), newRoundDTO);
             dealTalonCards(game, request);
 
@@ -207,7 +210,7 @@ public class MessageController {
             game.setState(GameState.BIDDING);
 
         } else {
-            throw new NotAllowedOperationException("Invalid username");
+            throw new NotAllowedOperationException(new LocalizedMessage(MessageKey.ERROR_NOT_ALLOWED_OPERATION));
         }
     }
 
@@ -219,7 +222,7 @@ public class MessageController {
             PotentialBidsDTO potentialBids = bidService.getPotentialBidsToStartPlayer(playerName, request.gameId());
             messagingTemplate.convertAndSendToUser(playerName, "/queue/private", potentialBids);
         } else {
-            throw new NotAllowedOperationException("Invalid username");
+            throw new NotAllowedOperationException(new LocalizedMessage(MessageKey.ERROR_NOT_ALLOWED_OPERATION));
         }
     }
 
@@ -237,7 +240,7 @@ public class MessageController {
                 messagingTemplate.convertAndSend("/topic/game." + request.gameId(), publicBidDTO);
             } else {
                 if (game.getBiddingPasses() == 4) {
-                    FourPassesDTO fourPassesDTO = new FourPassesDTO(String.format("No one bid.@%s, deal again!", game.getDealer().toUpperCase()), game.getStartPlayer(), "game.fourPasses");
+                    FourPassesDTO fourPassesDTO = new FourPassesDTO(List.of(new LocalizedMessage(MessageKey.ROUND_NO_ONE_BID), new LocalizedMessage(MessageKey.ROUND_DEAL_AGAIN, Map.of("dealer", game.getDealer().toUpperCase()))), game.getStartPlayer(), "game.fourPasses");
                     messagingTemplate.convertAndSend("/topic/game." + request.gameId(), fourPassesDTO);
                     return;
                 }
@@ -248,7 +251,7 @@ public class MessageController {
             }
 
         } else {
-            throw new NotAllowedOperationException("Invalid username");
+            throw new NotAllowedOperationException(new LocalizedMessage(MessageKey.ERROR_NOT_ALLOWED_OPERATION));
         }
     }
 
@@ -279,9 +282,9 @@ public class MessageController {
                 PlayerCardListDTO cardList = talonService.allocateTalonCards(game, player, idFrom, idTo);
                 messagingTemplate.convertAndSendToUser(playerToDeal, "/queue/private", cardList);
 
-                String discardHandInfo = player.checkIfHandIsThrowable();
+                List<LocalizedMessage> discardHandInfo = player.checkIfHandIsThrowable();
                 if (discardHandInfo != null) {
-                    PrivateInfoDTO infoDTO = new PrivateInfoDTO(discardHandInfo, "game.discardHand");
+                    PrivateInfoListDTO infoDTO = new PrivateInfoListDTO(discardHandInfo, "game.discardHand");
                     messagingTemplate.convertAndSendToUser(playerToDeal, "/queue/private", infoDTO);
                 }
 
@@ -293,7 +296,7 @@ public class MessageController {
                 playerToDeal = player.getName();
                 idFrom = idTo + 1;
             }
-            PublicInfoDTO publicInfoDTO = new PublicInfoDTO("Discard skart phase has started!", "game.publicInfo");
+            PublicInfoDTO publicInfoDTO = new PublicInfoDTO(List.of(new LocalizedMessage(MessageKey.ROUND_SKART_PHASE_STARTED)), "game.publicInfo");
             messagingTemplate.convertAndSend("/topic/game." + request.gameId(), publicInfoDTO);
             if (game.getBidLevel().getBidValue() == 4) {
                 Player declarer = playerRepository.findByUserUsernameAndGameId(request.declarer(), request.gameId()).orElseThrow(() -> new NoSuchElementException("Declarer not found"));
@@ -304,7 +307,7 @@ public class MessageController {
             }
 
         } else {
-            throw new NotAllowedOperationException("Invalid username");
+            throw new NotAllowedOperationException(new LocalizedMessage(MessageKey.ERROR_NOT_ALLOWED_OPERATION));
         }
     }
 
@@ -319,13 +322,13 @@ public class MessageController {
             DiscardedHandDTO discardedHand = new DiscardedHandDTO(
                     playerCardList,
                     turnPlayer,
-                    player.getDiscardReason() + ", discards their hand and requires new deal",
+                    List.of(player.getDiscardReason(), new LocalizedMessage(MessageKey.DISCARD_HAND_SUBMITTED, Map.of("username", player.getName().toUpperCase()))),
                     "game.discardHand");
             player.getPlayerCards().clear();
             messagingTemplate.convertAndSend("/topic/game." + request.gameId(), discardedHand);
             playerCardRepository.deleteAllByPlayerGameId(request.gameId()); // ?
         } else {
-            throw new NotAllowedOperationException("Invalid username");
+            throw new NotAllowedOperationException(new LocalizedMessage(MessageKey.ERROR_NOT_ALLOWED_OPERATION));
         }
     }
 
@@ -344,7 +347,7 @@ public class MessageController {
             messagingTemplate.convertAndSend("/topic/game." + request.gameId(), skartDTO);
             handleFinishSkartPhase(request, game);
         } else {
-            throw new NotAllowedOperationException("Invalid username");
+            throw new NotAllowedOperationException(new LocalizedMessage(MessageKey.ERROR_NOT_ALLOWED_OPERATION));
         }
     }
 
@@ -358,7 +361,7 @@ public class MessageController {
             FirstPotentialBonusesDTO potentialBonuses = bonusService.getFirstPotentialDeclarerBonuses(game, declarer);
             messagingTemplate.convertAndSendToUser(playerName, "/queue/private", potentialBonuses);
         } else {
-            throw new NotAllowedOperationException("Invalid username");
+            throw new NotAllowedOperationException(new LocalizedMessage(MessageKey.ERROR_NOT_ALLOWED_OPERATION));
         }
     }
 
@@ -369,12 +372,12 @@ public class MessageController {
         if (request.declarer().equals(playerName)) {
             Game game = gameRepository.findById(request.gameId()).orElseThrow(() -> new NoSuchElementException("Game not found"));
             Player declarer = playerRepository.findByUserUsernameAndGameId(game.getDeclarer(), request.gameId()).orElseThrow(() -> new NoSuchElementException("Player not found"));
-            PrivateInfoDTO privateInfoDTO = bonusService.checkDeclarerUltimoAndTarokkNumber(declarer, request.bonuses(), request.selectedTarokkNumber());
+            PrivateInfoListDTO privateInfoDTO = bonusService.checkDeclarerUltimoAndTarokkNumber(declarer, request.bonuses(), request.selectedTarokkNumber());
             if (privateInfoDTO != null) {
                 messagingTemplate.convertAndSendToUser(playerName, "/queue/private", privateInfoDTO);
                 return;
             } else {
-                PrivateInfoDTO ultimoValidation = new PrivateInfoDTO("Ultimo validation is OK", "game.ultimoValidation");
+                PrivateInfoListDTO ultimoValidation = new PrivateInfoListDTO(List.of(new LocalizedMessage(MessageKey.VALIDATION_ULTIMO_OK)), "game.ultimoValidation");
                 messagingTemplate.convertAndSendToUser(playerName, "/queue/private", ultimoValidation);
             }
             PublicBonusDTO bonusDTO = bonusService.getFirstPublicBonusInfo(game, declarer, request.bonuses(), request.selectedTarokkNumber(), request.calledTarokk());
@@ -383,7 +386,7 @@ public class MessageController {
             PotentialBonusesDTO bonusesDTO = bonusService.getFirstPotentialTurnPlayerBonuses(game, nextPlayer);
             messagingTemplate.convertAndSendToUser(nextPlayer.getName(), "/queue/private", bonusesDTO);
         } else {
-            throw new NotAllowedOperationException("Invalid username");
+            throw new NotAllowedOperationException(new LocalizedMessage(MessageKey.ERROR_NOT_ALLOWED_OPERATION));
         }
     }
 
@@ -395,29 +398,29 @@ public class MessageController {
             Game game = gameRepository.findById(request.gameId()).orElseThrow(() -> new NoSuchElementException("Game not found"));
             Player player = playerRepository.findByUserUsernameAndGameId(playerName, request.gameId()).orElseThrow(() -> new NoSuchElementException("Player not found"));
 
-            PrivateInfoDTO ultimoInfo = bonusService.checkTurnPlayerUltimoAndTarokkNumber(player, request.bonuses(), request.selectedTarokkNumber());
+            PrivateInfoListDTO ultimoInfo = bonusService.checkTurnPlayerUltimoAndTarokkNumber(player, request.bonuses(), request.selectedTarokkNumber());
             if (ultimoInfo != null) {
                 messagingTemplate.convertAndSendToUser(playerName, "/queue/private", ultimoInfo);
                 return;
             }
-            PrivateInfoDTO doubleOrRedoubleInfo = bonusService.checkDoubleOrRedoubleIfNeeded(game, player, request.bonuses());
+            PrivateInfoListDTO doubleOrRedoubleInfo = bonusService.checkDoubleOrRedoubleIfNeeded(game, player, request.bonuses());
             if (doubleOrRedoubleInfo != null) {
                 messagingTemplate.convertAndSendToUser(playerName, "/queue/private", doubleOrRedoubleInfo);
                 return;
             }
-            PrivateInfoDTO doubleGameAndVolatInfo = bonusService.checkDoubleGameAndVolat(request.bonuses());
+            PrivateInfoListDTO doubleGameAndVolatInfo = bonusService.checkDoubleGameAndVolat(request.bonuses());
             if (doubleGameAndVolatInfo != null) {
                 messagingTemplate.convertAndSendToUser(playerName, "/queue/private", doubleGameAndVolatInfo);
                 return;
             }
 
-            PrivateInfoDTO announcementsAfterVolatInfo = bonusService.checkAnnouncementsAfterVolat(player, request.bonuses(), game);
+            PrivateInfoListDTO announcementsAfterVolatInfo = bonusService.checkAnnouncementsAfterVolat(player, request.bonuses(), game);
             if (announcementsAfterVolatInfo != null) {
                 messagingTemplate.convertAndSendToUser(playerName, "/queue/private", announcementsAfterVolatInfo);
                 return;
             }
 
-            PrivateInfoDTO validation = new PrivateInfoDTO("Validation is OK", "game.validation");
+            PrivateInfoListDTO validation = new PrivateInfoListDTO(List.of(new LocalizedMessage(MessageKey.VALIDATION_OK)), "game.validation");
             messagingTemplate.convertAndSendToUser(playerName, "/queue/private", validation);
 
             PublicBonusDTO bonusInfo = bonusService.getPublicBonusInfo(game, player, request.bonuses(), request.selectedTarokkNumber());
@@ -429,7 +432,7 @@ public class MessageController {
             }
 
         } else {
-            throw new NotAllowedOperationException("Invalid username");
+            throw new NotAllowedOperationException(new LocalizedMessage(MessageKey.ERROR_NOT_ALLOWED_OPERATION));
         }
     }
 
@@ -437,10 +440,10 @@ public class MessageController {
     public void handleBonusInfo(BonusInfoRequestDTO request, Principal principal) {
         String playerName = principal.getName();
         if (request.turnPlayer().equals(playerName)) {
-            PrivateInfoDTO dto = bonusService.informPlayerOfSelectedOptions(request.selectedTarokkNumber(), request.calledTarokk(), request.bonuses());
+            PrivateInfoListDTO dto = bonusService.informPlayerOfSelectedOptions(request.selectedTarokkNumber(), request.calledTarokk(), request.bonuses());
             messagingTemplate.convertAndSendToUser(playerName, "/queue/private", dto);
         } else {
-            throw new NotAllowedOperationException("Invalid username");
+            throw new NotAllowedOperationException(new LocalizedMessage(MessageKey.ERROR_NOT_ALLOWED_OPERATION));
         }
     }
 
@@ -490,7 +493,7 @@ public class MessageController {
                 messagingTemplate.convertAndSend("/topic/game." + request.gameId(), turnPlayerDTO);
             }
         } else {
-            throw new NotAllowedOperationException("Invalid username");
+            throw new NotAllowedOperationException(new LocalizedMessage(MessageKey.ERROR_NOT_ALLOWED_OPERATION));
         }
     }
 
@@ -501,7 +504,7 @@ public class MessageController {
             Game game = gameRepository.findById(request.gameId()).orElseThrow(() -> new NoSuchElementException("Game not found"));
             List<Player> players = game.getPlayers();
             for (Player player : players) {
-                PrivateInfoDTO dto = mapperService.mapToPrivateResult(player);
+                PrivateInfoListDTO dto = mapperService.mapToPrivateResult(player);
                 messagingTemplate.convertAndSendToUser(player.getName(), "/queue/private", dto);
             }
             String newDealer = game.getNextPlayerName(game.getDealer());
@@ -543,7 +546,7 @@ public class MessageController {
             game.setStartPlayer(newStartPlayer);
             game.setTurnPlayer(newStartPlayer);
         } else {
-            throw new NotAllowedOperationException("Invalid username");
+            throw new NotAllowedOperationException(new LocalizedMessage(MessageKey.ERROR_NOT_ALLOWED_OPERATION));
         }
     }
 
@@ -552,7 +555,10 @@ public class MessageController {
         headerAccessor.getSessionAttributes().put("player", playerName);
         joinMessage.setType("game.joined");
         if (joinMessage.getPlayer1() != null && joinMessage.getPlayer2() != null && joinMessage.getPlayer3() != null && joinMessage.getPlayer4() != null) {
-            joinMessage.setPrivateInformation("You are the fourth player.@ Let the game start!");
+            joinMessage.setPrivateInformation(List.of(
+                    new LocalizedMessage(MessageKey.JOIN_FOURTH_PLAYER),
+                    new LocalizedMessage(MessageKey.JOIN_LET_GAME_START)
+            ));
         }
         messagingTemplate.convertAndSendToUser(playerName, "/queue/private", joinMessage);
         messagingTemplate.convertAndSend("/topic/game." + joinMessage.getGameId(), joinMessage);
@@ -599,12 +605,11 @@ public class MessageController {
             }
             GameStateDTO gameStateDTO = new GameStateDTO(game.getState().toString(), "game.gameState");
             messagingTemplate.convertAndSend("/topic/game." + request.gameId(), gameStateDTO);
-            String bonusPhaseInfo;
+            List<LocalizedMessage> bonusPhaseInfo = new ArrayList<>();
             if (skartWithTarokkDTO != null) {
-                bonusPhaseInfo = skartWithTarokkDTO.info() + "@Bonus announcement phase has started!";
-            } else {
-                bonusPhaseInfo = "@Bonus announcement phase has started!";
+                bonusPhaseInfo.addAll(skartWithTarokkDTO.info());
             }
+            bonusPhaseInfo.add(new LocalizedMessage(MessageKey.ROUND_BONUS_PHASE_STARTED));
             PublicInfoDTO infoDTO = new PublicInfoDTO(bonusPhaseInfo, "game.publicSkartPhaseFinishInfo");
             messagingTemplate.convertAndSend("/topic/game." + request.gameId(), infoDTO);
         }
@@ -620,7 +625,7 @@ public class MessageController {
     private void finishAnnouncementPhase(Game game, BonusesRequestDTO request) {
         TurnPlayerDTO turnPlayerDTO = new TurnPlayerDTO(game.getStartPlayer(), "game.turnPlayer");
         messagingTemplate.convertAndSend("/topic/game." + request.gameId(), turnPlayerDTO);
-        NewGameStateWithInfoDTO infoDTO = new NewGameStateWithInfoDTO(game.getState().toString(), "Trick phase", "game.gameStateInfo");
+        NewGameStateWithInfoDTO infoDTO = new NewGameStateWithInfoDTO(game.getState().toString(), new LocalizedMessage(MessageKey.ROUND_TRICK_PHASE), "game.gameStateInfo");
         messagingTemplate.convertAndSend("/topic/game." + request.gameId(), infoDTO);
         Player turnPlayer = game.getPlayerByName(game.getStartPlayer());
         PlayerCardListDTO playerCardList = trickService.getFirstPlayerCards(turnPlayer, game, game.getInvitedTarokk());

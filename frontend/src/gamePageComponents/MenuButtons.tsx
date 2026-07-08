@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { User } from "../types";
 
 function MenuButtons({
@@ -23,16 +24,17 @@ function MenuButtons({
   user: User | null;
   dealer: string | null;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="w-full h-1/12 flex justify-around items-center">
       <button
         className="border-black border-2 w-1/8 h-2/3 bg-green-300 hover:scale-105 hover:bg-green-400 cursor-pointer text-[#2f4b3a] text-2xl font-bold rounded-lg"
         onClick={onHandleLogout}
       >
-        Logout
+        {t("game.logout")}
       </button>
       <button className="border-black border-2 w-1/8 h-2/3 bg-green-300 hover:scale-105 hover:bg-green-400 cursor-pointer text-[#2f4b3a] text-2xl font-bold rounded-lg">
-        Back
+        {t("game.back")}
       </button>
       {user?.username === dealer &&
         (gameState === "NEW" || gameState === "FINISHED") &&
@@ -41,7 +43,7 @@ function MenuButtons({
             className="border-black border-2 w-1/8 h-2/3 bg-green-300 hover:scale-105 hover:bg-green-400 cursor-pointer text-[#2f4b3a] text-2xl font-bold rounded-lg"
             onClick={onHandleDeal}
           >
-            DEAL
+            {t("game.deal")}
           </button>
         )}
     </div>

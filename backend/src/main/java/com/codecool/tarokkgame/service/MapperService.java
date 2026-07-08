@@ -80,9 +80,9 @@ public class MapperService {
         return wonCards;
     }
 
-    public PrivateInfoDTO mapToPrivateResult(Player player) {
+    public PrivateInfoListDTO mapToPrivateResult(Player player) {
         RoundResult result = player.getResult();
-        return new PrivateInfoDTO(result.getInfo(), "game.privateResult");
+        return new PrivateInfoListDTO(result.getInfo(), "game.privateResult");
     }
 
     public Map<String, PlayerData> mapPlayersDataToHashMap(Game game) {

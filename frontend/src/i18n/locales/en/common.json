@@ -1,0 +1,122 @@
+{
+  "auth": {
+    "welcome": "Welcome to Tarokk game!",
+    "login": {
+      "title": "Sign in to your account",
+      "usernameLabel": "Your username",
+      "usernamePlaceholder": "username",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "••••••••",
+      "rememberMe": "Remember me",
+      "forgotPassword": "Forgot password?",
+      "submit": "Sign in",
+      "noAccount": "Don’t have an account yet?",
+      "signUp": "Sign up"
+    },
+    "register": {
+      "title": "Create an account",
+      "usernameLabel": "Your username",
+      "usernamePlaceholder": "username",
+      "emailLabel": "Your email",
+      "emailPlaceholder": "name@company.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "••••••••",
+      "submit": "Create an account",
+      "haveAccount": "Already have an account?",
+      "loginHere": "Login here"
+    },
+    "errors": {
+      "unknown": "An unknown error occurred",
+      "fetchUserInfo": "Could not fetch user info"
+    }
+  },
+  "menu": {
+    "yourGameId": "Your game ID:",
+    "gameIdPlaceholder": "Waiting for the ID...",
+    "copyId": "Copy ID to clipboard",
+    "copied": "Copied",
+    "selectOption": "Select an option:",
+    "joinRandomGame": "Join a random game",
+    "joinGameWithId": "Join a game with ID",
+    "getGameId": "Get an ID to invite players",
+    "editProfile": "Edit profile",
+    "feedback": "Feedback",
+    "rules": "Rules",
+    "logout": "Logout",
+    "enterId": "Enter the ID:",
+    "enterIdPlaceholder": "Enter the ID here:",
+    "send": "Send",
+    "sending": "Sending...",
+    "feedbackThanks": "Thanks for your feedback!",
+    "close": "Close",
+    "feedbackLabel": "Found a bug or have a suggestion?",
+    "feedbackPlaceholder": "Describe the bug or your idea...",
+    "feedbackError": "Could not send your feedback. Please try again later.",
+    "cancel": "Cancel"
+  },
+  "edit": {
+    "title": "Edit your account:",
+    "usernameLabel": "Your username",
+    "usernamePlaceholder": "username",
+    "emailLabel": "Email address",
+    "emailPlaceholder": "email",
+    "passwordLabel": "Your password",
+    "newPasswordLabel": "New password",
+    "confirmPasswordLabel": "Confirm password",
+    "passwordMismatch": "New passwords do not match",
+    "save": "Save changes",
+    "delete": "Delete account",
+    "backToMenu": "Back to menu",
+    "errors": {
+      "updateFailed": "Failed to update profile"
+    }
+  },
+  "game": {
+    "logout": "Logout",
+    "back": "Back",
+    "deal": "DEAL",
+    "playerTricks": "{{name}}'s tricks",
+    "balance": "Balance: {{balance}}",
+    "eightTarokks": "8 Tarokks",
+    "nineTarokks": "9 Tarokks",
+    "submit": "Submit",
+    "selectBonusesTitle": "Select your bonuses:",
+    "biddingPhaseStarted": "Bidding phase has started!",
+    "newDealer": "New dealer is {{name}}",
+    "selectCardsToDiscard_one": "Select {{count}} card to discard!",
+    "selectCardsToDiscard_other": "Select {{count}} cards to discard!",
+    "noTarokkAndBonusSelected": "You haven't selected a tarokk and a bonus!",
+    "noTarokkCalled": "You haven't called a tarokk!",
+    "noBonusSelected": "You haven't selected a bonus!",
+    "skartLimit_one": "You can only select {{count}} card for the skart.",
+    "skartLimit_other": "You can only select {{count}} cards for the skart.",
+    "declarerSkart": "Declarer's skart",
+    "opponentSkart": "Opponent's skart",
+    "declarerTricksTitle": "Tricks of declarer side:",
+    "opponentTricksTitle": "Tricks of opponent side:",
+    "discardedHandTitle": "Discarded hand:",
+    "skartHereLabel": "Skart here:",
+    "talonLabel": "Talon",
+    "yes": "Yes",
+    "no": "No",
+    "alt": {
+      "skartCardBack": "Skart card back {{index}}",
+      "trickCardBack": "Trick card back {{index}}",
+      "cardBack": "Card back {{index}}",
+      "card": "Card {{index}}",
+      "publicCard": "Public card {{index}}",
+      "selectedCard": "Selected card {{index}}",
+      "trickCard": "Trick card {{index}}",
+      "talonCardBack": "Talon card back",
+      "deck": "Deck"
+    }
+  },
+  "infoTable": {
+    "bidLabel": "Bid:",
+    "declarerLabel": "Declarer:",
+    "dealerLabel": "Dealer:",
+    "turnLabel": "Turn:",
+    "declarerBonusesLabel": "Declarer's bonuses:",
+    "opponentBonusesLabel": "Opponent's bonuses:"
+  }
+}

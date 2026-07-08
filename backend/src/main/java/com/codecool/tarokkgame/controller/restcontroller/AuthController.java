@@ -1,11 +1,11 @@
 package com.codecool.tarokkgame.controller.restcontroller;
 
+import com.codecool.tarokkgame.model.dto.LocalizedMessage;
 import com.codecool.tarokkgame.model.dto.restdto.*;
 import com.codecool.tarokkgame.service.AuthService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -18,8 +18,8 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<Map<String , String>> addNewPlayer(@RequestBody RegisterDTO request) {
-        Map<String , String> response = authService.createPlayer(request);
+    public ResponseEntity<LocalizedMessage> addNewPlayer(@RequestBody RegisterDTO request) {
+        LocalizedMessage response = authService.createPlayer(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
@@ -36,12 +36,12 @@ public class AuthController {
 
     @DeleteMapping("/delete")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public Map<String, String> deleteMe() {
+    public LocalizedMessage deleteMe() {
         return authService.deleteMe();
     }
 
     @PatchMapping("/me")
-    public Map<String, String> editCredentials(@RequestBody EditCredentialsDTO request) {
+    public LocalizedMessage editCredentials(@RequestBody EditCredentialsDTO request) {
         return authService.editCredentials(request);
     }
 

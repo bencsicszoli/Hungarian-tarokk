@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import InputField from "./components/InputField";
+import { translateMessage } from "../i18n/translateMessage";
 
 function RegistrationPage() {
+  const { t } = useTranslation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
@@ -17,11 +20,11 @@ function RegistrationPage() {
         body: JSON.stringify({ username, password, email }),
       });
       if (!response.ok) {
-        throw new Error((await response.json()).message);
+        throw new Error(translateMessage(await response.json()));
       }
       navigate(`/`);
     } catch (e) {
-      setRegError(e instanceof Error ? e.message : "An unknown error occurred");
+      setRegError(e instanceof Error ? e.message : t("auth.errors.unknown"));
     }
   }
 
@@ -38,13 +41,13 @@ function RegistrationPage() {
     <div className="w-full h-screen bg-[#2f4b3a] flex flex-col items-center justify-center text-white px-6 sm:px-8">
 
       <h2 className="text-4xl font-extrabold mb-11 drop-shadow-lg text-center text-green-50">
-        Welcome to Tarokk game!
+        {t("auth.welcome")}
       </h2>
 
       <div className="z-0 w-full bg-[#2f4b3a] border border-green-300 rounded-lg shadow md:mt-0 sm:max-w-md xl:p-0">
         <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
           <h1 className="text-xl font-bold leading-tight tracking-tight text-green-50 md:text-2xl">
-            Create an account
+            {t("auth.register.title")}
           </h1>
           <form
             className="space-y-4 md:space-y-6"
@@ -52,33 +55,33 @@ function RegistrationPage() {
           >
             <InputField
               htmlFor="usrnm"
-              labelText="Your username"
+              labelText={t("auth.register.usernameLabel")}
               inputType="text"
               inputName="username"
               inputId="usrnm"
-              placeholderText="username"
+              placeholderText={t("auth.register.usernamePlaceholder")}
               inputValue={username}
               onInputValue={setUsername}
               autoComplete="off"
             />
             <InputField
               htmlFor="email"
-              labelText="Your email"
+              labelText={t("auth.register.emailLabel")}
               inputType="email"
               inputName="email"
               inputId="email"
-              placeholderText="name@company.com"
+              placeholderText={t("auth.register.emailPlaceholder")}
               inputValue={email}
               onInputValue={setEmail}
               autoComplete="off"
             />
             <InputField
               htmlFor="password"
-              labelText="Password"
+              labelText={t("auth.register.passwordLabel")}
               inputType="password"
               inputName="password"
               inputId="password"
-              placeholderText="••••••••"
+              placeholderText={t("auth.register.passwordPlaceholder")}
               inputValue={password}
               onInputValue={setPassword}
               autoComplete="off"
@@ -93,15 +96,15 @@ function RegistrationPage() {
               type="submit"
               className="w-full text-green-50 bg-[#23392c] hover:bg-[#3b5f4a] focus:ring-4 focus:outline-none focus:ring-green-300 cursor-pointer rounded-lg text-lg px-5 py-2.5 text-center"
             >
-              Create an account
+              {t("auth.register.submit")}
             </button>
             <div className="flex items-center justify-center gap-4 text-lg">
-              <p className="text-green-50">Already have an account?</p>
+              <p className="text-green-50">{t("auth.register.haveAccount")}</p>
               <button
                 onClick={switchToLogin}
                 className="font-medium text-green-50 hover:underline"
               >
-                Login here
+                {t("auth.register.loginHere")}
               </button>
             </div>
           </form>

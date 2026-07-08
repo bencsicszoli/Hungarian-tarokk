@@ -1,4 +1,4 @@
-import type { GameState } from "../types";
+import type { GameState, InfoLine } from "../types";
 import type { JSX } from "react";
 
 function PrivateInfo({
@@ -6,15 +6,15 @@ function PrivateInfo({
   onDisplayInformation,
   gameState,
 } : {
-  privateInfo: string;
-  onDisplayInformation: (privateInfo: string) => JSX.Element[];
+  privateInfo: InfoLine[];
+  onDisplayInformation: (privateInfo: InfoLine[]) => JSX.Element[];
   gameState: GameState;
 }) {
-    if (privateInfo) {
+    if (privateInfo.length > 0) {
       return (
         <div
           className="w-full h-auto px-4 py-6 font-bold animate-jump-in text-center flex justify-center items-center"
-          key={privateInfo}
+          key={JSON.stringify(privateInfo)}
         >
           {gameState === "FINISHED" ? (
             <p className="text-2xl">{onDisplayInformation(privateInfo)}</p>

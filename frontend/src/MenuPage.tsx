@@ -1,10 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useUser } from "./context/UserContext";
 import { useWebSocket } from "./context/WebSocketContext";
 import LinkButton from "./menuPageComponents/LinkButton";
 
 function MenuPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const userContext = useUser();
   const webSocketContext = useWebSocket();
@@ -154,13 +156,13 @@ function MenuPage() {
           <div className="flex flex-col w-4/5">
             <div className="m-2">
               <label htmlFor="" className="text-lg font-medium text-green-50">
-                Your game ID:
+                {t("menu.yourGameId")}
               </label>
             </div>
 
             <input
               type="text"
-              placeholder="Waiting for the ID..."
+              placeholder={t("menu.gameIdPlaceholder")}
               value={customGameId}
               className="h-12 font-bold text-2xl text-center text-[#2f4b3a] bg-green-300 rounded-lg m-2 placeholder:text-[#2f4b3a] placeholder:font-normal placeholder: text-md"
             />
@@ -173,7 +175,7 @@ function MenuPage() {
                   setCopiedId("write-text");
                 }}
               >
-                {copiedId === "write-text" ? "Copied" : "Copy ID to clipboard"}
+                {copiedId === "write-text" ? t("menu.copied") : t("menu.copyId")}
               </button>
             </div>
           </div>
@@ -182,44 +184,44 @@ function MenuPage() {
       </div>
       <div className="w-1/3 flex flex-col justify-center items-center">
         <h2 className="text-3xl font-extrabold mb-11 drop-shadow-lg text-green-100 md:text-4xl">
-          Select an option:
+          {t("menu.selectOption")}
         </h2>
 
         <div className="w-full bg-[#2f4b3a] border border-green-300 rounded-lg shadow md:mt-0 sm:max-w-md xl:p-0">
           <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
             <LinkButton
-              buttonText="Join a random game"
+              buttonText={t("menu.joinRandomGame")}
               fontStyle="font-extrabold text-xl"
               onHandleClick={joinGame}
             />
             <LinkButton
-              buttonText="Join a game with ID"
+              buttonText={t("menu.joinGameWithId")}
               fontStyle="font-extrabold text-xl"
               onHandleClick={joinGameWithId}
             />
             <LinkButton
-              buttonText="Get an ID to invite players"
+              buttonText={t("menu.getGameId")}
               fontStyle="font-semibold text-lg"
               onHandleClick={getGameId}
             />
             <LinkButton
               whereToLink={`/edit`}
-              buttonText="Edit profile"
+              buttonText={t("menu.editProfile")}
               fontStyle="font-semibold text-lg"
             />
             <LinkButton
-              buttonText="Feedback"
+              buttonText={t("menu.feedback")}
               onHandleClick={() => setFeedbackOpen(true)}
               fontStyle="font-semibold text-lg"
             />
             <LinkButton
-              buttonText="Rules"
+              buttonText={t("menu.rules")}
               onHandleClick={handleHelpClick}
               fontStyle="font-semibold text-lg"
             />
             <LinkButton
               whereToLink={`/`}
-              buttonText="Logout"
+              buttonText={t("menu.logout")}
               onHandleClick={handleLogout}
               fontStyle="font-semibold text-lg"
             />
@@ -232,13 +234,13 @@ function MenuPage() {
             <form onSubmit={submitId} className="flex flex-col w-4/5">
               <div className="m-2">
                 <label htmlFor="" className="text-lg font-medium text-green-50">
-                  Enter the ID:
+                  {t("menu.enterId")}
                 </label>
               </div>
 
               <input
                 type="text"
-                placeholder="Enter the ID here:"
+                placeholder={t("menu.enterIdPlaceholder")}
                 onChange={(e) => setGameIdToSend(e.target.value)}
                 className="h-12 font-bold text-2xl text-center text-[#2f4b3a] bg-green-300 rounded-lg m-2 placeholder:text-[#2f4b3a] placeholder:font-normal placeholder: text-md"
               />
@@ -247,7 +249,7 @@ function MenuPage() {
                   type="submit"
                   className="bg-green-700 rounded-lg w-40 h-10 border border-green-300 hover:scale-105 hover:bg-green-900 cursor-pointer"
                 >
-                  Send
+                  {t("menu.send")}
                 </button>
               </div>
             </form>
@@ -267,30 +269,30 @@ function MenuPage() {
             {feedbackStatus === "sent" ? (
               <div className="flex flex-col items-center gap-4 text-center">
                 <p className="text-lg font-medium text-green-50">
-                  Thanks for your feedback!
+                  {t("menu.feedbackThanks")}
                 </p>
                 <button
                   onClick={closeFeedback}
                   className="bg-green-700 rounded-lg w-32 h-10 border border-green-300 hover:scale-105 hover:bg-green-900 cursor-pointer"
                 >
-                  Close
+                  {t("menu.close")}
                 </button>
               </div>
             ) : (
               <form onSubmit={submitFeedback} className="flex flex-col gap-3">
                 <label className="text-lg font-medium text-green-50">
-                  Found a bug or have a suggestion?
+                  {t("menu.feedbackLabel")}
                 </label>
                 <textarea
                   value={feedbackText}
                   onChange={(e) => setFeedbackText(e.target.value)}
-                  placeholder="Describe the bug or your idea..."
+                  placeholder={t("menu.feedbackPlaceholder")}
                   rows={6}
                   className="w-full p-3 text-[#2f4b3a] bg-green-300 rounded-lg resize-none placeholder:text-[#2f4b3a]/70 focus:outline-none focus:ring-4 focus:ring-green-400"
                 />
                 {feedbackStatus === "error" && (
                   <p className="text-red-300 text-sm">
-                    Could not send your feedback. Please try again later.
+                    {t("menu.feedbackError")}
                   </p>
                 )}
                 <div className="flex justify-end gap-2">
@@ -299,7 +301,7 @@ function MenuPage() {
                     onClick={closeFeedback}
                     className="rounded-lg px-4 h-10 border border-green-300 text-green-50 hover:bg-green-900 cursor-pointer"
                   >
-                    Cancel
+                    {t("menu.cancel")}
                   </button>
                   <button
                     type="submit"
@@ -308,7 +310,7 @@ function MenuPage() {
                     }
                     className="bg-green-700 rounded-lg px-4 h-10 border border-green-300 hover:scale-105 hover:bg-green-900 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                   >
-                    {feedbackStatus === "sending" ? "Sending..." : "Send"}
+                    {feedbackStatus === "sending" ? t("menu.sending") : t("menu.send")}
                   </button>
                 </div>
               </form>

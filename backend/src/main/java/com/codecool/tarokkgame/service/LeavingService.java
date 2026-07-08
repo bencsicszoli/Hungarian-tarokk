@@ -1,7 +1,9 @@
 package com.codecool.tarokkgame.service;
 
 import com.codecool.tarokkgame.constants.Bonus;
+import com.codecool.tarokkgame.constants.MessageKey;
 import com.codecool.tarokkgame.model.PlayerData;
+import com.codecool.tarokkgame.model.dto.LocalizedMessage;
 import com.codecool.tarokkgame.model.dto.messagedto.response.PlayerLeaveDTO;
 import com.codecool.tarokkgame.model.entity.DeclarerSkart;
 import com.codecool.tarokkgame.model.entity.Game;
@@ -38,8 +40,9 @@ public class LeavingService {
     }
 
     public void calculatePenalty(Player player, Game game) {
-        StringBuilder penaltyMessage = new StringBuilder();
-        penaltyMessage.append("Do you really want to quit this round?@You must pay all bonuses anybody have announced!@");
+        List<LocalizedMessage> penaltyMessage = new ArrayList<>();
+        penaltyMessage.add(new LocalizedMessage(MessageKey.LEAVE_CONFIRM_QUIT));
+        penaltyMessage.add(new LocalizedMessage(MessageKey.LEAVE_MUST_PAY_BONUSES));
         int penalty = 0;
         if (!game.getDeclarerBonuses().isEmpty()) {
             methodIfDeclarerBonusesNotEmpty(game, penalty, penaltyMessage);
@@ -47,8 +50,8 @@ public class LeavingService {
         if (!game.getOpponentBonuses().isEmpty()) {
             methodIfOpponentBonusesNotEmpty(game, penalty, penaltyMessage);
         }
-        penaltyMessage.append("TOTAL PENALTY: ").append(penalty);
-        game.setInformation(penaltyMessage.toString());
+        penaltyMessage.add(new LocalizedMessage(MessageKey.LEAVE_TOTAL_PENALTY, Map.of("penalty", penalty)));
+        game.setInformation(penaltyMessage);
         player.setPenalty(penalty);
     }
 
@@ -85,7 +88,7 @@ public class LeavingService {
         }
     }
 
-    private void methodIfDeclarerBonusesNotEmpty(Game game, int penalty, StringBuilder penaltyMessage) {
+    private void methodIfDeclarerBonusesNotEmpty(Game game, int penalty, List<LocalizedMessage> penaltyMessage) {
         for (Bonus bonus : game.getDeclarerBonuses()) {
             penalty += bonus.getPointValue() * 3;
             String bonusName;
@@ -94,14 +97,14 @@ public class LeavingService {
             } else {
                 bonusName = bonus.getBonusName();
             }
-            penaltyMessage.append(bonusName).append(": ").append(bonus.getPointValue() * 3).append(".");
+            penaltyMessage.add(new LocalizedMessage(MessageKey.LEAVE_BONUS_PENALTY_LINE, Map.of("bonusName", bonusName, "points", bonus.getPointValue() * 3)));
         }
     }
 
-    private void methodIfOpponentBonusesNotEmpty(Game game, int penalty, StringBuilder penaltyMessage) {
+    private void methodIfOpponentBonusesNotEmpty(Game game, int penalty, List<LocalizedMessage> penaltyMessage) {
         for (Bonus bonus : game.getOpponentBonuses()) {
             penalty += bonus.getPointValue() * 3;
-            penaltyMessage.append(bonus.getBonusName()).append(": ").append(bonus.getPointValue() * 3).append(".");
+            penaltyMessage.add(new LocalizedMessage(MessageKey.LEAVE_BONUS_PENALTY_LINE, Map.of("bonusName", bonus.getBonusName(), "points", bonus.getPointValue() * 3)));
         }
     }
 
@@ -152,7 +155,8 @@ public class LeavingService {
         game.resetGame();
 
         Map<String, PlayerData> playersData = mapperService.mapPlayersDataToHashMap(game);
-        return new PlayerLeaveDTO(player.getName(), String.format("%s quit the game", player.getName().toUpperCase()), playersData, "game.confirmLeaving");
+        LocalizedMessage quitMessage = new LocalizedMessage(MessageKey.LEAVE_PLAYER_QUIT, Map.of("username", player.getName().toUpperCase()));
+        return new PlayerLeaveDTO(player.getName(), quitMessage, playersData, "game.confirmLeaving");
     }
 
     private void methodWithOnePlayerRemained(Player player, Game game) {
