@@ -64,7 +64,7 @@ public class TalonService {
     public PublicSkartDTO createSkartDTO(Game game, int thrownCards, Player player) {
         int declarerSkartLength = declarerSkartRepository.countAllByGameId(game.getId());
         int opponentSkartLength = opponentSkartRepository.countAllByGameId(game.getId());
-        LocalizedMessage discardedCardsInfo = new LocalizedMessage(MessageKey.SKART_CARDS_ADDED, Map.of("player", player.getName(), "count", thrownCards));
+        LocalizedMessage discardedCardsInfo = new LocalizedMessage(MessageKey.SKART_CARDS_ADDED, Map.of("player", player.getName().toUpperCase(), "count", thrownCards));
         Player nextPlayer = game.getNextPlayer(player);
         String turnPlayer = nextPlayer.getName();
         game.setTurnPlayer(turnPlayer);
@@ -161,7 +161,7 @@ public class TalonService {
         Player declarer = playerRepository.findByUserUsernameAndGameId(game.getDeclarer(), game.getId()).orElseThrow(() -> new NoSuchElementException("Declarer not found"));
         List<DeclarerSkart> skartCards = declarerSkartRepository.findAllByGameId(game.getId());
         int tarokks = changeFrontImageIfTarokk(skartCards, playerCardDTOs, declarer);
-        infoLines.add(new LocalizedMessage(MessageKey.SKART_DECLARER_TAROKK_PLACED, Map.of("player", declarer.getName(), "count", tarokks)));
+        infoLines.add(new LocalizedMessage(MessageKey.SKART_DECLARER_TAROKK_PLACED, Map.of("player", declarer.getName().toUpperCase(), "count", tarokks)));
     }
 
     private void handleTarokksInOpponentSkart(Game game, List<LocalizedMessage> infoLines) {
