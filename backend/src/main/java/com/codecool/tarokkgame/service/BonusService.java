@@ -7,6 +7,7 @@ import com.codecool.tarokkgame.constants.RoleInGame;
 import com.codecool.tarokkgame.constants.RomanTarokkNumber;
 import com.codecool.tarokkgame.model.TarokkNumberHolder;
 import com.codecool.tarokkgame.model.dto.LocalizedMessage;
+import com.codecool.tarokkgame.model.dto.messagedto.response.BonusOptionDTO;
 import com.codecool.tarokkgame.model.dto.messagedto.response.FirstPotentialBonusesDTO;
 import com.codecool.tarokkgame.model.dto.messagedto.response.PotentialBonusesDTO;
 import com.codecool.tarokkgame.model.dto.messagedto.response.PrivateInfoListDTO;
@@ -30,13 +31,13 @@ public class BonusService {
 
     public FirstPotentialBonusesDTO getFirstPotentialDeclarerBonuses(Game game, Player player) {
         List<Bonus> bonuses = Bonus.getBonusesWithBaseLevel();
-        List<String> bonusNames = bonuses.stream().map(Bonus::getBonusName).collect(Collectors.toList());
+        List<BonusOptionDTO> bonusOptions = toBonusOptions(bonuses);
         Set<LocalizedMessage> callableTarokks = new LinkedHashSet<>();
         setCallableTarokks(game, player, callableTarokks);
         TarokkNumberHolder tarokkNumberHolder = getTarokkNumber(player);
         List<LocalizedMessage> playerInfo = createPlayerInfo(tarokkNumberHolder);
         game.getOptionalBonuses().addAll(bonuses);
-        return new FirstPotentialBonusesDTO(tarokkNumberHolder.isEightTarokk(), tarokkNumberHolder.isNineTarokk(), bonusNames, callableTarokks, playerInfo, "game.firstPotentialBonuses");
+        return new FirstPotentialBonusesDTO(tarokkNumberHolder.isEightTarokk(), tarokkNumberHolder.isNineTarokk(), bonusOptions, callableTarokks, playerInfo, "game.firstPotentialBonuses");
     }
 
     public PotentialBonusesDTO getFirstPotentialTurnPlayerBonuses(Game game, Player player) {
@@ -47,8 +48,8 @@ public class BonusService {
         List<LocalizedMessage> playerInfo = createPlayerInfo(tarokkNumberHolder, player, game, bonuses);
 
         List<Bonus> sortedBonuses = Bonus.sortBonuses(bonuses);
-        List<String> bonusNames = sortedBonuses.stream().map(Bonus::getBonusName).toList();
-        return new PotentialBonusesDTO(tarokkNumberHolder.isEightTarokk(), tarokkNumberHolder.isNineTarokk(), bonusNames, playerInfo, "game.firstTurnPlayerBonuses");
+        List<BonusOptionDTO> bonusOptions = toBonusOptions(sortedBonuses);
+        return new PotentialBonusesDTO(tarokkNumberHolder.isEightTarokk(), tarokkNumberHolder.isNineTarokk(), bonusOptions, playerInfo, "game.firstTurnPlayerBonuses");
     }
 
     public PotentialBonusesDTO getPotentialTurnPlayerBonuses(Game game, Player player) {
@@ -60,8 +61,12 @@ public class BonusService {
         setPotentialBonuses(player, bonuses, game);
 
         List<Bonus> sortedBonuses = Bonus.sortBonuses(bonuses);
-        List<String> bonusNames = sortedBonuses.stream().map(Bonus::getBonusName).toList();
-        return new PotentialBonusesDTO(tarokkNumberHolder.isEightTarokk(), tarokkNumberHolder.isNineTarokk(), bonusNames, playerInfo, "game.turnPlayerBonuses" );
+        List<BonusOptionDTO> bonusOptions = toBonusOptions(sortedBonuses);
+        return new PotentialBonusesDTO(tarokkNumberHolder.isEightTarokk(), tarokkNumberHolder.isNineTarokk(), bonusOptions, playerInfo, "game.turnPlayerBonuses" );
+    }
+
+    private List<BonusOptionDTO> toBonusOptions(List<Bonus> bonuses) {
+        return bonuses.stream().map(bonus -> new BonusOptionDTO(bonus.getBonusName(), bonus.getLocalizedName())).toList();
     }
 
     public PublicBonusDTO getFirstPublicBonusInfo(Game game, Player player, Set<String> bonusNames, int selectedTarokkNumber, String calledTarokk) {
@@ -75,7 +80,7 @@ public class BonusService {
         }
         String upperCaseName = player.getName().toUpperCase();
         List<LocalizedMessage> info = createInfoAboutDeclarerAnnouncement(selectedTarokkNumber, upperCaseName, calledTarokk, bonusNames);
-        return new PublicBonusDTO(info, Bonus.getBonusNames(game.getDeclarerBonuses()), Bonus.getBonusNames(game.getOpponentBonuses()), turnPlayer, "game.publicBonusInfo");
+        return new PublicBonusDTO(info, Bonus.getLocalizedBonusNames(game.getDeclarerBonuses()), Bonus.getLocalizedBonusNames(game.getOpponentBonuses()), turnPlayer, "game.publicBonusInfo");
     }
 
     public PublicBonusDTO getPublicBonusInfo(Game game, Player player, Set<String> bonusNames, int selectedTarokkNumber) {
@@ -95,7 +100,7 @@ public class BonusService {
         String upperCaseName = player.getName().toUpperCase();
         List<LocalizedMessage> info = createInfoAboutTurnPlayerAnnouncement(selectedTarokkNumber, upperCaseName, bonusNames);
 
-        return new PublicBonusDTO(info, Bonus.getBonusNames(game.getDeclarerBonuses()), Bonus.getBonusNames(game.getOpponentBonuses()), turnPlayer, "game.publicBonusInfo");
+        return new PublicBonusDTO(info, Bonus.getLocalizedBonusNames(game.getDeclarerBonuses()), Bonus.getLocalizedBonusNames(game.getOpponentBonuses()), turnPlayer, "game.publicBonusInfo");
     }
 
     public PrivateInfoListDTO checkDoubleOrRedoubleIfNeeded(Game game, Player player, Set<String> bonusNames) {
@@ -172,7 +177,8 @@ public class BonusService {
         }
         if (!selectedBonuses.isEmpty()) {
             String key = selectedBonuses.size() == 1 ? MessageKey.BONUS_SELECTED_BONUS : MessageKey.BONUS_SELECTED_BONUSES;
-            lines.add(new LocalizedMessage(key, Map.of("bonuses", selectedBonuses)));
+            List<LocalizedMessage> bonusLabels = selectedBonuses.stream().map(name -> Bonus.getBonusByName(name).getLocalizedName()).toList();
+            lines.add(new LocalizedMessage(key, Map.of("bonuses", bonusLabels)));
         }
         return new PrivateInfoListDTO(lines, "game.privateInfo");
     }
@@ -343,8 +349,12 @@ public class BonusService {
         List<LocalizedMessage> lines = new ArrayList<>();
         addTarokkNumberAnnouncementIfAny(selectedTarokkNumber, upperCaseName, lines);
         lines.add(new LocalizedMessage(MessageKey.BONUS_PLAYER_CALLED_TAROKK, Map.of("player", upperCaseName, "tarokk", calledTarokk)));
-        lines.add(new LocalizedMessage(MessageKey.BONUS_PLAYER_ANNOUNCED, Map.of("player", upperCaseName, "bonuses", List.copyOf(bonusNames))));
+        lines.add(new LocalizedMessage(MessageKey.BONUS_PLAYER_ANNOUNCED, Map.of("player", upperCaseName, "bonuses", toLocalizedBonusNames(bonusNames))));
         return lines;
+    }
+
+    private List<LocalizedMessage> toLocalizedBonusNames(Set<String> bonusNames) {
+        return bonusNames.stream().map(name -> Bonus.getBonusByName(name).getLocalizedName()).toList();
     }
 
     private void handleBaseLevelBonus(Game game, Bonus bonus, Player player) {
@@ -397,7 +407,7 @@ public class BonusService {
     private List<LocalizedMessage> createInfoAboutTurnPlayerAnnouncement(int selectedTarokkNumber, String upperCaseName, Set<String> bonusNames) {
         List<LocalizedMessage> lines = new ArrayList<>();
         addTarokkNumberAnnouncementIfAny(selectedTarokkNumber, upperCaseName, lines);
-        lines.add(new LocalizedMessage(MessageKey.BONUS_PLAYER_ANNOUNCED, Map.of("player", upperCaseName, "bonuses", List.copyOf(bonusNames))));
+        lines.add(new LocalizedMessage(MessageKey.BONUS_PLAYER_ANNOUNCED, Map.of("player", upperCaseName, "bonuses", toLocalizedBonusNames(bonusNames))));
         return lines;
     }
 

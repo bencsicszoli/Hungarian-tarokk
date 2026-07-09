@@ -15,12 +15,12 @@
     "confirmPrompt": "Are you sure you want to quit?"
   },
   "round": {
-    "dealing": "{{dealer}} is dealing the cards.",
+    "dealing": "{{dealer}} is dealing...",
     "noOneBid": "No one has bid.",
     "dealAgain": "{{dealer}} deals again.",
     "skartPhaseStarted": "The skart phase has started.",
     "bonusPhaseStarted": "The bonus announcement phase has started.",
-    "trickPhase": "The trick phase has started."
+    "trickPhase": "Trick phase"
   },
   "bid": {
     "announced": "{{player}} bid {{level}}."
@@ -38,17 +38,41 @@
     "playerCalledTarokk": "{{player}} called the {{tarokk}}.",
     "playerAnnounced": "{{player}} announced: {{bonuses}}",
     "callTarokk": "I call the {{romanNumeral}}",
-    "pagatUltimoRequires8": "Pagat Ultimo requires 8 tarokks.",
-    "pagatUltimoRequires9": "Pagat Ultimo requires 9 tarokks.",
-    "turnPagatUltimoRequires8": "Pagat Ultimo requires 8 tarokks.",
-    "turnPagatUltimoRequires9": "Pagat Ultimo requires 9 tarokks.",
-    "doubleVolatConflict": "You cannot double and announce Volat at the same time.",
-    "announceAfterVolatConflict": "You cannot announce further bonuses after Volat.",
-    "mustDoubleDeclarerSide": "You must double on the declarer's side.",
-    "mustDoubleOpponentSide": "You must double on the opponents' side.",
+    "pagatUltimoRequires8": "You MUST announce the 8 tarokks to announce Pagat Ultimo.",
+    "pagatUltimoRequires9": "You MUST announce the 9 tarokks to announce Pagat Ultimo.",
+    "turnPagatUltimoRequires8": "You MUST announce the 8 tarokks to announce Pagat Ultimo.",
+    "turnPagatUltimoRequires9": "You MUST announce the 9 tarokks to announce Pagat Ultimo.",
+    "doubleVolatConflict": "You cannot announce Double game and Volat at the same time.",
+    "announceAfterVolatConflict": "You cannot announce Trull, Four kings or Double game after Volat!",
+    "mustDoubleDeclarerSide": "You MUST double or redouble something otherwise it is not clear that you belong to the declarer",
+    "mustDoubleOpponentSide": "You MUST double something otherwise it is not clear that you are an opponent",
     "selectedTarokks": "Selected {{count}} tarokks.",
     "selectedBonus": "Selected bonus: {{bonuses}}",
-    "selectedBonuses": "Selected bonuses: {{bonuses}}"
+    "selectedBonuses": "Selected bonuses: {{bonuses}}",
+    "name": {
+      "pass": "Pass",
+      "party": "Party",
+      "trull": "Trull",
+      "fourKings": "Four kings",
+      "doubleGame": "Double game",
+      "pagatUltimo": "Pagat ultimo",
+      "xxiCatch": "XXI-catch",
+      "volat": "Volat",
+      "partyDoubled": "Party doubled",
+      "trullDoubled": "Trull doubled",
+      "fourKingsDoubled": "Four kings doubled",
+      "doubleGameDoubled": "Double game doubled",
+      "pagatUltimoDoubled": "Pagat ultimo doubled",
+      "xxiCatchDoubled": "XXI-catch doubled",
+      "volatDoubled": "Volat doubled",
+      "partyReDoubled": "Party re-doubled",
+      "trullReDoubled": "Trull re-doubled",
+      "fourKingsReDoubled": "Four kings re-doubled",
+      "doubleGameReDoubled": "Double game re-doubled",
+      "pagatUltimoReDoubled": "Pagat ultimo re-doubled",
+      "xxiCatchReDoubled": "XXI-catch re-doubled",
+      "volatReDoubled": "Volat re-doubled"
+    }
   },
   "discard": {
     "noTarokks": "{{username}} has no tarokks.",
@@ -56,12 +80,12 @@
     "soloXXI": "{{username}} has only the XXI.",
     "pagatAndXXI": "{{username}} has only the Pagat and the XXI.",
     "fourKings": "{{username}} has all four Kings.",
-    "promptNoTarokks": "Do you want to throw in your hand?",
-    "promptSoloPagat": "Do you want to throw in your hand?",
-    "promptSoloXXI": "Do you want to throw in your hand?",
-    "promptPagatAndXXI": "Do you want to throw in your hand?",
-    "promptFourKings": "Do you want to throw in your hand?",
-    "handSubmitted": "{{username}} has thrown in the hand."
+    "promptNoTarokks": "Do you want to discard your hand?",
+    "promptSoloPagat": "Do you want to discard your hand?",
+    "promptSoloXXI": "Do you want to discard your hand?",
+    "promptPagatAndXXI": "Do you want to discard your hand?",
+    "promptFourKings": "Do you want to discard your hand?",
+    "handSubmitted": "{{username}} has discarded the hand."
   },
   "validation": {
     "ok": "Validation is OK.",

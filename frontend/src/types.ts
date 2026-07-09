@@ -5,6 +5,11 @@ export interface LocalizedMessage {
 
 export type InfoLine = string | LocalizedMessage;
 
+export interface BonusOption {
+  bonusName: string;
+  label: LocalizedMessage;
+}
+
 export interface User {
   id: string;
   username: string;

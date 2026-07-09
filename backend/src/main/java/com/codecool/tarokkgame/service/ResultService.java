@@ -564,7 +564,7 @@ public class ResultService {
                     }
                 }
             } else { // Neither side announced double game
-                if (cardCount < 36) {
+                if (cardCount < 36 && game.findBonusByIndex(Bonus.VOLAT, "declarer") == null) {
                     if (player.getRoleInGame().getTeam().equals("declarer")) {
                         if (!game.isDeclarerAlone()) {
                             result.setSilentDoubleGame(2 * bidMultiplier);
@@ -778,7 +778,7 @@ public class ResultService {
                     }
                 }
             } else { // Neither side announced double game
-                if (cardCount > 0) {
+                if (cardCount > 0 && game.findBonusByIndex(Bonus.VOLAT, "opponent") == null) {
                     if (player.getRoleInGame().getTeam().equals("declarer")) {
                         if (!game.isDeclarerAlone()) {
                             result.setSilentDoubleGame(-2 * bidMultiplier);

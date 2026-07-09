@@ -14,8 +14,13 @@ import type {
   GameState,
   InfoLine,
   LocalizedMessage,
+  BonusOption,
 } from "./types.ts";
-import { translateInfoLines, translateMessage } from "./i18n/translateMessage.ts";
+import {
+  translateInfoLines,
+  translateMessage,
+  translateMessages,
+} from "./i18n/translateMessage.ts";
 import Bonuses from "./gamePageComponents/Bonuses.tsx";
 import PublicDescardedHand from "./gamePageComponents/PublicDiscardedHand.tsx";
 import MenuButtons from "./gamePageComponents/MenuButtons.tsx";
@@ -121,7 +126,7 @@ function Game() {
   const [player3, setPlayer3] = useState<string | null>(game?.player3 || null);
   const [player4, setPlayer4] = useState<string | null>(game?.player4 || null);
   const [potentialBids, setPotentialBids] = useState<string[]>([]);
-  const [potentialBonuses, setPotentialBonuses] = useState<string[]>([]);
+  const [potentialBonuses, setPotentialBonuses] = useState<BonusOption[]>([]);
   const [privateInformation, setPrivateInformation] = useState<InfoLine[]>(
     game?.privateInformation || [],
   );
@@ -455,8 +460,8 @@ function Game() {
           break;
         case "game.publicBonusInfo":
           setPublicInformation(message.info);
-          setDeclarerBonuses(message.declarerBonuses.join(", "));
-          setOpponentBonuses(message.opponentBonuses.join(", "));
+          setDeclarerBonuses(translateMessages(message.declarerBonuses).join(", "));
+          setOpponentBonuses(translateMessages(message.opponentBonuses).join(", "));
           setTurnPlayer(message.turnPlayer);
           setFirstBonusRound(false);
           console.log("Public bonus info updated:", message.info);
@@ -1072,16 +1077,18 @@ function Game() {
   function renderBonusButtons() {
     const buttons = potentialBonuses.map((bonus) => (
       <button
-        key={bonus}
+        key={bonus.bonusName}
         className={`border-green-300 border-2 w-40 h-14 hover:scale-105 hover:bg-green-700 cursor-pointer rounded-md font-semibold mt-0.5 ${
-          selectedBonuses.includes(bonus) ? "bg-green-600" : ""
+          selectedBonuses.includes(bonus.bonusName) ? "bg-green-600" : ""
         }`}
         onClick={() => {
           let selectedBonusesToSend = [];
-          if (selectedBonuses.includes(bonus)) {
-            selectedBonusesToSend = selectedBonuses.filter((b) => b !== bonus);
+          if (selectedBonuses.includes(bonus.bonusName)) {
+            selectedBonusesToSend = selectedBonuses.filter(
+              (b) => b !== bonus.bonusName,
+            );
           } else {
-            selectedBonusesToSend = [...selectedBonuses, bonus];
+            selectedBonusesToSend = [...selectedBonuses, bonus.bonusName];
           }
           send("/app/game.bonusInfo", {
             turnPlayer: turnPlayer,
@@ -1093,7 +1100,7 @@ function Game() {
           setSelectedBonuses(selectedBonusesToSend);
         }}
       >
-        {bonus}
+        {translateMessage(bonus.label)}
       </button>
     ));
     const confirmButton = (

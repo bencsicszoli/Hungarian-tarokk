@@ -91,20 +91,14 @@ public class LeavingService {
     private void methodIfDeclarerBonusesNotEmpty(Game game, int penalty, List<LocalizedMessage> penaltyMessage) {
         for (Bonus bonus : game.getDeclarerBonuses()) {
             penalty += bonus.getPointValue() * 3;
-            String bonusName;
-            if (bonus.getBonusName().equals("Pass")) {
-                bonusName = "Party";
-            } else {
-                bonusName = bonus.getBonusName();
-            }
-            penaltyMessage.add(new LocalizedMessage(MessageKey.LEAVE_BONUS_PENALTY_LINE, Map.of("bonusName", bonusName, "points", bonus.getPointValue() * 3)));
+            penaltyMessage.add(new LocalizedMessage(MessageKey.LEAVE_BONUS_PENALTY_LINE, Map.of("bonusName", bonus.getLocalizedSummaryName(), "points", bonus.getPointValue() * 3)));
         }
     }
 
     private void methodIfOpponentBonusesNotEmpty(Game game, int penalty, List<LocalizedMessage> penaltyMessage) {
         for (Bonus bonus : game.getOpponentBonuses()) {
             penalty += bonus.getPointValue() * 3;
-            penaltyMessage.add(new LocalizedMessage(MessageKey.LEAVE_BONUS_PENALTY_LINE, Map.of("bonusName", bonus.getBonusName(), "points", bonus.getPointValue() * 3)));
+            penaltyMessage.add(new LocalizedMessage(MessageKey.LEAVE_BONUS_PENALTY_LINE, Map.of("bonusName", bonus.getLocalizedSummaryName(), "points", bonus.getPointValue() * 3)));
         }
     }
 

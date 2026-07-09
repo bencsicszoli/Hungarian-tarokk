@@ -50,6 +50,29 @@ public final class MessageKey {
     public static final String BONUS_SELECTED_BONUS = "bonus.selectedBonus";
     public static final String BONUS_SELECTED_BONUSES = "bonus.selectedBonuses";
 
+    public static final String BONUS_NAME_PASS = "bonus.name.pass";
+    public static final String BONUS_NAME_PARTY = "bonus.name.party";
+    public static final String BONUS_NAME_TRULL = "bonus.name.trull";
+    public static final String BONUS_NAME_FOUR_KINGS = "bonus.name.fourKings";
+    public static final String BONUS_NAME_DOUBLE_GAME = "bonus.name.doubleGame";
+    public static final String BONUS_NAME_PAGAT_ULTIMO = "bonus.name.pagatUltimo";
+    public static final String BONUS_NAME_XXI_CATCH = "bonus.name.xxiCatch";
+    public static final String BONUS_NAME_VOLAT = "bonus.name.volat";
+    public static final String BONUS_NAME_PARTY_DOUBLED = "bonus.name.partyDoubled";
+    public static final String BONUS_NAME_TRULL_DOUBLED = "bonus.name.trullDoubled";
+    public static final String BONUS_NAME_FOUR_KINGS_DOUBLED = "bonus.name.fourKingsDoubled";
+    public static final String BONUS_NAME_DOUBLE_GAME_DOUBLED = "bonus.name.doubleGameDoubled";
+    public static final String BONUS_NAME_PAGAT_ULTIMO_DOUBLED = "bonus.name.pagatUltimoDoubled";
+    public static final String BONUS_NAME_XXI_CATCH_DOUBLED = "bonus.name.xxiCatchDoubled";
+    public static final String BONUS_NAME_VOLAT_DOUBLED = "bonus.name.volatDoubled";
+    public static final String BONUS_NAME_PARTY_RE_DOUBLED = "bonus.name.partyReDoubled";
+    public static final String BONUS_NAME_TRULL_RE_DOUBLED = "bonus.name.trullReDoubled";
+    public static final String BONUS_NAME_FOUR_KINGS_RE_DOUBLED = "bonus.name.fourKingsReDoubled";
+    public static final String BONUS_NAME_DOUBLE_GAME_RE_DOUBLED = "bonus.name.doubleGameReDoubled";
+    public static final String BONUS_NAME_PAGAT_ULTIMO_RE_DOUBLED = "bonus.name.pagatUltimoReDoubled";
+    public static final String BONUS_NAME_XXI_CATCH_RE_DOUBLED = "bonus.name.xxiCatchReDoubled";
+    public static final String BONUS_NAME_VOLAT_RE_DOUBLED = "bonus.name.volatReDoubled";
+
     public static final String DISCARD_NO_TAROKKS = "discard.noTarokks";
     public static final String DISCARD_SOLO_PAGAT = "discard.soloPagat";
     public static final String DISCARD_SOLO_XXI = "discard.soloXXI";
